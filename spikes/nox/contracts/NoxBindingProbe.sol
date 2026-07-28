@@ -14,6 +14,7 @@ contract NoxBindingProbe {
     function accept(externalEuint256 v, bytes calldata proof) external {
         euint256 h = Nox.fromExternal(v, proof);
         Nox.allowThis(h);
+        Nox.allow(h, msg.sender);
         stored = h;
     }
 

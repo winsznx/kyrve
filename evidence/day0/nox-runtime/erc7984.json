@@ -1,0 +1,10 @@
+{
+  "findings": {
+    "wrap deposit visibility": "PUBLIC (plain uint256 argument, visible in calldata)",
+    "confidential balance": "PRIVATE (encrypted handle; holder decrypts locally)",
+    "operator blast radius": "TOTAL - no allowance function exists; an operator may move the entire confidential balance and may unwrap it to any address until `until` expires",
+    "operator expiry": "ENFORCED (isOperator false after `until`)",
+    "aggregate reservations": "provider reservations remain encrypted handles; only a deliberate publish crosses the boundary",
+    "unwrap amount visibility": "PUBLIC and IRREVERSIBLE - _unwrap calls allowPublicDecryption on the burn amount; finalizeUnwrap writes the plaintext into an event"
+  }
+}
