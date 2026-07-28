@@ -1,8 +1,14 @@
 [profile.default]
 src = "contracts"
-test = "contracts/integration/test"
+# Rooted at `contracts` so both contracts/test (Kyrve unit tests) and
+# contracts/integration/test (tests against real unmodified Midnight) are discovered.
+test = "contracts"
+script = "contracts/script"
 out = "out"
 libs = ["vendor/midnight/lib"]
+
+# Matches the pinned Midnight release exactly so runtime-bytecode comparison stays meaningful.
+# Changing any of these five invalidates deployments/*/bytecode-lock.json. PRD v1.1 A-1.
 via_ir = true
 optimizer = true
 optimizer_runs = 466
@@ -15,5 +21,23 @@ remappings = [
     "midnight/=vendor/midnight/src/",
 ]
 
+# Narrow, explicit write scope: fixtures and generated artifacts only. Never the repository root.
+fs_permissions = [
+    { access = "read-write", path = "./packages/quote-math/test/fixtures" },
+    { access = "read-write", path = "./packages/generated/abi" },
+    { access = "read-write", path = "./deployments" },
+    { access = "read", path = "./vendor/midnight" },
+]
+
 [profile.default.fmt]
 wrap_comments = true
+
+[profile.ci]
+verbosity = 3
+fuzz = { runs = 1024 }
+
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 11155111 }

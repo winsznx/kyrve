@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Day 0 validation spike.
+//
+// PERMANENT REGRESSION SUITE. Promoted from the Day 0 validation spike.
 //
 // Differential-tests Kyrve's quote math against the pinned Midnight release 2026-07-23 (dbd8d3d5)
 // by comparing derived values with the return values of the real `take` entry point.
@@ -10,117 +11,53 @@ pragma solidity 0.8.34;
 
 import {Test, console} from "forge-std/Test.sol";
 
-import {Midnight} from "midnight/Midnight.sol";
-import {IMidnight, Market, Offer, CollateralParams} from "midnight/interfaces/IMidnight.sol";
+import {IMidnight, Market, Offer} from "midnight/interfaces/IMidnight.sol";
 import {TickLib, MAX_TICK} from "midnight/libraries/TickLib.sol";
 import {UtilsLib} from "midnight/libraries/UtilsLib.sol";
 import {WAD, ORACLE_PRICE_SCALE, CBP, DEFAULT_TICK_SPACING} from "midnight/libraries/ConstantsLib.sol";
 
-import {KyrveSeriesVault} from "../../kyrve/KyrveSeriesVault.sol";
-import {KyrveQuoteRatifier} from "../../kyrve/KyrveQuoteRatifier.sol";
-import {ActivatedQuote, QuoteStatus} from "../../kyrve/KyrveQuoteRegistry.sol";
-
-contract MockERC20 {
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-
-    function mint(address to, uint256 amount) external {
-        balanceOf[to] += amount;
-    }
-
-    function approve(address spender, uint256 amount) external returns (bool) {
-        allowance[msg.sender][spender] = amount;
-        return true;
-    }
-
-    function transfer(address to, uint256 amount) external returns (bool) {
-        balanceOf[msg.sender] -= amount;
-        balanceOf[to] += amount;
-        return true;
-    }
-
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
-        if (msg.sender != from) allowance[from][msg.sender] -= amount;
-        balanceOf[from] -= amount;
-        balanceOf[to] += amount;
-        return true;
-    }
-}
-
-contract Oracle {
-    uint256 public price = 1e36;
-}
+import {LocalMidnightFixture} from "../LocalMidnightFixture.sol";
+import {KyrveExactFillVault} from "../KyrveExactFillVault.sol";
+import {KyrveQuoteRatifier} from "../KyrveQuoteRatifier.sol";
+import {ActivatedQuote, QuoteStatus} from "../KyrveQuoteBinding.sol";
 
 contract QuoteMathDifferentialTest is Test {
     using UtilsLib for uint256;
 
-    uint256 internal constant LLTV = 0.77e18;
-    uint256 internal constant LIQUIDATION_CURSOR = 0.3e18;
-    uint256 internal constant MATURITY_OFFSET = 60 days;
-
-    Midnight internal midnight;
-    MockERC20 internal loanToken;
-    MockERC20 internal collateralToken;
-    Oracle internal oracle;
-
+    LocalMidnightFixture internal fixtureContract;
+    IMidnight internal midnight;
     Market internal market;
     bytes32 internal marketId;
+    uint256 internal maturityOffset;
 
     address internal borrower = makeAddr("borrower");
     uint256 internal quoteNonce;
 
     function setUp() public {
-        midnight = new Midnight();
-        midnight.setFeeSetter(address(this));
-        midnight.setTickSpacingSetter(address(this));
-        midnight.enableLltv(LLTV);
-        midnight.enableLiquidationCursor(LIQUIDATION_CURSOR);
+        fixtureContract = new LocalMidnightFixture();
+        fixtureContract.deploy(block.timestamp);
 
-        loanToken = new MockERC20();
-        collateralToken = new MockERC20();
-        oracle = new Oracle();
-
-        midnight.setDefaultSettlementFee(address(loanToken), 3, 400 * CBP);
-        midnight.setDefaultSettlementFee(address(loanToken), 4, 1000 * CBP);
-        midnight.setDefaultContinuousFee(address(loanToken), 1000);
-
-        CollateralParams[] memory cp = new CollateralParams[](1);
-        cp[0] = CollateralParams({
-            token: address(collateralToken),
-            lltv: LLTV,
-            liquidationCursor: LIQUIDATION_CURSOR,
-            oracle: address(oracle)
-        });
-
-        market = Market({
-            chainId: block.chainid,
-            midnight: address(midnight),
-            loanToken: address(loanToken),
-            collateralParams: cp,
-            maturity: block.timestamp + MATURITY_OFFSET,
-            rcfThreshold: 0,
-            enterGate: address(0),
-            liquidatorGate: address(0)
-        });
-        marketId = midnight.touchMarket(market);
+        midnight = IMidnight(address(fixtureContract.midnight()));
+        market = fixtureContract.market(1); // usdc-90d-weth
+        marketId = fixtureContract.marketId(1);
+        maturityOffset = fixtureContract.MATURITY_LONG();
     }
 
-    function realTakeExternal(uint256 tick, uint256 units) external returns (uint256, uint256) {
-        return realTake(tick, units);
-    }
-
-    /// @dev Kyrve's candidate quote math, derived from the pinned release:
-    /// for a buy offer, buyerAssets = floor(units * tickToPrice(tick) / WAD).
+    /// @dev Kyrve's candidate quote math, derived from the pinned release: for a buy offer,
+    /// buyerAssets = floor(units * tickToPrice(tick) / WAD).
     function kyrveBuyerAssets(uint256 units, uint256 tick) internal pure returns (uint256) {
         return units.mulDivDown(TickLib.tickToPrice(tick), WAD);
     }
 
     /// @dev Runs one real settlement at `tick` for `units` and returns Midnight's actual amounts.
+    ///
+    /// The vault's `onBuy` already asserts `buyerAssets == expected`, so a mismatch at any tick
+    /// reverts the take. Reaching the assertions at all is itself the proof of equality.
     function realTake(uint256 tick, uint256 units) internal returns (uint256 buyerAssets, uint256 sellerAssets) {
         quoteNonce++;
         bytes32 quoteId = keccak256(abi.encode("kyrve.quote", quoteNonce));
 
-        KyrveSeriesVault vault = new KyrveSeriesVault(address(midnight), address(this));
+        KyrveExactFillVault vault = new KyrveExactFillVault(address(midnight), address(this));
         KyrveQuoteRatifier ratifier = new KyrveQuoteRatifier(address(midnight), address(vault));
         vault.authoriseRatifier(address(ratifier), true);
 
@@ -158,26 +95,30 @@ contract QuoteMathDifferentialTest is Test {
             })
         );
 
-        loanToken.mint(address(vault), expected);
+        fixtureContract.usdc().mint(address(vault), expected);
 
-        uint256 collateral = units.mulDivUp(WAD, LLTV).mulDivUp(ORACLE_PRICE_SCALE, oracle.price());
-        collateralToken.mint(borrower, collateral);
+        uint256 collateral = units.mulDivUp(WAD, fixtureContract.LLTV_WETH()).mulDivUp(
+            ORACLE_PRICE_SCALE, fixtureContract.wethOracle().price()
+        );
+        fixtureContract.weth().mint(borrower, collateral);
         vm.startPrank(borrower);
-        collateralToken.approve(address(midnight), collateral);
+        fixtureContract.weth().approve(address(midnight), collateral);
         midnight.supplyCollateral(market, 0, collateral, borrower);
         (buyerAssets, sellerAssets) = midnight.take(offer, hex"", units, borrower, borrower, address(0), hex"");
         vm.stopPrank();
+    }
+
+    function realTakeExternal(uint256 tick, uint256 units) external returns (uint256, uint256) {
+        return realTake(tick, units);
     }
 
     // --------------------------------------------------------------------------------------------
     // 1. The quote-math identity holds against real settlement, across a real rate grid
     // --------------------------------------------------------------------------------------------
 
-    /// @dev PRD 12.3 / 30.3. The vault's onBuy already asserts buyerAssets == expected, so a
-    /// mismatch at any tick would revert the take. Reaching the assertions proves equality.
     function test_differential_buyerAssetsAcrossGrid() public {
         uint256 units = 1_000_000e6;
-        console.log("tick | tickToPrice(WAD)   | kyrve buyerAssets | real buyerAssets | real sellerAssets");
+        console.log("tick | tickToPrice(WAD)   | kyrve buyerAssets | real sellerAssets");
         for (uint256 tick = 4400; tick <= 6744; tick += 256) {
             uint256 t = tick - (tick % DEFAULT_TICK_SPACING);
             (uint256 real, uint256 sellerAssets) = realTake(t, units);
@@ -187,16 +128,20 @@ contract QuoteMathDifferentialTest is Test {
         }
     }
 
-    /// @dev PRD 12.3: the maker's payment must not drift with the settlement fee. For a buy offer
-    /// buyerPrice == offerPrice, so the fee is taken out of the borrower's proceeds only.
+    /// @dev PRD v1.1 A-6: the maker's payment must not drift with the settlement fee. For a buy
+    /// offer buyerPrice == offerPrice, so the fee comes out of the borrower's proceeds only.
     function test_differential_buyerAssetsIndependentOfSettlementFee() public {
         uint256 units = 500_000e6;
         uint256 tick = 6000;
 
         (uint256 buyerLowFee, uint256 sellerLowFee) = realTake(tick, units);
 
+        // Raise both bracketing breakpoints to their protocol maxima. The fixture holds the
+        // feeSetter role, so the call must come from it.
+        vm.startPrank(address(fixtureContract));
         midnight.setMarketSettlementFee(marketId, 3, 417 * CBP);
         midnight.setMarketSettlementFee(marketId, 4, 1250 * CBP);
+        vm.stopPrank();
 
         (uint256 buyerHighFee, uint256 sellerHighFee) = realTake(tick, units);
 
@@ -208,7 +153,6 @@ contract QuoteMathDifferentialTest is Test {
         console.log("borrower gets (high) :", sellerHighFee);
     }
 
-    /// @dev PRD 12.3, fuzzed over the pure identity.
     function testFuzz_quoteMathIdentity(uint128 units, uint16 rawTick) public pure {
         uint256 tick = bound(uint256(rawTick), 0, MAX_TICK);
         tick = tick - (tick % DEFAULT_TICK_SPACING);
@@ -218,12 +162,12 @@ contract QuoteMathDifferentialTest is Test {
     }
 
     // --------------------------------------------------------------------------------------------
-    // 2. Rate-grid discipline (PRD 9.3)
+    // 2. Rate-grid discipline (PRD 9.3, v1.1 A-3 and A-7)
     // --------------------------------------------------------------------------------------------
 
-    /// @dev PRD 9.3 step 3 requires sorting indexes by increasing borrowing cost. That is only
-    /// well-defined if tickToPrice is monotone. Higher price = more assets per unit of face
-    /// value = cheaper borrowing, so borrowing cost DECREASES as tick increases.
+    /// @dev Sorting indexes by increasing borrowing cost is only well-defined if tickToPrice is
+    /// monotone. Higher price = more assets per unit of face value = CHEAPER borrowing, so
+    /// borrowing cost DECREASES as tick increases.
     function test_rateGrid_priceIsMonotonicInTick() public pure {
         uint256 previous = 0;
         for (uint256 tick = 0; tick <= MAX_TICK; tick += DEFAULT_TICK_SPACING) {
@@ -234,11 +178,10 @@ contract QuoteMathDifferentialTest is Test {
         assertLe(TickLib.tickToPrice(MAX_TICK), WAD, "max tick price must be <= WAD");
     }
 
-    /// @dev A universe rate grid must exclude ticks whose price is below the market settlement fee:
-    /// for a buy offer Midnight computes `offerPrice - settlementFee`, which reverts on underflow.
-    /// This constraint is absent from the PRD.
+    /// @dev A universe rate grid must exclude ticks priced below the market settlement fee: for a
+    /// buy offer Midnight computes `offerPrice - settlementFee`, which reverts on underflow.
     function test_rateGrid_lowTicksUnderflowAgainstSettlementFee() public {
-        uint256 fee = midnight.settlementFee(marketId, MATURITY_OFFSET);
+        uint256 fee = midnight.settlementFee(marketId, maturityOffset);
         assertGt(fee, 0, "fee must be non-zero for this test to be meaningful");
 
         uint256 lowTick = 0;
@@ -248,13 +191,36 @@ contract QuoteMathDifferentialTest is Test {
         vm.expectRevert();
         this.realTakeExternal(lowTick, 1_000e6);
 
-        console.log("settlement fee at 60d (WAD):", fee);
+        console.log("settlement fee at 90d (WAD):", fee);
         console.log("tickToPrice(0)             :", TickLib.tickToPrice(lowTick));
         console.log("minimum safe tick price    :", fee);
     }
 
+    /// @dev The lowest accessible tick that Kyrve may include in a universe for this market.
+    /// `packages/quote-math.minimumViableTick` must agree with this.
+    function test_rateGrid_minimumViableTickIsAboveTheFee() public view {
+        uint256 fee = midnight.settlementFee(marketId, maturityOffset);
+        uint256 minimumViable = type(uint256).max;
+        for (uint256 tick = 0; tick <= MAX_TICK; tick += DEFAULT_TICK_SPACING) {
+            if (TickLib.tickToPrice(tick) >= fee) {
+                minimumViable = tick;
+                break;
+            }
+        }
+        assertLt(minimumViable, MAX_TICK, "a viable tick must exist");
+        assertGe(TickLib.tickToPrice(minimumViable), fee, "viable tick prices at or above the fee");
+        if (minimumViable >= DEFAULT_TICK_SPACING) {
+            assertLt(
+                TickLib.tickToPrice(minimumViable - DEFAULT_TICK_SPACING),
+                fee,
+                "the tick below it must be genuinely unusable"
+            );
+        }
+        console.log("minimum viable tick at 90d:", minimumViable);
+    }
+
     // --------------------------------------------------------------------------------------------
-    // 3. Funding invariant and dust (PRD 19.2 / 19.8)
+    // 3. Funding invariant and dust (PRD 19.2 / 19.8, v1.1 A-8)
     // --------------------------------------------------------------------------------------------
 
     /// @dev Nox produces an aggregate `fillAssets`. Kyrve must choose `units` so the maker never
@@ -273,21 +239,57 @@ contract QuoteMathDifferentialTest is Test {
         assertLe(target - owed, 2, "dust must be at most 2 wei of the loan token");
     }
 
-    /// @dev The opposite rounding is what a naive implementation would choose, and it can overdraw.
-    function test_roundingUp_canOverdrawTheReservation() public pure {
-        uint256 tick = 6000;
-        uint256 price = TickLib.tickToPrice(tick);
-        uint256 target = 999_999_999_999;
+    /// @dev PHASE 1 CORRECTION P-2. See docs/phase1/PRD-DELTA.md.
+    ///
+    /// Day 0 finding D-15, applied as PRD v1.1 A-8, justifies rounding down with the claim that
+    /// "rounding up can overdraw and would break section 19.2". That justification is FALSE, and
+    /// the Day 0 test named `test_roundingUp_canOverdrawTheReservation` never actually asserted
+    /// it — it only checked the round-down case.
+    ///
+    /// Rounding up cannot overdraw, because tick prices are capped at par. With p <= WAD:
+    ///
+    ///     unitsUp   = ceil(t * W / p)  <  t * W / p + 1
+    ///     owedUp    = floor(unitsUp * p / W)  <  t + p/W  <=  t + 1
+    ///     therefore   owedUp <= t,  for every t and every p in (0, WAD].
+    ///
+    /// This test asserts that property directly. Rounding DOWN remains normative, for the reason
+    /// established below rather than the one originally stated: rounding up inflates `units`, so
+    /// the borrower takes on face value whose exact price exceeds the assets providers reserved,
+    /// and Midnight's own flooring silently hands that fraction to the maker. Rounding down
+    /// instead leaves an explicit residue that routes to the section 19.8 dust account.
+    function test_roundingDirection_neitherOverdraws_butUpInflatesBorrowerDebt() public pure {
+        uint256 overdrawWitnesses;
+        uint256 inflationWitnesses;
+        uint256 maxDust;
 
-        uint256 unitsUp = target.mulDivUp(WAD, price);
-        uint256 owedUp = unitsUp.mulDivDown(price, WAD);
+        for (uint256 tick = 4400; tick <= MAX_TICK; tick += DEFAULT_TICK_SPACING) {
+            uint256 price = TickLib.tickToPrice(tick);
+            if (price == 0) continue;
 
-        uint256 unitsDown = target.mulDivDown(WAD, price);
-        uint256 owedDown = unitsDown.mulDivDown(price, WAD);
+            for (uint256 k = 0; k < 8; k++) {
+                uint256 target = 999_999_999_991 + k;
 
-        console.log("target reserved by providers:", target);
-        console.log("round-up   units / owed     :", unitsUp, owedUp);
-        console.log("round-down units / owed     :", unitsDown, owedDown);
-        assertLe(owedDown, target, "round-down is safe");
+                uint256 unitsUp = target.mulDivUp(WAD, price);
+                uint256 unitsDown = target.mulDivDown(WAD, price);
+                uint256 owedUp = unitsUp.mulDivDown(price, WAD);
+                uint256 owedDown = unitsDown.mulDivDown(price, WAD);
+
+                assertLe(owedDown, target, "round-down must never overdraw the reservation");
+                assertLe(owedUp, target, "round-up does not overdraw either: prices are capped at par");
+                assertGe(unitsUp, unitsDown, "round-up never produces fewer units");
+
+                if (owedUp > target) overdrawWitnesses++;
+                if (unitsUp > unitsDown) inflationWitnesses++;
+                if (target - owedDown > maxDust) maxDust = target - owedDown;
+            }
+        }
+
+        assertEq(overdrawWitnesses, 0, "no overdraw is reachable in either direction");
+        assertGt(inflationWitnesses, 0, "round-up demonstrably inflates units, which is the real hazard");
+        assertLe(maxDust, 2, "round-down dust stays within the 2 wei bound Day 0 measured");
+
+        console.log("overdraw witnesses (expect 0):", overdrawWitnesses);
+        console.log("unit-inflation witnesses     :", inflationWitnesses);
+        console.log("max round-down dust (wei)    :", maxDust);
     }
 }
