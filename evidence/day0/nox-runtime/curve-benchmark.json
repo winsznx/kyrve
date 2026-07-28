@@ -1,0 +1,95 @@
+{
+  "blockGas": 30000000,
+  "safeTxGas": 24000000,
+  "stages": [
+    {
+      "stage": "A seedProvider",
+      "units": 16,
+      "gas": 5581276,
+      "gasPerUnit": 348830
+    },
+    {
+      "stage": "B cacheProvider",
+      "units": 16,
+      "gas": 4104852,
+      "gasPerUnit": 256553
+    },
+    {
+      "stage": "C accumulate/cell",
+      "units": 1,
+      "gas": 76402,
+      "gasPerUnit": 76402
+    },
+    {
+      "stage": "D finalizeLeaf",
+      "units": 8,
+      "gas": 1270772,
+      "gasPerUnit": 158847
+    },
+    {
+      "stage": "E reduceWinner",
+      "units": 8,
+      "gas": 757192,
+      "gasPerUnit": 94649
+    },
+    {
+      "stage": "F allocate",
+      "units": 16,
+      "gas": 2662772,
+      "gasPerUnit": 166423
+    },
+    {
+      "stage": "E2 publishWinner",
+      "units": 1,
+      "gas": 90076,
+      "gasPerUnit": 90076
+    }
+  ],
+  "envelopes": [
+    {
+      "providers": 4,
+      "leaves": 16,
+      "cells": 64,
+      "cellGas": 4889728,
+      "totalGas": 10637568,
+      "txs": 4,
+      "maxTxGas": 24000000
+    },
+    {
+      "providers": 8,
+      "leaves": 32,
+      "cells": 256,
+      "cellGas": 19558912,
+      "totalGas": 31054592,
+      "txs": 4,
+      "maxTxGas": 24000000
+    },
+    {
+      "providers": 8,
+      "leaves": 64,
+      "cells": 512,
+      "cellGas": 39117824,
+      "totalGas": 58725376,
+      "txs": 5,
+      "maxTxGas": 24000000
+    },
+    {
+      "providers": 16,
+      "leaves": 64,
+      "cells": 1024,
+      "cellGas": 78235648,
+      "totalGas": 101227008,
+      "txs": 7,
+      "maxTxGas": 24000000
+    },
+    {
+      "providers": 16,
+      "leaves": 128,
+      "cells": 2048,
+      "cellGas": 156471296,
+      "totalGas": 195686400,
+      "txs": 11,
+      "maxTxGas": 24000000
+    }
+  ]
+}
