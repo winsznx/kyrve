@@ -13,3 +13,6 @@ broadcast/
 coverage/
 typechain-types/
 .turbo/
+out/
+vendor/midnight/out/
+vendor/midnight/cache/
