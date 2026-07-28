@@ -1,0 +1,63 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "kyrve-spike-runtime",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
+  // Bounded queryable projection + cursors ONLY. Full event history lives in R2.
+  // D1 is capped at 10 GB and is single-threaded per database - see STORAGE-DECISION.md.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kyrve-projection",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "./migrations"
+    }
+  ],
+
+  // Block-range partitioned event history and content-addressed proof bundles.
+  "r2_buckets": [{ "binding": "EVENTS", "bucket_name": "kyrve-events" }],
+
+  "queues": {
+    "producers": [{ "binding": "INDEX_JOBS", "queue": "kyrve-index-jobs" }],
+    "consumers": [
+      {
+        "queue": "kyrve-index-jobs",
+        "max_batch_size": 100,
+        "max_batch_timeout": 30,
+        "max_retries": 5,
+        "max_concurrency": 5,
+        "dead_letter_queue": "kyrve-index-dlq"
+      }
+    ]
+  },
+
+  // The one thing Workflows cannot do: serialise nonce allocation per signing key.
+  "durable_objects": {
+    "bindings": [{ "name": "NONCE_ALLOCATOR", "class_name": "NonceAllocator" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["NonceAllocator"] }],
+
+  "workflows": [
+    {
+      "binding": "QUOTE_FLOW",
+      "name": "kyrve-quote-flow",
+      "class_name": "QuoteLifecycleWorkflow",
+      "limits": { "steps": 10000 }
+    }
+  ],
+
+  "triggers": { "crons": ["* * * * *"] },
+
+  "limits": { "subrequests": 10000 },
+
+  "vars": {
+    "SEPOLIA_RPC_URL": "https://sepolia.drpc.org"
+  }
+}
