@@ -298,3 +298,59 @@ peaking at ~124 MiB free), which blocked Docker images, `pnpm install`, and pack
 
 None of these is known to fail. All three are cheap once disk is available, and each has a defined
 discharge procedure above.
+
+---
+
+# Applied status — 2026-07-28
+
+All twenty findings are applied in [`kyrve-production-prd-v1.1.md`](../../kyrve-production-prd-v1.1.md),
+a normative amendment. `kyrve-production-prd.md` (v1.0) remains **unedited**. Where they conflict,
+v1.1 wins.
+
+| Finding | Applied as | v1.0 sections superseded |
+|---|---|---|
+| D-1 exact-fill composition | *(confirmed, no change)* | — |
+| D-2 direct-caller nuance | **A-12** | §11.1 |
+| D-3 external types | *(confirmed, no change)* | — |
+| D-4 ACL permanence + transient escalation | **A-16** | §11.13, §18.3 |
+| D-5 ERC-7984 boundaries | **A-17** | §11.14 *(confirmed)* |
+| D-6 Osaka + solc pin | **A-1** | §3.1 |
+| D-7 ratifier authorisation | **A-2** | §12.4, §13.10, §13.12 |
+| D-8 rate-grid fee floor | **A-3** | §9.3 |
+| D-9 `pendingFeeIncrease` | **A-4** | §12.5 |
+| D-10 `setConsumed` cancellation | **A-5** | §12.6 |
+| D-11 no boolean ops | **A-9** | §11.5 |
+| D-12 no batch API; hierarchical epoch | **A-10** | §9.1, §13.7 |
+| D-13 settlement-fee drift reframed | **A-6** | §12.3, §20.2 |
+| D-14 tick ordering | **A-7** | §9.3 |
+| D-15 round down; dust | **A-8** | §11.9, §12.3 |
+| D-16 handle-to-graph binding | **A-11** | §13.8 |
+| D-17 storage decision | **A-13** | §21.3 |
+| D-18 BUSL licences | **A-14** | §3.2 |
+| D-19 Nox maturity + continuous fee | **A-15**, **A-4** | §20.1, §19.1 |
+| D-20 `verify:live` additions | **A-18** | §31 |
+
+Two amendments have no v1.0 antecedent — they arise from Day 0 runtime evidence:
+
+| New | Subject |
+|---|---|
+| **A-19** | Invariant 1 qualified: gas is **not** yet indistinguishable across confidential failures |
+| **A-20** | Keeper idempotency — DO nonce allocation, deterministic step names, cursor reconciliation |
+
+## Residuals resolved since the first run
+
+| Was | Now |
+|---|---|
+| Spike C not run | **EXECUTED** — real Nox runtime, 24 tests |
+| Spike D not run | **EXECUTED** — measured budget, full universe viable |
+| Spike E not run | **EXECUTED** — viem proven under workerd |
+| BUSL grant unresolved | **RESOLVED** — ENS carries no records; the grant is empty |
+
+## Residuals still open
+
+| Item | Status |
+|---|---|
+| Gas indistinguishability | **FAIL, open** — 4 distinct values, 2,974 spread (THREAT-MODEL T-1) |
+| Testnet latency and gas | UNVERIFIED — all figures local |
+| Storage under realistic load | UNVERIFIED |
+| Concurrent epochs | UNVERIFIED |

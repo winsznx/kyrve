@@ -18,20 +18,56 @@
     "commitDate": "2026-07-23T01:19:00+02:00",
     "commitSubject": "callback max buyer assets (#1073)",
     "repositoryHeadAtAudit": "4ab59c43242a9a9422f3d01cd06074c56108bb63",
-    "allReleaseTags": ["2026-07-23","2026-07-02","2026-07-01","2026-06-25","2026-05-29","2026-05-21","2026-05-19","2026-05-13","2026-04-07"],
+    "allReleaseTags": [
+      "2026-07-23",
+      "2026-07-02",
+      "2026-07-01",
+      "2026-06-25",
+      "2026-05-29",
+      "2026-05-21",
+      "2026-05-19",
+      "2026-05-13",
+      "2026-04-07"
+    ],
     "submodules": {
-      "lib/forge-std": { "commit": "620536fa5277db4e3fd46772d5cbc1ea0696fb43", "describes": "v1.16.1" },
-      "lib/morpho-blue": { "commit": "528ccf43568e2f45ccd14fb2dcfcbaf46311f398", "describes": "v1.0.0-327-g528ccf4" }
+      "lib/forge-std": {
+        "commit": "620536fa5277db4e3fd46772d5cbc1ea0696fb43",
+        "describes": "v1.16.1"
+      },
+      "lib/morpho-blue": {
+        "commit": "528ccf43568e2f45ccd14fb2dcfcbaf46311f398",
+        "describes": "v1.0.0-327-g528ccf4"
+      }
     },
-    "compiler": { "primary": "0.8.34", "secondary": "0.8.19", "secondaryScope": "test/imports/MorphoImport.sol" },
-    "foundry": { "via_ir": true, "optimizer": true, "optimizer_runs": 466, "bytecode_hash": "none", "evm_version": "osaka" },
-    "licences": { "src/Midnight.sol": "BUSL-1.1", "allOtherSrcFiles": "GPL-2.0-or-later", "secondaryLicenceFile": "LICENSE-SECONDARY (GPL-2.0)" },
-    "formalVerification": ["certora/", "rocq/"],
+    "compiler": {
+      "primary": "0.8.34",
+      "secondary": "0.8.19",
+      "secondaryScope": "test/imports/MorphoImport.sol"
+    },
+    "foundry": {
+      "via_ir": true,
+      "optimizer": true,
+      "optimizer_runs": 466,
+      "bytecode_hash": "none",
+      "evm_version": "osaka"
+    },
+    "licences": {
+      "src/Midnight.sol": "BUSL-1.1",
+      "allOtherSrcFiles": "GPL-2.0-or-later",
+      "secondaryLicenceFile": "LICENSE-SECONDARY (GPL-2.0)"
+    },
+    "formalVerification": [
+      "certora/",
+      "rocq/"
+    ],
     "officialDeploymentOnSepolia": null,
     "note": "Morpho publishes no official Midnight deployment on Ethereum Sepolia. Kyrve deploys its own unmodified replica and must label it as such."
   },
   "nox": {
-    "docs": ["https://docs.iex.ec/", "https://docs.noxprotocol.io/"],
+    "docs": [
+      "https://docs.iex.ec/",
+      "https://docs.noxprotocol.io/"
+    ],
     "deployment": {
       "network": "Ethereum Sepolia",
       "chainId": 11155111,
@@ -67,7 +103,9 @@
         "packageJsonLicense": "MIT",
         "gitHead": "080264eb8066f0bebdaa9bc882acf12e48c6ec31",
         "publishedAt": "2026-06-22T12:59:21.318Z",
-        "peerDependencies": { "hardhat": "^3.4.0" },
+        "peerDependencies": {
+          "hardhat": "^3.4.0"
+        },
         "engines": null
       },
       "@iexec-nox/handle": {
@@ -82,16 +120,82 @@
     }
   },
   "cloudflare": {
-    "wrangler": { "version": "4.115.0", "integrity": "sha512-+upG2VW66M1sjb43yzgUZ6Ss8iYpJ6+7F3U4GF8TY5EYd+08sYdS54d24AEwCnhuef3J9KlSPusqiqR9WYy1UA==", "license": "MIT OR Apache-2.0", "enginesNode": ">=22.0.0" },
-    "@cloudflare/vite-plugin": { "version": "1.48.0", "integrity": "sha512-Qt+lhot9ws3K4qOZYRuvsU03QsdLjQ63dgVrQo47kTL+SJmHScaQYG40mnJAKYL84mVT/ai7eFQORUxM6vMrWQ==", "license": "MIT" },
-    "@cloudflare/vitest-pool-workers": { "version": "0.19.0", "integrity": "sha512-6t6zs1YBoAo9jJVpA8pTxPWYEY3c/ai07MWZYJ4vkUc5cyW9PHfMB6tFhDsRg7eLS+i26NMuB3aUOlBKdRiwhw==", "license": "MIT", "peerDependencies": { "vitest": "^4.1.0" } },
+    "wrangler": {
+      "version": "4.115.0",
+      "integrity": "sha512-+upG2VW66M1sjb43yzgUZ6Ss8iYpJ6+7F3U4GF8TY5EYd+08sYdS54d24AEwCnhuef3J9KlSPusqiqR9WYy1UA==",
+      "license": "MIT OR Apache-2.0",
+      "enginesNode": ">=22.0.0"
+    },
+    "@cloudflare/vite-plugin": {
+      "version": "1.48.0",
+      "integrity": "sha512-Qt+lhot9ws3K4qOZYRuvsU03QsdLjQ63dgVrQo47kTL+SJmHScaQYG40mnJAKYL84mVT/ai7eFQORUxM6vMrWQ==",
+      "license": "MIT"
+    },
+    "@cloudflare/vitest-pool-workers": {
+      "version": "0.19.0",
+      "integrity": "sha512-6t6zs1YBoAo9jJVpA8pTxPWYEY3c/ai07MWZYJ4vkUc5cyW9PHfMB6tFhDsRg7eLS+i26NMuB3aUOlBKdRiwhw==",
+      "license": "MIT",
+      "peerDependencies": {
+        "vitest": "^4.1.0"
+      }
+    },
     "configFormat": "wrangler.jsonc",
     "schema": "./node_modules/wrangler/config-schema.json"
   },
-  "viem": { "version": "2.55.10", "integrity": "sha512-Q9Ba+/ma81U2M5o5P2AQ7Ux8rTIwmCZvUcr8rKdQ22bV0IBFHllM2m5gWDP8hFaUN2nH2oW3QG44amRazflYNQ==", "license": "MIT", "engines": null, "workerdSupport": "UNVERIFIED - structural evidence only, bundle probe not yet run" },
+  "viem": {
+    "version": "2.55.10",
+    "integrity": "sha512-Q9Ba+/ma81U2M5o5P2AQ7Ux8rTIwmCZvUcr8rKdQ22bV0IBFHllM2m5gWDP8hFaUN2nH2oW3QG44amRazflYNQ==",
+    "license": "MIT",
+    "engines": null,
+    "workerdSupport": "PROVEN - clean bundle (zero unenv stubs, zero node: imports, viem/node absent) and 6/6 tests executing inside workerd"
+  },
   "toolchain": {
     "node": "24.14.1",
     "pnpm": "10.33.0",
-    "foundry": { "forge": "1.7.1", "commit": "4072e48705af9d93e3c0f6e29e93b5e9a40caed8" }
+    "foundry": {
+      "forge": "1.7.1",
+      "commit": "4072e48705af9d93e3c0f6e29e93b5e9a40caed8"
+    }
+  },
+  "spikes": {
+    "nox": {
+      "hardhat": "3.11.1",
+      "@nomicfoundation/hardhat-toolbox-viem": "5.0.7",
+      "encrypted-types": "0.0.4",
+      "@openzeppelin/contracts": "5.6.1",
+      "solc": "0.8.36",
+      "solcSettings": {
+        "viaIR": true,
+        "optimizer": true,
+        "runs": 200,
+        "evmVersion": "cancun"
+      },
+      "localNoxCompute": "0x75C6AF4430cc474b1bb9b8540b7E46D6f8e1C685",
+      "localGatewaySigner": "0xE1a6B1De3AbF04e7FA5355373880350Dc3004D0e",
+      "noxServiceImages": {
+        "nox-kms": "0.6.0",
+        "nox-handle-gateway": "0.6.0",
+        "nox-ingestor": "0.6.0",
+        "nox-runner": "0.6.0"
+      },
+      "note": "Gateway and KMS keys are local-only development keys shipped inside the plugin and unusable on any public network."
+    },
+    "cloudflare": {
+      "wrangler": "4.115.0",
+      "@cloudflare/vitest-pool-workers": "0.19.0",
+      "vitest": "4.1.0",
+      "viem": "2.55.10",
+      "sepoliaRpcPinned": "https://sepolia.drpc.org",
+      "rpcNote": "publicnode rejects eth_getLogs as an archive request; 1rpc caps at 50 blocks; drpc serves 200-block ranges."
+    }
+  },
+  "licence": {
+    "morphoAdditionalUseGrant": "EMPTY",
+    "ensNames": [
+      "morpho-midnight-license-grants.morpho.eth",
+      "morpho-midnight-license-date.morpho.eth"
+    ],
+    "ensResolver": "0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41",
+    "verifiedBy": "mainnet eth_call: no contenthash, no text records across 17 candidate keys, 2026-07-28"
   }
 }

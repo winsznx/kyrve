@@ -5,8 +5,8 @@
     {
       "stage": "A seedProvider",
       "units": 16,
-      "gas": 5581276,
-      "gasPerUnit": 348830
+      "gas": 5580232,
+      "gasPerUnit": 348765
     },
     {
       "stage": "B cacheProvider",

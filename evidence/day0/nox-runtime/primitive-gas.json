@@ -3,156 +3,156 @@
   "rows": [
     {
       "primitive": "add",
-      "gasAt1": 98612,
-      "gasAtN": 192005,
-      "marginalGas": 10377,
+      "gasAt1": 98950,
+      "gasAtN": 191281,
+      "marginalGas": 10259,
       "note": "unsafe, wrapping"
     },
     {
       "primitive": "sub",
-      "gasAt1": 81526,
-      "gasAtN": 192226,
-      "marginalGas": 12300,
+      "gasAt1": 81267,
+      "gasAtN": 190905,
+      "marginalGas": 12182,
       "note": "unsafe, wrapping"
     },
     {
       "primitive": "mul",
-      "gasAt1": 81537,
-      "gasAtN": 192237,
-      "marginalGas": 12300,
+      "gasAt1": 81609,
+      "gasAtN": 191247,
+      "marginalGas": 12182,
       "note": "unsafe, wrapping"
     },
     {
       "primitive": "div",
-      "gasAt1": 81559,
-      "gasAtN": 191872,
-      "marginalGas": 12257,
+      "gasAt1": 81720,
+      "gasAtN": 190971,
+      "marginalGas": 12139,
       "note": "unsafe, saturates on /0"
     },
     {
       "primitive": "safeAdd",
-      "gasAt1": 84797,
-      "gasAtN": 224451,
-      "marginalGas": 15517,
+      "gasAt1": 84962,
+      "gasAtN": 223590,
+      "marginalGas": 15403,
       "note": "returns (ebool,T)"
     },
     {
       "primitive": "safeSub",
-      "gasAt1": 84754,
-      "gasAtN": 223832,
-      "marginalGas": 15453,
+      "gasAt1": 85093,
+      "gasAtN": 223145,
+      "marginalGas": 15339,
       "note": "returns (ebool,T)"
     },
     {
       "primitive": "safeMul",
-      "gasAt1": 84843,
-      "gasAtN": 224911,
-      "marginalGas": 15563,
+      "gasAt1": 84832,
+      "gasAtN": 223874,
+      "marginalGas": 15449,
       "note": "returns (ebool,T)"
     },
     {
       "primitive": "safeDiv",
-      "gasAt1": 84721,
-      "gasAtN": 223988,
-      "marginalGas": 15474,
+      "gasAt1": 84533,
+      "gasAtN": 222774,
+      "marginalGas": 15360,
       "note": "returns (ebool,T)"
     },
     {
       "primitive": "lt",
       "gasAt1": 78545,
-      "gasAtN": 172126,
-      "marginalGas": 10398,
+      "gasAtN": 171199,
+      "marginalGas": 10295,
       "note": "-> ebool"
     },
     {
       "primitive": "ge",
-      "gasAt1": 81346,
-      "gasAtN": 172334,
-      "marginalGas": 10110,
+      "gasAt1": 81336,
+      "gasAtN": 171307,
+      "marginalGas": 9997,
       "note": "-> ebool"
     },
     {
       "primitive": "eq",
-      "gasAt1": 81369,
-      "gasAtN": 172366,
-      "marginalGas": 10111,
+      "gasAt1": 81623,
+      "gasAtN": 171603,
+      "marginalGas": 9998,
       "note": "-> ebool"
     },
     {
       "primitive": "select(euint256)",
-      "gasAt1": 88499,
-      "gasAtN": 225866,
-      "marginalGas": 15263,
+      "gasAt1": 88742,
+      "gasAtN": 224993,
+      "marginalGas": 15139,
       "note": "no ebool overload exists"
     },
     {
       "primitive": "select(euint16)",
-      "gasAt1": 105533,
-      "gasAtN": 225233,
-      "marginalGas": 13300,
+      "gasAt1": 105716,
+      "gasAtN": 224552,
+      "marginalGas": 13204,
       "note": "indicator width"
     },
     {
       "primitive": "add16",
-      "gasAt1": 81514,
-      "gasAtN": 191440,
-      "marginalGas": 12214,
+      "gasAt1": 81410,
+      "gasAtN": 190274,
+      "marginalGas": 12096,
       "note": "euint16"
     },
     {
       "primitive": "mul16",
-      "gasAt1": 81515,
-      "gasAtN": 191648,
-      "marginalGas": 12237,
+      "gasAt1": 81600,
+      "gasAtN": 190788,
+      "marginalGas": 12132,
       "note": "euint16 - indicator combine"
     },
     {
       "primitive": "toEuint16",
-      "gasAt1": 39921,
-      "gasAtN": 96279,
-      "marginalGas": 6262,
+      "gasAt1": 39974,
+      "gasAtN": 94721,
+      "marginalGas": 6083,
       "note": "plaintext -> handle"
     },
     {
       "primitive": "toEuint256",
-      "gasAt1": 39938,
-      "gasAtN": 96242,
-      "marginalGas": 6256,
+      "gasAt1": 39732,
+      "gasAtN": 94479,
+      "marginalGas": 6083,
       "note": "plaintext -> handle"
     },
     {
       "primitive": "allowThis",
-      "gasAt1": 38435,
-      "gasAtN": 91139,
-      "marginalGas": 5856,
+      "gasAt1": 38800,
+      "gasAtN": 91531,
+      "marginalGas": 5859,
       "note": "persistent, irreversible"
     },
     {
       "primitive": "allow",
-      "gasAt1": 60767,
-      "gasAtN": 93625,
-      "marginalGas": 3651,
+      "gasAt1": 60623,
+      "gasAtN": 93463,
+      "marginalGas": 3649,
       "note": "persistent, irreversible"
     },
     {
       "primitive": "allowTransient",
-      "gasAt1": 37305,
-      "gasAtN": 76212,
+      "gasAt1": 37318,
+      "gasAtN": 76225,
       "marginalGas": 4323,
       "note": "one transaction"
     },
     {
       "primitive": "indicator",
-      "gasAt1": 90227,
-      "gasAtN": 185850,
-      "marginalGas": 10625,
+      "gasAt1": 89943,
+      "gasAtN": 184774,
+      "marginalGas": 10537,
       "note": "ebool -> euint16 0/1"
     },
     {
       "primitive": "conjunction6",
-      "gasAt1": 214121,
-      "gasAtN": 1535904,
-      "marginalGas": 146865,
+      "gasAt1": 212367,
+      "gasAtN": 1519633,
+      "marginalGas": 145252,
       "note": "6 selects + 5 muls = 1 eligibility cell"
     }
   ]

@@ -1,3 +1,8 @@
+> **SUPERSEDED 2026-07-28.** This was the first-run verdict, issued when three spikes were
+> blocked by host disk exhaustion. All three have since been executed. The current gate is
+> [`GATE.md`](GATE.md) — **TECHNICAL PASS**, conditional only on an external licence
+> clarification. This file is retained as a record of what was known at the time.
+
 # Day 0 verdict — CONDITIONAL PASS
 
 Date: 2026-07-28 · Branch: `phase/00-validation` · Baseline commit: `a071831`
