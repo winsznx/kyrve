@@ -1,0 +1,97 @@
+{
+  "$comment": "Kyrve Day 0 source lock. Every entry was retrieved and verified on 2026-07-28 (UTC). Do not edit by hand without re-running the retrieval commands recorded in docs/day0/SOURCE-LOCK.md.",
+  "retrievedAt": "2026-07-28T21:00:00Z",
+  "chain": {
+    "name": "Ethereum Sepolia",
+    "chainId": 11155111,
+    "activeFork": "Osaka",
+    "forkEvidence": "docs/day0/evidence/sepolia-osaka.md",
+    "rpcUsedForVerification": "https://ethereum-sepolia-rpc.publicnode.com",
+    "clientObserved": "Geth/v1.17.1-stable-16783c16/linux-amd64/go1.25.7"
+  },
+  "morphoMidnight": {
+    "repository": "https://github.com/morpho-org/midnight",
+    "defaultBranch": "main",
+    "pinnedRelease": "2026-07-23",
+    "pinnedCommit": "dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0",
+    "releasePublishedAt": "2026-07-22T23:20:09Z",
+    "commitDate": "2026-07-23T01:19:00+02:00",
+    "commitSubject": "callback max buyer assets (#1073)",
+    "repositoryHeadAtAudit": "4ab59c43242a9a9422f3d01cd06074c56108bb63",
+    "allReleaseTags": ["2026-07-23","2026-07-02","2026-07-01","2026-06-25","2026-05-29","2026-05-21","2026-05-19","2026-05-13","2026-04-07"],
+    "submodules": {
+      "lib/forge-std": { "commit": "620536fa5277db4e3fd46772d5cbc1ea0696fb43", "describes": "v1.16.1" },
+      "lib/morpho-blue": { "commit": "528ccf43568e2f45ccd14fb2dcfcbaf46311f398", "describes": "v1.0.0-327-g528ccf4" }
+    },
+    "compiler": { "primary": "0.8.34", "secondary": "0.8.19", "secondaryScope": "test/imports/MorphoImport.sol" },
+    "foundry": { "via_ir": true, "optimizer": true, "optimizer_runs": 466, "bytecode_hash": "none", "evm_version": "osaka" },
+    "licences": { "src/Midnight.sol": "BUSL-1.1", "allOtherSrcFiles": "GPL-2.0-or-later", "secondaryLicenceFile": "LICENSE-SECONDARY (GPL-2.0)" },
+    "formalVerification": ["certora/", "rocq/"],
+    "officialDeploymentOnSepolia": null,
+    "note": "Morpho publishes no official Midnight deployment on Ethereum Sepolia. Kyrve deploys its own unmodified replica and must label it as such."
+  },
+  "nox": {
+    "docs": ["https://docs.iex.ec/", "https://docs.noxprotocol.io/"],
+    "deployment": {
+      "network": "Ethereum Sepolia",
+      "chainId": 11155111,
+      "noxComputeProxy": "0x24Ef36Ec5b626D7DCD09a98F3083c2758F0F77bF",
+      "proxyType": "ERC-1967",
+      "proxyCodeSizeBytes": 89,
+      "implementation": "0xc9B5D2e99e45dc652b3B90bA5FA79667ACFEb819",
+      "gateway": "0xE13191F53671957C8a48A7A3Ff15E16450a1552F",
+      "verifiedBy": "live eth_getCode + eth_getStorageAt(EIP-1967 slot) + eth_call gateway() on 2026-07-28"
+    },
+    "packages": {
+      "@iexec-nox/nox-protocol-contracts": {
+        "version": "0.2.4",
+        "integrity": "sha512-jXunAVPc0W6Zcv5QiHx699BYd8U+Tw9U5O+3Xcbcq4y5gry2Z6FyWwGvYL0VjV9MJQL0zcVIcdkBL3ZyM5FfSg==",
+        "packageJsonLicense": "MIT",
+        "actualLicence": "BUSL-1.1 on core modules; MIT only on sdk/Nox.sol, interfaces/INoxCompute.sol, utils/*",
+        "licenceDiscrepancy": true,
+        "gitHead": "1a2ebd45e4af91797397961bcb0046fe1e5c1d03",
+        "publishedAt": "2026-06-04T13:22:01.574Z",
+        "engines": null
+      },
+      "@iexec-nox/nox-confidential-contracts": {
+        "version": "0.2.2",
+        "integrity": "sha512-5Kt/Xzlk6Ekj/7hZa5+s8vDd6wQDdENRSxCbZp4Pomi85MdWjI/jJwfOqPWV+bF7Tm9Lew2Aon9UF0El9WVPkQ==",
+        "packageJsonLicense": "MIT",
+        "gitHead": "e685645986af394ab5507c0c67e611650f4e4d33",
+        "publishedAt": "2026-07-01T12:19:13.485Z",
+        "engines": null
+      },
+      "@iexec-nox/nox-hardhat-plugin": {
+        "version": "0.1.0",
+        "integrity": "sha512-wNUxy6RSPzrq4DHbqQJAB3MRBdarDUAZFFN2GYiOnhNRfqCOcSxFDT6buOvWEoexAZea7sSaQE4IWQCZF9fHLg==",
+        "packageJsonLicense": "MIT",
+        "gitHead": "080264eb8066f0bebdaa9bc882acf12e48c6ec31",
+        "publishedAt": "2026-06-22T12:59:21.318Z",
+        "peerDependencies": { "hardhat": "^3.4.0" },
+        "engines": null
+      },
+      "@iexec-nox/handle": {
+        "version": "0.1.0-beta.13",
+        "integrity": "sha512-RPVoQTLRwettq+DYbVDV6V9Y15Uy6BNsHZUEQuG2qe0zrPJKx87lFMP0E6lX2AOHwgOfzCq5ju1C3vBJ1cuuRg==",
+        "packageJsonLicense": "MIT",
+        "gitHead": "e552f6a3b297bc5bc7d1afd514c96e7b9b30cea0",
+        "publishedAt": "2026-06-08T10:18:17.770Z",
+        "stable": false,
+        "engines": null
+      }
+    }
+  },
+  "cloudflare": {
+    "wrangler": { "version": "4.115.0", "integrity": "sha512-+upG2VW66M1sjb43yzgUZ6Ss8iYpJ6+7F3U4GF8TY5EYd+08sYdS54d24AEwCnhuef3J9KlSPusqiqR9WYy1UA==", "license": "MIT OR Apache-2.0", "enginesNode": ">=22.0.0" },
+    "@cloudflare/vite-plugin": { "version": "1.48.0", "integrity": "sha512-Qt+lhot9ws3K4qOZYRuvsU03QsdLjQ63dgVrQo47kTL+SJmHScaQYG40mnJAKYL84mVT/ai7eFQORUxM6vMrWQ==", "license": "MIT" },
+    "@cloudflare/vitest-pool-workers": { "version": "0.19.0", "integrity": "sha512-6t6zs1YBoAo9jJVpA8pTxPWYEY3c/ai07MWZYJ4vkUc5cyW9PHfMB6tFhDsRg7eLS+i26NMuB3aUOlBKdRiwhw==", "license": "MIT", "peerDependencies": { "vitest": "^4.1.0" } },
+    "configFormat": "wrangler.jsonc",
+    "schema": "./node_modules/wrangler/config-schema.json"
+  },
+  "viem": { "version": "2.55.10", "integrity": "sha512-Q9Ba+/ma81U2M5o5P2AQ7Ux8rTIwmCZvUcr8rKdQ22bV0IBFHllM2m5gWDP8hFaUN2nH2oW3QG44amRazflYNQ==", "license": "MIT", "engines": null, "workerdSupport": "UNVERIFIED - structural evidence only, bundle probe not yet run" },
+  "toolchain": {
+    "node": "24.14.1",
+    "pnpm": "10.33.0",
+    "foundry": { "forge": "1.7.1", "commit": "4072e48705af9d93e3c0f6e29e93b5e9a40caed8" }
+  }
+}
