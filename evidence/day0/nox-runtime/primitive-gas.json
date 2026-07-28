@@ -1,0 +1,159 @@
+{
+  "sampleN": 10,
+  "rows": [
+    {
+      "primitive": "add",
+      "gasAt1": 98612,
+      "gasAtN": 192005,
+      "marginalGas": 10377,
+      "note": "unsafe, wrapping"
+    },
+    {
+      "primitive": "sub",
+      "gasAt1": 81526,
+      "gasAtN": 192226,
+      "marginalGas": 12300,
+      "note": "unsafe, wrapping"
+    },
+    {
+      "primitive": "mul",
+      "gasAt1": 81537,
+      "gasAtN": 192237,
+      "marginalGas": 12300,
+      "note": "unsafe, wrapping"
+    },
+    {
+      "primitive": "div",
+      "gasAt1": 81559,
+      "gasAtN": 191872,
+      "marginalGas": 12257,
+      "note": "unsafe, saturates on /0"
+    },
+    {
+      "primitive": "safeAdd",
+      "gasAt1": 84797,
+      "gasAtN": 224451,
+      "marginalGas": 15517,
+      "note": "returns (ebool,T)"
+    },
+    {
+      "primitive": "safeSub",
+      "gasAt1": 84754,
+      "gasAtN": 223832,
+      "marginalGas": 15453,
+      "note": "returns (ebool,T)"
+    },
+    {
+      "primitive": "safeMul",
+      "gasAt1": 84843,
+      "gasAtN": 224911,
+      "marginalGas": 15563,
+      "note": "returns (ebool,T)"
+    },
+    {
+      "primitive": "safeDiv",
+      "gasAt1": 84721,
+      "gasAtN": 223988,
+      "marginalGas": 15474,
+      "note": "returns (ebool,T)"
+    },
+    {
+      "primitive": "lt",
+      "gasAt1": 78545,
+      "gasAtN": 172126,
+      "marginalGas": 10398,
+      "note": "-> ebool"
+    },
+    {
+      "primitive": "ge",
+      "gasAt1": 81346,
+      "gasAtN": 172334,
+      "marginalGas": 10110,
+      "note": "-> ebool"
+    },
+    {
+      "primitive": "eq",
+      "gasAt1": 81369,
+      "gasAtN": 172366,
+      "marginalGas": 10111,
+      "note": "-> ebool"
+    },
+    {
+      "primitive": "select(euint256)",
+      "gasAt1": 88499,
+      "gasAtN": 225866,
+      "marginalGas": 15263,
+      "note": "no ebool overload exists"
+    },
+    {
+      "primitive": "select(euint16)",
+      "gasAt1": 105533,
+      "gasAtN": 225233,
+      "marginalGas": 13300,
+      "note": "indicator width"
+    },
+    {
+      "primitive": "add16",
+      "gasAt1": 81514,
+      "gasAtN": 191440,
+      "marginalGas": 12214,
+      "note": "euint16"
+    },
+    {
+      "primitive": "mul16",
+      "gasAt1": 81515,
+      "gasAtN": 191648,
+      "marginalGas": 12237,
+      "note": "euint16 - indicator combine"
+    },
+    {
+      "primitive": "toEuint16",
+      "gasAt1": 39921,
+      "gasAtN": 96279,
+      "marginalGas": 6262,
+      "note": "plaintext -> handle"
+    },
+    {
+      "primitive": "toEuint256",
+      "gasAt1": 39938,
+      "gasAtN": 96242,
+      "marginalGas": 6256,
+      "note": "plaintext -> handle"
+    },
+    {
+      "primitive": "allowThis",
+      "gasAt1": 38435,
+      "gasAtN": 91139,
+      "marginalGas": 5856,
+      "note": "persistent, irreversible"
+    },
+    {
+      "primitive": "allow",
+      "gasAt1": 60767,
+      "gasAtN": 93625,
+      "marginalGas": 3651,
+      "note": "persistent, irreversible"
+    },
+    {
+      "primitive": "allowTransient",
+      "gasAt1": 37305,
+      "gasAtN": 76212,
+      "marginalGas": 4323,
+      "note": "one transaction"
+    },
+    {
+      "primitive": "indicator",
+      "gasAt1": 90227,
+      "gasAtN": 185850,
+      "marginalGas": 10625,
+      "note": "ebool -> euint16 0/1"
+    },
+    {
+      "primitive": "conjunction6",
+      "gasAt1": 214121,
+      "gasAtN": 1535904,
+      "marginalGas": 146865,
+      "note": "6 selects + 5 muls = 1 eligibility cell"
+    }
+  ]
+}

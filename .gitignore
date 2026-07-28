@@ -16,3 +16,8 @@ typechain-types/
 out/
 vendor/midnight/out/
 vendor/midnight/cache/
+node_modules/
+spikes/**/artifacts/
+spikes/**/cache/
+spikes/**/types/
+.DS_Store

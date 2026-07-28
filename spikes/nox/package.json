@@ -1,0 +1,22 @@
+{
+  "name": "@kyrve/spike-nox",
+  "private": true,
+  "type": "module",
+  "description": "Day 0 Spike C/D - executes real Nox primitives against the local stack. Not product code.",
+  "scripts": {
+    "test": "hardhat test",
+    "bench": "hardhat test solidity --gas-stats"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "5.0.7",
+    "hardhat": "3.11.1"
+  },
+  "dependencies": {
+    "@iexec-nox/handle": "0.1.0-beta.13",
+    "@iexec-nox/nox-confidential-contracts": "0.2.2",
+    "@iexec-nox/nox-hardhat-plugin": "0.1.0",
+    "@iexec-nox/nox-protocol-contracts": "0.2.4",
+    "@openzeppelin/contracts": "5.6.1",
+    "encrypted-types": "0.0.4"
+  }
+}
