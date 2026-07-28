@@ -1,0 +1,5 @@
+{
+  "$comment": "Solution file. Each entry points at a package's composite build config; the sibling tsconfig.json in each package is the editor/Vitest view and includes tests.",
+  "files": [],
+  "references": [{ "path": "./packages/config/tsconfig.build.json" }]
+}

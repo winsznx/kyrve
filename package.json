@@ -1,0 +1,53 @@
+{
+  "name": "kyrve",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Confidential fixed-income liquidity network. One quote. The curve stays private.",
+  "license": "SEE LICENSE IN LICENSE",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean && rm -rf packages/*/dist workers/*/dist",
+    "lint": "pnpm lint:ts && pnpm lint:sol && pnpm lint:imports",
+    "lint:ts": "biome check .",
+    "lint:sol": "forge fmt --check",
+    "lint:imports": "tsx scripts/verify/import-boundary.ts",
+    "format": "biome check --write . && forge fmt",
+    "typecheck": "tsc --build --force",
+    "test": "pnpm test:contracts && pnpm test:unit && pnpm test:workers",
+    "test:unit": "vitest run",
+    "test:contracts": "forge test -vv",
+    "test:midnight": "forge test --match-path 'contracts/integration/test/*' -vv",
+    "test:nox": "pnpm --dir spikes/nox exec hardhat test",
+    "test:workers": "pnpm --filter './workers/*' test",
+    "generate": "tsx scripts/generate/abis.ts",
+    "wrangler:dry-run": "pnpm --filter './workers/*' dry-run",
+    "verify:source-lock": "tsx scripts/verify/source-lock.ts",
+    "verify:toolchain": "tsx scripts/verify/toolchain.ts",
+    "verify:vendor": "tsx scripts/verify/vendor.ts",
+    "verify:midnight-bytecode": "tsx scripts/verify/midnight-bytecode.ts",
+    "verify:osaka": "tsx scripts/verify/osaka.ts",
+    "verify:markets": "tsx scripts/verify/markets.ts",
+    "verify:generated": "tsx scripts/verify/generated.ts",
+    "verify:deployment": "tsx scripts/verify/deployment.ts",
+    "verify:bundles": "tsx scripts/verify/bundles.ts",
+    "verify:licence": "tsx scripts/verify/licence.ts",
+    "verify:secrets": "tsx scripts/verify/secrets.ts",
+    "verify:nox-runtime": "tsx scripts/verify/nox-runtime.ts",
+    "verify:phase1": "tsx scripts/phase1/gate.ts",
+    "deploy:local": "tsx scripts/deploy/local.ts",
+    "deploy:sepolia": "tsx scripts/deploy/sepolia.ts",
+    "grids:build": "tsx scripts/generate/rate-grids.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.6",
+    "@types/node": "26.1.2",
+    "tsx": "4.23.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.0"
+  }
+}

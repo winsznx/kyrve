@@ -1,0 +1,11 @@
+# `spikes/*` are deliberately excluded. They are the frozen Day 0 evidence artifacts and
+# reproduce with their own lockfiles exactly as `docs/day0/` records. Phase 1 promotes their
+# proven behaviour into `packages/*` and `workers/*` rather than absorbing them.
+packages:
+  - packages/*
+  - workers/*
+  - apps/*
+
+onlyBuiltDependencies:
+  - esbuild
+  - workerd

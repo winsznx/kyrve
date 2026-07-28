@@ -1,0 +1,99 @@
+{
+  "$comment": "Kyrve Phase 1 toolchain lock. Every value is normative and verified by `pnpm verify:toolchain`. Reproduction commands and the reasoning behind each pin are in docs/phase1/TOOLCHAIN.md. Never widen a pin to a range.",
+  "lockedAt": "2026-07-29T00:00:00Z",
+  "phase": "phase/01-foundations",
+  "baseline": "89131b3",
+  "runtime": {
+    "node": {
+      "version": "24.14.1",
+      "declaredIn": [".nvmrc", "package.json#engines.node"],
+      "minimum": "22.0.0",
+      "minimumReason": "wrangler@4.115.0 declares engines.node >= 22.0.0. Cloudflare doc pages claiming 16.17 or 18 are stale; the engines field binds."
+    },
+    "pnpm": {
+      "version": "10.33.0",
+      "declaredIn": "package.json#packageManager",
+      "exactPins": "save-exact=true in .npmrc; no caret, tilde or range anywhere in the workspace"
+    }
+  },
+  "solidity": {
+    "kyrveContracts": {
+      "version": "0.8.34",
+      "evmVersion": "osaka",
+      "viaIr": true,
+      "optimizer": true,
+      "optimizerRuns": 466,
+      "bytecodeHash": "none",
+      "reason": "Matches the pinned Midnight release exactly so runtime-bytecode comparison stays meaningful. PRD v1.1 A-1."
+    },
+    "noxContracts": {
+      "version": "0.8.36",
+      "evmVersion": "cancun",
+      "viaIr": true,
+      "optimizer": true,
+      "optimizerRuns": 200,
+      "reason": "The Nox SDK requires >=0.8.35 and the NoxCompute testnet deployment targets cancun, not osaka. Nox contracts therefore compile under a separate Hardhat profile and are never mixed with the Midnight settlement path."
+    }
+  },
+  "foundry": {
+    "forge": "1.7.1",
+    "commit": "4072e48705af9d93e3c0f6e29e93b5e9a40caed8",
+    "configFile": "foundry.toml"
+  },
+  "hardhat": {
+    "version": "3.11.1",
+    "scope": "spikes/nox and the permanent Nox compatibility suite only",
+    "toolboxViem": "5.0.7"
+  },
+  "cloudflare": {
+    "wrangler": "4.115.0",
+    "vitestPoolWorkers": "0.19.0",
+    "compatibilityDate": "2026-07-28",
+    "compatibilityFlags": ["nodejs_compat"],
+    "plan": "Workers Paid",
+    "planReason": "Free plan allows 50 subrequests per invocation counting D1 and R2 calls, which cannot cover one block of indexing. PRD v1.1 A-13."
+  },
+  "typescript": {
+    "version": "5.9.3",
+    "reason": "TypeScript 7.0.2 exists and is the published `latest`, but its compatibility with hardhat@3.11.1 and @cloudflare/vitest-pool-workers@0.19.0 type surfaces is UNVERIFIED. 5.9.3 is the last stable 5.x and is what every pinned dependency was published against. Revisit only with an executable typecheck across all workspaces."
+  },
+  "tooling": {
+    "vitest": "4.1.0",
+    "vitestReason": "@cloudflare/vitest-pool-workers@0.19.0 peer-requires vitest ^4.1.0. 4.1.0 is the exact version Day 0 proved 6/6 workerd tests against; newer 4.1.x patches are unverified against workerd here.",
+    "biome": "2.5.6",
+    "tsx": "4.23.1",
+    "typesNode": "26.1.2"
+  },
+  "chain": {
+    "targetChainId": 11155111,
+    "targetChainName": "Ethereum Sepolia",
+    "requiredFork": "Osaka",
+    "forkProof": "docs/day0/evidence/sepolia-osaka.md",
+    "forkProbeCommand": "pnpm verify:osaka"
+  },
+  "protocols": {
+    "morphoMidnight": {
+      "release": "2026-07-23",
+      "commit": "dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0",
+      "vendoredAs": "git submodule at vendor/midnight",
+      "licence": "BUSL-1.1 on src/Midnight.sol; GPL-2.0-or-later on all other src files"
+    },
+    "nox": {
+      "noxProtocolContracts": "0.2.4",
+      "noxConfidentialContracts": "0.2.2",
+      "noxHardhatPlugin": "0.1.0",
+      "handleSdk": "0.1.0-beta.13",
+      "serviceImages": {
+        "iexechub/nox-kms": "0.6.0",
+        "iexechub/nox-handle-gateway": "0.6.0",
+        "iexechub/nox-ingestor": "0.6.0",
+        "iexechub/nox-runner": "0.6.0"
+      },
+      "sepoliaNoxCompute": "0x24Ef36Ec5b626D7DCD09a98F3083c2758F0F77bF"
+    }
+  },
+  "libraries": {
+    "viem": "2.55.10",
+    "viemWorkerdSupport": "PROVEN — docs/day0/CLOUDFLARE-RUNTIME-GATE.md; re-proven every CI run by `pnpm verify:bundles`"
+  }
+}
