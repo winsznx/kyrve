@@ -67,7 +67,13 @@ contract DeployKyrveSubstrate is Script {
         midnight.setDefaultContinuousFee(address(usdc), CONTINUOUS_FEE);
 
         Market[4] memory markets = _buildMarkets(
-            anchor, address(midnight), address(usdc), address(weth), address(wsteth), address(wethOracle), address(wstethOracle)
+            anchor,
+            address(midnight),
+            address(usdc),
+            address(weth),
+            address(wsteth),
+            address(wethOracle),
+            address(wstethOracle)
         );
 
         bytes32[4] memory ids;
@@ -113,9 +119,7 @@ contract DeployKyrveSubstrate is Script {
         markets[0] = _market(midnight, usdc, anchor + MATURITY_SHORT, _single(weth, LLTV_WETH, wethOracle));
         markets[1] = _market(midnight, usdc, anchor + MATURITY_LONG, _single(weth, LLTV_WETH, wethOracle));
         markets[2] = _market(midnight, usdc, anchor + MATURITY_SHORT, _single(wsteth, LLTV_WSTETH, wstethOracle));
-        markets[3] = _market(
-            midnight, usdc, anchor + MATURITY_LONG, _pair(weth, wethOracle, wsteth, wstethOracle)
-        );
+        markets[3] = _market(midnight, usdc, anchor + MATURITY_LONG, _pair(weth, wethOracle, wsteth, wstethOracle));
     }
 
     function _market(address midnight, address usdc, uint256 maturity, CollateralParams[] memory cp)
