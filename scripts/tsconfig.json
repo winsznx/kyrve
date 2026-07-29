@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "types": ["node"],
+    "paths": {
+      "@kyrve/config": ["../packages/config/src/index.ts"],
+      "@kyrve/quote-math": ["../packages/quote-math/src/index.ts"]
+    }
+  },
+  "include": ["**/*.ts"]
+}

@@ -1,0 +1,263 @@
+{
+  "chainId": 31337,
+  "compiler": {
+    "bytecodeHash": "none",
+    "evmVersion": "osaka",
+    "optimizer": true,
+    "optimizerRuns": 466,
+    "solc": "0.8.34",
+    "viaIr": true
+  },
+  "contracts": {
+    "KyrveDeploymentVerifier": {
+      "address": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
+      "constructorArgs": [
+        "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f"
+      ],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/registry/KyrveDeploymentVerifier.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "KyrveOsakaProbe": {
+      "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+      "constructorArgs": [],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/registry/KyrveOsakaProbe.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "KyrveProtocolRegistry": {
+      "address": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+      "constructorArgs": [
+        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+      ],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/registry/KyrveProtocolRegistry.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "Midnight": {
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "constructorArgs": [],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0x94dfc372cddf727c3cb9649ffab79f400260e1f50c380324e4ad0cf5ab29d9a7",
+      "sourcePath": "vendor/midnight/src/Midnight.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "TestUSDC": {
+      "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+      "constructorArgs": [],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/integration/TestERC20.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "TestWETH": {
+      "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "constructorArgs": [],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/integration/TestERC20.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "TestWstETH": {
+      "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "constructorArgs": [],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/integration/TestERC20.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "WethOracle": {
+      "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "constructorArgs": [],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/integration/FixedPriceOracle.sol",
+      "verifiedSource": "not-applicable"
+    },
+    "WstethOracle": {
+      "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "constructorArgs": [],
+      "deploymentTxHash": null,
+      "explorerUrl": null,
+      "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
+      "sourcePath": "contracts/integration/FixedPriceOracle.sol",
+      "verifiedSource": "not-applicable"
+    }
+  },
+  "deployedAt": "2026-07-29T00:15:18.000Z",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "deploymentBlock": "26",
+  "disclosure": "Non-production testnet replica of the pinned Morpho Midnight release 2026-07-23 (dbd8d3d5). Deployed by Kyrve under BUSL-1.1 non-production use; the Additional Use Grant was resolved on 2026-07-28 and found empty. This is NOT an official Morpho deployment, is not maintained by Morpho Association, and carries no Morpho branding.",
+  "environment": "local",
+  "licenceDisclosureHash": "0x6fb2665ca973e77be56bf0aaae21f853ec4cf9780659a2bfe5e39c9ee6b2b049",
+  "markets": [
+    {
+      "continuousFee": "1000",
+      "id": "0x45de7986b59233ae943f9c94f8c2487851219d85984b878e2d2d2041c278fe31",
+      "key": "usdc-30d-weth",
+      "label": "USDC 30d / WETH",
+      "market": {
+        "chainId": "31337",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "770000000000000000",
+            "oracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+            "token": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "maturity": "1801353600",
+        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0xb9465f3e68188a2b9b750cdf70a354fb138a0a5919d797af360a5927c6c458db",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "id": "0x588b948019978d9168c5d25b890249989bf715d1fb61816990495fc2bbd3a9f0",
+      "key": "usdc-90d-weth",
+      "label": "USDC 90d / WETH",
+      "market": {
+        "chainId": "31337",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "770000000000000000",
+            "oracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+            "token": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "maturity": "1806537600",
+        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0x840069a1fb7df9f20317cdff292ddd97290e74d28d12771510bbbde15c013019",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "id": "0x6aa53c3ce2028f72f8bd30375046a65ed9523547429d83b8b90b898b19582142",
+      "key": "usdc-30d-wsteth",
+      "label": "USDC 30d / wstETH",
+      "market": {
+        "chainId": "31337",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "860000000000000000",
+            "oracle": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+            "token": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "maturity": "1801353600",
+        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0x7a9cd05ace11c0cc29ab8600e50f0dc7e4a11f06faa897ea3a17c61b493e7d30",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "id": "0x0d9cbb561a77fdb2fb5881007c9287488e2fa537936d01ae831354dd3e35bef0",
+      "key": "usdc-90d-multi",
+      "label": "USDC 90d / WETH + wstETH",
+      "market": {
+        "chainId": "31337",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "860000000000000000",
+            "oracle": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+            "token": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+          },
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "770000000000000000",
+            "oracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+            "token": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "maturity": "1806537600",
+        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0xeae235bfd080419d9383f24f152cf7a78be274ffb16f237170c1273288ff9bd4",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    }
+  ],
+  "pins": {
+    "handleSdk": "0.1.0-beta.13",
+    "midnightCommit": "dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0",
+    "midnightRelease": "2026-07-23",
+    "noxConfidentialContracts": "0.2.2",
+    "noxProtocolContracts": "0.2.4"
+  },
+  "roles": {
+    "configurator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "feeClaimer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "feeSetter": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "tickSpacingSetter": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+  },
+  "schemaVersion": 1,
+  "sourceUrl": "https://github.com/kyrve/kyrve"
+}

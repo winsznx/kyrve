@@ -1,0 +1,664 @@
+{
+  "grids": [
+    {
+      "continuousFee": "1000",
+      "gridHash": "0xb9465f3e68188a2b9b750cdf70a354fb138a0a5919d797af360a5927c6c458db",
+      "label": "USDC 30d / WETH",
+      "marketKey": "usdc-30d-weth",
+      "maturitySeconds": 2592000,
+      "points": [
+        {
+          "annualisedRateWad": "20135033769460561",
+          "borrowerProceeds": "997947800000",
+          "impliedTermReturnWad": "1654934282421416",
+          "makerFunding": "998347800000",
+          "priceWad": "998347800000000000",
+          "rateIndex": 0,
+          "tick": "4656"
+        },
+        {
+          "annualisedRateWad": "23618677855010745",
+          "borrowerProceeds": "997662500000",
+          "impliedTermReturnWad": "1941261193562527",
+          "makerFunding": "998062500000",
+          "priceWad": "998062500000000000",
+          "rateIndex": 1,
+          "tick": "4624"
+        },
+        {
+          "annualisedRateWad": "27159308594699635",
+          "borrowerProceeds": "997372700000",
+          "impliedTermReturnWad": "2232271939290381",
+          "makerFunding": "997772700000",
+          "priceWad": "997772700000000000",
+          "rateIndex": 2,
+          "tick": "4596"
+        },
+        {
+          "annualisedRateWad": "31871119674373230",
+          "borrowerProceeds": "996987300000",
+          "impliedTermReturnWad": "2619544082825197",
+          "makerFunding": "997387300000",
+          "priceWad": "997387300000000000",
+          "rateIndex": 3,
+          "tick": "4564"
+        },
+        {
+          "annualisedRateWad": "37376101381424075",
+          "borrowerProceeds": "996537400000",
+          "impliedTermReturnWad": "3072008332719787",
+          "makerFunding": "996937400000",
+          "priceWad": "996937400000000000",
+          "rateIndex": 4,
+          "tick": "4532"
+        },
+        {
+          "annualisedRateWad": "42973047939527950",
+          "borrowerProceeds": "996080400000",
+          "impliedTermReturnWad": "3532031337495448",
+          "makerFunding": "996480400000",
+          "priceWad": "996480400000000000",
+          "rateIndex": 5,
+          "tick": "4504"
+        },
+        {
+          "annualisedRateWad": "50408875394096911",
+          "borrowerProceeds": "995473900000",
+          "impliedTermReturnWad": "4143195237870979",
+          "makerFunding": "995873900000",
+          "priceWad": "995873900000000000",
+          "rateIndex": 6,
+          "tick": "4472"
+        },
+        {
+          "annualisedRateWad": "59137437029991093",
+          "borrowerProceeds": "994762900000",
+          "impliedTermReturnWad": "4860611262738994",
+          "makerFunding": "995162900000",
+          "priceWad": "995162900000000000",
+          "rateIndex": 7,
+          "tick": "4440"
+        },
+        {
+          "annualisedRateWad": "68021194099501656",
+          "borrowerProceeds": "994040300000",
+          "impliedTermReturnWad": "5590783076671369",
+          "makerFunding": "994440300000",
+          "priceWad": "994440300000000000",
+          "rateIndex": 8,
+          "tick": "4412"
+        },
+        {
+          "annualisedRateWad": "79762215955405811",
+          "borrowerProceeds": "993086900000",
+          "impliedTermReturnWad": "6555798571677190",
+          "makerFunding": "993486900000",
+          "priceWad": "993486900000000000",
+          "rateIndex": 9,
+          "tick": "4380"
+        },
+        {
+          "annualisedRateWad": "93561479048395340",
+          "borrowerProceeds": "991968700000",
+          "impliedTermReturnWad": "7689984579320165",
+          "makerFunding": "992368700000",
+          "priceWad": "992368700000000000",
+          "rateIndex": 10,
+          "tick": "4348"
+        },
+        {
+          "annualisedRateWad": "107585043666238944",
+          "borrowerProceeds": "990834900000",
+          "impliedTermReturnWad": "8842606328731968",
+          "makerFunding": "991234900000",
+          "priceWad": "991234900000000000",
+          "rateIndex": 11,
+          "tick": "4320"
+        },
+        {
+          "annualisedRateWad": "126242025817465795",
+          "borrowerProceeds": "989330500000",
+          "impliedTermReturnWad": "10376056916504038",
+          "makerFunding": "989730500000",
+          "priceWad": "989730500000000000",
+          "rateIndex": 12,
+          "tick": "4288"
+        },
+        {
+          "annualisedRateWad": "148057465293733493",
+          "borrowerProceeds": "987577200000",
+          "impliedTermReturnWad": "12169106736471246",
+          "makerFunding": "987977200000",
+          "priceWad": "987977200000000000",
+          "rateIndex": 13,
+          "tick": "4256"
+        },
+        {
+          "annualisedRateWad": "170225674208631446",
+          "borrowerProceeds": "985801900000",
+          "impliedTermReturnWad": "13991151304819023",
+          "makerFunding": "986201900000",
+          "priceWad": "986201900000000000",
+          "rateIndex": 14,
+          "tick": "4228"
+        },
+        {
+          "annualisedRateWad": "199680646703723018",
+          "borrowerProceeds": "983452900000",
+          "impliedTermReturnWad": "16412107948251207",
+          "makerFunding": "983852900000",
+          "priceWad": "983852900000000000",
+          "rateIndex": 15,
+          "tick": "4196"
+        }
+      ],
+      "referenceUnits": "1000000000000",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "settlementFeeWad": "400000000000000",
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "gridHash": "0x840069a1fb7df9f20317cdff292ddd97290e74d28d12771510bbbde15c013019",
+      "label": "USDC 90d / WETH",
+      "marketKey": "usdc-90d-weth",
+      "maturitySeconds": 7776000,
+      "points": [
+        {
+          "annualisedRateWad": "20110968898264930",
+          "borrowerProceeds": "994065600000",
+          "impliedTermReturnWad": "4958869043407791",
+          "makerFunding": "995065600000",
+          "priceWad": "995065600000000000",
+          "rateIndex": 0,
+          "tick": "4436"
+        },
+        {
+          "annualisedRateWad": "23592979295873693",
+          "borrowerProceeds": "993216200000",
+          "impliedTermReturnWad": "5817446949667486",
+          "makerFunding": "994216200000",
+          "priceWad": "994216200000000000",
+          "rateIndex": 1,
+          "tick": "4404"
+        },
+        {
+          "annualisedRateWad": "27122865824596902",
+          "borrowerProceeds": "992356600000",
+          "impliedTermReturnWad": "6687829929352661",
+          "makerFunding": "993356600000",
+          "priceWad": "993356600000000000",
+          "rateIndex": 2,
+          "tick": "4376"
+        },
+        {
+          "annualisedRateWad": "31815277087124087",
+          "borrowerProceeds": "991216200000",
+          "impliedTermReturnWad": "7844862843400460",
+          "makerFunding": "992216200000",
+          "priceWad": "992216200000000000",
+          "rateIndex": 3,
+          "tick": "4344"
+        },
+        {
+          "annualisedRateWad": "37322133067011460",
+          "borrowerProceeds": "989881200000",
+          "impliedTermReturnWad": "9202717742550771",
+          "makerFunding": "990881200000",
+          "priceWad": "990881200000000000",
+          "rateIndex": 4,
+          "tick": "4312"
+        },
+        {
+          "annualisedRateWad": "42933724452726760",
+          "borrowerProceeds": "988524500000",
+          "impliedTermReturnWad": "10586397810261393",
+          "makerFunding": "989524500000",
+          "priceWad": "989524500000000000",
+          "rateIndex": 5,
+          "tick": "4284"
+        },
+        {
+          "annualisedRateWad": "50345324824961786",
+          "borrowerProceeds": "986738300000",
+          "impliedTermReturnWad": "12413915710264550",
+          "makerFunding": "987738300000",
+          "priceWad": "987738300000000000",
+          "rateIndex": 6,
+          "tick": "4252"
+        },
+        {
+          "annualisedRateWad": "59051607623801172",
+          "borrowerProceeds": "984648300000",
+          "impliedTermReturnWad": "14560670372992070",
+          "makerFunding": "985648300000",
+          "priceWad": "985648300000000000",
+          "rateIndex": 7,
+          "tick": "4220"
+        },
+        {
+          "annualisedRateWad": "67901796914596486",
+          "borrowerProceeds": "982532800000",
+          "impliedTermReturnWad": "16742908828256668",
+          "makerFunding": "983532800000",
+          "priceWad": "983532800000000000",
+          "rateIndex": 8,
+          "tick": "4192"
+        },
+        {
+          "annualisedRateWad": "79662494605523083",
+          "borrowerProceeds": "979735600000",
+          "impliedTermReturnWad": "19642806889033089",
+          "makerFunding": "980735600000",
+          "priceWad": "980735600000000000",
+          "rateIndex": 9,
+          "tick": "4160"
+        },
+        {
+          "annualisedRateWad": "93461165561556167",
+          "borrowerProceeds": "976473900000",
+          "impliedTermReturnWad": "23045218905589192",
+          "makerFunding": "977473900000",
+          "priceWad": "977473900000000000",
+          "rateIndex": 10,
+          "tick": "4128"
+        },
+        {
+          "annualisedRateWad": "107440688566422056",
+          "borrowerProceeds": "973191500000",
+          "impliedTermReturnWad": "26492224578021877",
+          "makerFunding": "974191500000",
+          "priceWad": "974191500000000000",
+          "rateIndex": 11,
+          "tick": "4100"
+        },
+        {
+          "annualisedRateWad": "126029201140539267",
+          "borrowerProceeds": "968860900000",
+          "impliedTermReturnWad": "31075693431913792",
+          "makerFunding": "969860900000",
+          "priceWad": "969860900000000000",
+          "rateIndex": 12,
+          "tick": "4068"
+        },
+        {
+          "annualisedRateWad": "147841459472878581",
+          "borrowerProceeds": "963828100000",
+          "impliedTermReturnWad": "36454058500161842",
+          "makerFunding": "964828100000",
+          "priceWad": "964828100000000000",
+          "rateIndex": 13,
+          "tick": "4036"
+        },
+        {
+          "annualisedRateWad": "170061214599938918",
+          "borrowerProceeds": "958754700000",
+          "impliedTermReturnWad": "41932902230121925",
+          "makerFunding": "959754700000",
+          "priceWad": "959754700000000000",
+          "rateIndex": 14,
+          "tick": "4008"
+        },
+        {
+          "annualisedRateWad": "199433909207104742",
+          "borrowerProceeds": "952129400000",
+          "impliedTermReturnWad": "49175484462025827",
+          "makerFunding": "953129400000",
+          "priceWad": "953129400000000000",
+          "rateIndex": 15,
+          "tick": "3976"
+        }
+      ],
+      "referenceUnits": "1000000000000",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "settlementFeeWad": "1000000000000000",
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "gridHash": "0x7a9cd05ace11c0cc29ab8600e50f0dc7e4a11f06faa897ea3a17c61b493e7d30",
+      "label": "USDC 30d / wstETH",
+      "marketKey": "usdc-30d-wsteth",
+      "maturitySeconds": 2592000,
+      "points": [
+        {
+          "annualisedRateWad": "20135033769460561",
+          "borrowerProceeds": "997947800000",
+          "impliedTermReturnWad": "1654934282421416",
+          "makerFunding": "998347800000",
+          "priceWad": "998347800000000000",
+          "rateIndex": 0,
+          "tick": "4656"
+        },
+        {
+          "annualisedRateWad": "23618677855010745",
+          "borrowerProceeds": "997662500000",
+          "impliedTermReturnWad": "1941261193562527",
+          "makerFunding": "998062500000",
+          "priceWad": "998062500000000000",
+          "rateIndex": 1,
+          "tick": "4624"
+        },
+        {
+          "annualisedRateWad": "27159308594699635",
+          "borrowerProceeds": "997372700000",
+          "impliedTermReturnWad": "2232271939290381",
+          "makerFunding": "997772700000",
+          "priceWad": "997772700000000000",
+          "rateIndex": 2,
+          "tick": "4596"
+        },
+        {
+          "annualisedRateWad": "31871119674373230",
+          "borrowerProceeds": "996987300000",
+          "impliedTermReturnWad": "2619544082825197",
+          "makerFunding": "997387300000",
+          "priceWad": "997387300000000000",
+          "rateIndex": 3,
+          "tick": "4564"
+        },
+        {
+          "annualisedRateWad": "37376101381424075",
+          "borrowerProceeds": "996537400000",
+          "impliedTermReturnWad": "3072008332719787",
+          "makerFunding": "996937400000",
+          "priceWad": "996937400000000000",
+          "rateIndex": 4,
+          "tick": "4532"
+        },
+        {
+          "annualisedRateWad": "42973047939527950",
+          "borrowerProceeds": "996080400000",
+          "impliedTermReturnWad": "3532031337495448",
+          "makerFunding": "996480400000",
+          "priceWad": "996480400000000000",
+          "rateIndex": 5,
+          "tick": "4504"
+        },
+        {
+          "annualisedRateWad": "50408875394096911",
+          "borrowerProceeds": "995473900000",
+          "impliedTermReturnWad": "4143195237870979",
+          "makerFunding": "995873900000",
+          "priceWad": "995873900000000000",
+          "rateIndex": 6,
+          "tick": "4472"
+        },
+        {
+          "annualisedRateWad": "59137437029991093",
+          "borrowerProceeds": "994762900000",
+          "impliedTermReturnWad": "4860611262738994",
+          "makerFunding": "995162900000",
+          "priceWad": "995162900000000000",
+          "rateIndex": 7,
+          "tick": "4440"
+        },
+        {
+          "annualisedRateWad": "68021194099501656",
+          "borrowerProceeds": "994040300000",
+          "impliedTermReturnWad": "5590783076671369",
+          "makerFunding": "994440300000",
+          "priceWad": "994440300000000000",
+          "rateIndex": 8,
+          "tick": "4412"
+        },
+        {
+          "annualisedRateWad": "79762215955405811",
+          "borrowerProceeds": "993086900000",
+          "impliedTermReturnWad": "6555798571677190",
+          "makerFunding": "993486900000",
+          "priceWad": "993486900000000000",
+          "rateIndex": 9,
+          "tick": "4380"
+        },
+        {
+          "annualisedRateWad": "93561479048395340",
+          "borrowerProceeds": "991968700000",
+          "impliedTermReturnWad": "7689984579320165",
+          "makerFunding": "992368700000",
+          "priceWad": "992368700000000000",
+          "rateIndex": 10,
+          "tick": "4348"
+        },
+        {
+          "annualisedRateWad": "107585043666238944",
+          "borrowerProceeds": "990834900000",
+          "impliedTermReturnWad": "8842606328731968",
+          "makerFunding": "991234900000",
+          "priceWad": "991234900000000000",
+          "rateIndex": 11,
+          "tick": "4320"
+        },
+        {
+          "annualisedRateWad": "126242025817465795",
+          "borrowerProceeds": "989330500000",
+          "impliedTermReturnWad": "10376056916504038",
+          "makerFunding": "989730500000",
+          "priceWad": "989730500000000000",
+          "rateIndex": 12,
+          "tick": "4288"
+        },
+        {
+          "annualisedRateWad": "148057465293733493",
+          "borrowerProceeds": "987577200000",
+          "impliedTermReturnWad": "12169106736471246",
+          "makerFunding": "987977200000",
+          "priceWad": "987977200000000000",
+          "rateIndex": 13,
+          "tick": "4256"
+        },
+        {
+          "annualisedRateWad": "170225674208631446",
+          "borrowerProceeds": "985801900000",
+          "impliedTermReturnWad": "13991151304819023",
+          "makerFunding": "986201900000",
+          "priceWad": "986201900000000000",
+          "rateIndex": 14,
+          "tick": "4228"
+        },
+        {
+          "annualisedRateWad": "199680646703723018",
+          "borrowerProceeds": "983452900000",
+          "impliedTermReturnWad": "16412107948251207",
+          "makerFunding": "983852900000",
+          "priceWad": "983852900000000000",
+          "rateIndex": 15,
+          "tick": "4196"
+        }
+      ],
+      "referenceUnits": "1000000000000",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "settlementFeeWad": "400000000000000",
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "gridHash": "0xeae235bfd080419d9383f24f152cf7a78be274ffb16f237170c1273288ff9bd4",
+      "label": "USDC 90d / WETH + wstETH",
+      "marketKey": "usdc-90d-multi",
+      "maturitySeconds": 7776000,
+      "points": [
+        {
+          "annualisedRateWad": "20110968898264930",
+          "borrowerProceeds": "994065600000",
+          "impliedTermReturnWad": "4958869043407791",
+          "makerFunding": "995065600000",
+          "priceWad": "995065600000000000",
+          "rateIndex": 0,
+          "tick": "4436"
+        },
+        {
+          "annualisedRateWad": "23592979295873693",
+          "borrowerProceeds": "993216200000",
+          "impliedTermReturnWad": "5817446949667486",
+          "makerFunding": "994216200000",
+          "priceWad": "994216200000000000",
+          "rateIndex": 1,
+          "tick": "4404"
+        },
+        {
+          "annualisedRateWad": "27122865824596902",
+          "borrowerProceeds": "992356600000",
+          "impliedTermReturnWad": "6687829929352661",
+          "makerFunding": "993356600000",
+          "priceWad": "993356600000000000",
+          "rateIndex": 2,
+          "tick": "4376"
+        },
+        {
+          "annualisedRateWad": "31815277087124087",
+          "borrowerProceeds": "991216200000",
+          "impliedTermReturnWad": "7844862843400460",
+          "makerFunding": "992216200000",
+          "priceWad": "992216200000000000",
+          "rateIndex": 3,
+          "tick": "4344"
+        },
+        {
+          "annualisedRateWad": "37322133067011460",
+          "borrowerProceeds": "989881200000",
+          "impliedTermReturnWad": "9202717742550771",
+          "makerFunding": "990881200000",
+          "priceWad": "990881200000000000",
+          "rateIndex": 4,
+          "tick": "4312"
+        },
+        {
+          "annualisedRateWad": "42933724452726760",
+          "borrowerProceeds": "988524500000",
+          "impliedTermReturnWad": "10586397810261393",
+          "makerFunding": "989524500000",
+          "priceWad": "989524500000000000",
+          "rateIndex": 5,
+          "tick": "4284"
+        },
+        {
+          "annualisedRateWad": "50345324824961786",
+          "borrowerProceeds": "986738300000",
+          "impliedTermReturnWad": "12413915710264550",
+          "makerFunding": "987738300000",
+          "priceWad": "987738300000000000",
+          "rateIndex": 6,
+          "tick": "4252"
+        },
+        {
+          "annualisedRateWad": "59051607623801172",
+          "borrowerProceeds": "984648300000",
+          "impliedTermReturnWad": "14560670372992070",
+          "makerFunding": "985648300000",
+          "priceWad": "985648300000000000",
+          "rateIndex": 7,
+          "tick": "4220"
+        },
+        {
+          "annualisedRateWad": "67901796914596486",
+          "borrowerProceeds": "982532800000",
+          "impliedTermReturnWad": "16742908828256668",
+          "makerFunding": "983532800000",
+          "priceWad": "983532800000000000",
+          "rateIndex": 8,
+          "tick": "4192"
+        },
+        {
+          "annualisedRateWad": "79662494605523083",
+          "borrowerProceeds": "979735600000",
+          "impliedTermReturnWad": "19642806889033089",
+          "makerFunding": "980735600000",
+          "priceWad": "980735600000000000",
+          "rateIndex": 9,
+          "tick": "4160"
+        },
+        {
+          "annualisedRateWad": "93461165561556167",
+          "borrowerProceeds": "976473900000",
+          "impliedTermReturnWad": "23045218905589192",
+          "makerFunding": "977473900000",
+          "priceWad": "977473900000000000",
+          "rateIndex": 10,
+          "tick": "4128"
+        },
+        {
+          "annualisedRateWad": "107440688566422056",
+          "borrowerProceeds": "973191500000",
+          "impliedTermReturnWad": "26492224578021877",
+          "makerFunding": "974191500000",
+          "priceWad": "974191500000000000",
+          "rateIndex": 11,
+          "tick": "4100"
+        },
+        {
+          "annualisedRateWad": "126029201140539267",
+          "borrowerProceeds": "968860900000",
+          "impliedTermReturnWad": "31075693431913792",
+          "makerFunding": "969860900000",
+          "priceWad": "969860900000000000",
+          "rateIndex": 12,
+          "tick": "4068"
+        },
+        {
+          "annualisedRateWad": "147841459472878581",
+          "borrowerProceeds": "963828100000",
+          "impliedTermReturnWad": "36454058500161842",
+          "makerFunding": "964828100000",
+          "priceWad": "964828100000000000",
+          "rateIndex": 13,
+          "tick": "4036"
+        },
+        {
+          "annualisedRateWad": "170061214599938918",
+          "borrowerProceeds": "958754700000",
+          "impliedTermReturnWad": "41932902230121925",
+          "makerFunding": "959754700000",
+          "priceWad": "959754700000000000",
+          "rateIndex": 14,
+          "tick": "4008"
+        },
+        {
+          "annualisedRateWad": "199433909207104742",
+          "borrowerProceeds": "952129400000",
+          "impliedTermReturnWad": "49175484462025827",
+          "makerFunding": "953129400000",
+          "priceWad": "953129400000000000",
+          "rateIndex": 15,
+          "tick": "3976"
+        }
+      ],
+      "referenceUnits": "1000000000000",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "settlementFeeWad": "1000000000000000",
+      "tickSpacing": 4
+    }
+  ]
+}
