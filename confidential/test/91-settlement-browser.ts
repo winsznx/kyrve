@@ -63,6 +63,8 @@ import {
 } from "./settlement-helpers.js";
 
 const APP_URL = "http://127.0.0.1:5173";
+/** Hardhat/Anvil account zero's key — published, and worthless on any public network. */
+const LOCAL_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
 /** Hardhat/Anvil account zero — a published development key with no value on any public network. */
 const BROWSER_WALLET_INDEX = 0;
 
@@ -240,8 +242,28 @@ describe("Phase 4 demonstration 18: the settlement flow in a real Chromium", () 
 
     browser = await chromium.launch();
     page = await browser.newPage();
+
+    // The wallet key, the RPC and the gateway URL are injected the same way `70-browser-flow.ts`
+    // injects them. Without the key the terminal has no session and never renders a band at all —
+    // which is how a first run of this file timed out waiting for one.
+    await page.addInitScript(
+      ({ key, rpc, gateway }) => {
+        (window as unknown as Record<string, unknown>).__KYRVE_LOCAL_KEY__ = key;
+        (window as unknown as Record<string, unknown>).__KYRVE_RPC_URL__ = rpc;
+        (window as unknown as Record<string, unknown>).__KYRVE_NOX_GATEWAY__ = gateway;
+      },
+      { key: LOCAL_KEY, rpc: "http://127.0.0.1:8545", gateway: handleGatewayUrl() },
+    );
+
+    // A boot failure must surface as itself, not as a 60-second timeout on a band that never
+    // rendered. The terminal shows the reason it refused to start; this reads it back.
     page.on("request", (request) => origins.add(new URL(request.url()).origin));
     await page.goto(APP_URL);
+
+    const bootError = page.getByTestId("boot-error");
+    if ((await bootError.count()) > 0) {
+      throw new Error(`the terminal refused to start: ${await bootError.innerText()}`);
+    }
     await page.getByTestId("quote-band").waitFor({ timeout: 60_000 });
 
     evidence = {
@@ -261,18 +283,70 @@ describe("Phase 4 demonstration 18: the settlement flow in a real Chromium", () 
 
   it("18a. shows the verified public result, and nothing private", async () => {
     await page.getByTestId("verify-result").click();
-    await page.getByTestId("quote-proof-state").getByText("verified on chain").waitFor();
+    await page
+      .getByTestId("quote-proof-state")
+      .filter({ hasText: "verified on chain" })
+      .waitFor({ timeout: 60_000 });
 
-    // Every one of the panel's fields is public from publication. The band renders no provider, no
-    // allocation, no capacity and no provider count — there is no test id for one because there is
-    // no field for one.
-    const body = (await page.locator("body").textContent()) ?? "";
-    for (const forbidden of ["provider count", "allocation", "leaf capacity"]) {
-      assert.ok(!body.toLowerCase().includes(forbidden), `the page must not show ${forbidden}`);
+    /**
+     * THE PANEL'S ENTIRE DATA SURFACE, ENUMERATED.
+     *
+     * A first version scanned the page text for words like "allocation" and failed — because the
+     * boundary warning legitimately SAYS that per-provider allocations stay encrypted. Forbidding
+     * the word forbids the sentence that explains the guarantee, which is backwards.
+     *
+     * So the check is over FIELDS rather than prose: every `data-testid` the band renders must be on
+     * this list. A future field carrying a provider, an allocation, a leaf capacity or a provider
+     * count would appear as a new id and fail here, whatever it was called.
+     */
+    const permitted = new Set([
+      "quote-market",
+      "quote-rate",
+      "quote-aggregate",
+      "quote-maturity",
+      "quote-borrower",
+      "quote-proof-state",
+      "aggregate-note",
+      "verify-result",
+      "activation-state",
+      "quote-id",
+      "settlement-state",
+      "quote-units",
+      "quote-buyer-assets",
+      "quote-expiry",
+      "public-credit",
+      "public-debt",
+      "activation-warning",
+      "activate-quote",
+      "attempt-partial-fill",
+      "settle-quote",
+      "cancel-quote",
+      "recover-expired-quote",
+      "fill-rejection",
+      "consumption-note",
+      "quote-status",
+      "tx-activation",
+      "tx-settlement",
+    ]);
+    const rendered = await page
+      .getByTestId("quote-band")
+      .locator("[data-testid]")
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-testid") ?? ""));
+    for (const id of rendered) {
+      assert.ok(permitted.has(id), `the band renders an unexpected field: ${id}`);
     }
+
+    // And the warning must still SAY what stays private, in those words.
+    assert.match(
+      await page.getByTestId("activation-warning").innerText(),
+      /allocation/i,
+      "the panel must name what stays encrypted, not merely omit it",
+    );
+
     assert.match(await page.getByTestId("quote-aggregate").innerText(), /tUSDC/);
-    assert.ok((await page.getByTestId("quote-maturity").innerText()).length > 0);
-    assert.match(await page.getByTestId("quote-borrower").innerText(), /^0x[0-9a-fA-F]{40}$/);
+    assert.ok((await page.getByTestId("quote-maturity").innerText()).trim().length > 0);
+    const borrowerShown = (await page.getByTestId("quote-borrower").innerText()).trim();
+    assert.match(borrowerShown, /^0x[0-9a-fA-F]{40}$/);
   });
 
   it("18b. names the boundary before activation, and cannot hide it", async () => {
@@ -287,11 +361,19 @@ describe("Phase 4 demonstration 18: the settlement flow in a real Chromium", () 
 
   it("18c. activates the quote from the page, with a real signed transaction", async () => {
     await page.getByTestId("activate-quote").click();
-    await page.getByTestId("activation-state").getByText("activated").waitFor({ timeout: 60_000 });
 
-    const quoteId = await page.getByTestId("quote-id").innerText();
+    // Waited on the QUOTE ID, not on the word "activated". The activation cell reads "not activated"
+    // before and "activated" after, and `getByText("activated")` matches the former as a substring —
+    // so a first run resolved instantly and then asserted against a quote id of "—".
+    await page
+      .getByTestId("quote-id")
+      .filter({ hasText: /^0x[0-9a-fA-F]{64}$/ })
+      .waitFor({ timeout: 60_000 });
+    assert.equal((await page.getByTestId("activation-state").innerText()).trim(), "activated");
+
+    const quoteId = (await page.getByTestId("quote-id").innerText()).trim();
     assert.match(quoteId, /^0x[0-9a-fA-F]{64}$/);
-    assert.equal(await page.getByTestId("settlement-state").innerText(), "executable");
+    assert.equal((await page.getByTestId("settlement-state").innerText()).trim(), "executable");
 
     const onChain = (await s.registry.read.quoteOfEpoch([epoch.epochId])) as string;
     assert.equal(
@@ -339,14 +421,16 @@ describe("Phase 4 demonstration 18: the settlement flow in a real Chromium", () 
 
   it("18f. settles the exact fill from the page, through real Midnight", async () => {
     await page.getByTestId("settle-quote").click();
-    await page.getByTestId("settlement-state").getByText("settled").waitFor({ timeout: 90_000 });
-    await page.getByTestId("consumption-note").waitFor();
+    // The consumption note only renders once the registry reports `Consumed`, so waiting on it waits
+    // on chain state rather than on a label — and no other status label contains "settled".
+    await page.getByTestId("consumption-note").waitFor({ timeout: 90_000 });
+    assert.equal((await page.getByTestId("settlement-state").innerText()).trim(), "settled");
   });
 
   it("18g. shows the public credit and debt the settlement created", async () => {
-    const credit = await page.getByTestId("public-credit").innerText();
-    const debt = await page.getByTestId("public-debt").innerText();
-    const units = await page.getByTestId("quote-units").innerText();
+    const credit = (await page.getByTestId("public-credit").innerText()).trim();
+    const debt = (await page.getByTestId("public-debt").innerText()).trim();
+    const units = (await page.getByTestId("quote-units").innerText()).trim();
 
     assert.equal(credit, units, "the vault's public credit equals the exact fill");
     assert.equal(debt, "0", "the maker takes no debt");

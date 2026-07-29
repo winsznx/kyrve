@@ -571,6 +571,19 @@ export async function activateQuote(
   };
 }
 
-function foundryArtifactAbi(name: string): readonly unknown[] {
-  return foundryArtifact(name).abi;
+/**
+ * The ABI of any Foundry-compiled source, by name — including INTERFACES.
+ *
+ * Separate from `foundryArtifact` because that one asserts creation bytecode exists, which an
+ * interface has none of. Resolving a revert selector needs `IMidnight`'s error list, so the reader
+ * that fetches it must not demand something interfaces cannot have.
+ */
+export function foundryArtifactAbi(name: string): readonly unknown[] {
+  const path = new URL(`../../out/${name}.sol/${name}.json`, import.meta.url);
+  const artifact = JSON.parse(readFileSync(path, "utf8")) as { abi: readonly unknown[] };
+  assert.ok(
+    Array.isArray(artifact.abi),
+    `${name} has no ABI; run \`forge build\` before this suite`,
+  );
+  return artifact.abi;
 }

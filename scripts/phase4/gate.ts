@@ -341,17 +341,41 @@ const GATES: readonly Gate[] = [
           "engine's confidential branch and is recorded in evidence/phase3/gas-side-channel.json; " +
           "activation and settlement have not been measured, so NOTHING is claimed about their " +
           "gas distinguishability. Tracked in docs/phase4/GATE.md as outstanding.",
+    /**
+     * Asserted on the keys THIS experiment produces, not on Phase 3's.
+     *
+     * Phase 3 compared two confidential branches and reported a noise floor. The settlement path has
+     * no confidential branch — every one of the nine outcomes is public from activation — so
+     * reporting a "noise floor" or a "separation" here would be answering a question nobody asked.
+     * What is checked instead is the property that does matter: every refusal is a NAMED public
+     * revert, all nine outcomes were measured, and the verdict still disclaims what it cannot prove.
+     */
     execute: () => {
       const evidence = readJson<{
-        verdict: { groupsSeparatedByGas: boolean; noiseFloorGas: number; claim: string };
+        verdict: {
+          claim: string;
+          everyRefusalIsNamed: boolean;
+          outcomesMeasured: number;
+          settlementPathHasConfidentialBranch: boolean;
+        };
       }>(repoPath("evidence/phase4/gas-side-channel.json"));
-      if (evidence.verdict.groupsSeparatedByGas) {
-        throw new Error("the two branches are separated by gas — a real side channel");
+
+      if (!evidence.verdict.everyRefusalIsNamed) {
+        throw new Error("a settlement refusal was not a named public revert");
+      }
+      if (evidence.verdict.outcomesMeasured !== 9) {
+        throw new Error(`${evidence.verdict.outcomesMeasured} outcomes measured, expected 9`);
+      }
+      if (evidence.verdict.settlementPathHasConfidentialBranch) {
+        throw new Error(
+          "the settlement path now has a confidential branch, so this experiment no longer asks " +
+            "the right question and must be redesigned rather than re-run",
+        );
       }
       if (!evidence.verdict.claim.includes("does NOT establish")) {
         throw new Error("the recorded verdict no longer disclaims gas indistinguishability");
       }
-      return `noise floor ${evidence.verdict.noiseFloorGas} gas, no separation, claim still disclaimed`;
+      return `9 outcomes measured, every refusal named, claim still disclaimed`;
     },
   },
   {

@@ -1,0 +1,155 @@
+{
+  "$comment": "MEASURED against real unmodified Midnight and the real Nox stack. Gas from receipts. No decrypted value appears here and none is representable: every outcome measured is public from activation.",
+  "samples": [
+    {
+      "outcome": "valid-exact-fill",
+      "pass": "forward",
+      "settlementGas": 327582,
+      "settlementGasUnavailableReason": null,
+      "calldataBytes": 992,
+      "succeeded": true,
+      "revertSelector": null,
+      "revertName": null,
+      "activationGas": 709115
+    },
+    {
+      "outcome": "partial-fill",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0x1f4e7466",
+      "revertName": "WrongUnits",
+      "activationGas": 682513
+    },
+    {
+      "outcome": "oversized-fill",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0xe7a700db",
+      "revertName": "ConsumedUnits",
+      "activationGas": 665437
+    },
+    {
+      "outcome": "wrong-taker",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0x13f2a791",
+      "revertName": "UnauthorisedTaker",
+      "activationGas": 665413
+    },
+    {
+      "outcome": "expired-quote",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0x9cb13087",
+      "revertName": "OfferExpired",
+      "activationGas": 665437
+    },
+    {
+      "outcome": "cancelled-quote",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0xe2f03efd",
+      "revertName": "QuoteNotExecutable",
+      "activationGas": 665425
+    },
+    {
+      "outcome": "replay",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0xe2f03efd",
+      "revertName": "QuoteNotExecutable",
+      "activationGas": 665413
+    },
+    {
+      "outcome": "wrong-offer-field",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0x6b912538",
+      "revertName": "AlteredOffer",
+      "activationGas": 665437
+    },
+    {
+      "outcome": "invalid-proof-binding",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0xe2f03efd",
+      "revertName": "QuoteNotExecutable",
+      "activationGas": 665413
+    },
+    {
+      "outcome": "partial-fill",
+      "pass": "reverse",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0x1f4e7466",
+      "revertName": "WrongUnits",
+      "activationGas": 665413
+    },
+    {
+      "outcome": "valid-exact-fill",
+      "pass": "reverse",
+      "settlementGas": 251915,
+      "settlementGasUnavailableReason": null,
+      "calldataBytes": 992,
+      "succeeded": true,
+      "revertSelector": null,
+      "revertName": null,
+      "activationGas": 665437
+    }
+  ],
+  "verdict": {
+    "claim": "Every one of the nine settlement outcomes is PUBLIC. Eight refuse with a named public revert and one settles, and an observer reads which happened from the revert reason and the event log — not from gas. This measurement therefore does NOT establish gas indistinguishability, and does not need to: there is no confidential branch on the settlement path for gas to leak. What it establishes is narrower and is what was checked: every refusal is a named public revert resolved against a deployed ABI, the eight refusals do not collapse to a single reason, and no settlement outcome reveals through gas anything the public revert reason does not already state.",
+    "settlementPathHasConfidentialBranch": false,
+    "everyRefusalIsNamed": true,
+    "distinctRefusalReverts": [
+      "AlteredOffer",
+      "ConsumedUnits",
+      "OfferExpired",
+      "QuoteNotExecutable",
+      "UnauthorisedTaker",
+      "WrongUnits"
+    ],
+    "outcomesMeasured": 9,
+    "refusalGasUnavailable": true,
+    "refusalGasUnavailableReason": "The local EDR node validates a transaction before including it and refuses a reverting one at submission, so a refused settlement produces no receipt and no gas figure on this node. Eight of the nine outcomes therefore have `settlementGas: null` rather than a fabricated zero. A gas comparison across refusals is NOT part of this result and is not claimed.",
+    "orderSensitivityGasDelta": 75667,
+    "orderSensitivityNote": "The two successful settlements differ in gas because the forward one is the first take against that market and pays cold-storage costs the later one does not. Reported because it is exactly why a single-pass gas comparison on this path would be unsound.",
+    "reversePassOutcomes": 2,
+    "reversePassIsPartial": true,
+    "reversePassNote": "Two of the nine were re-measured in reverse order rather than all nine: a full reverse pass is nine more confidential epochs. Two is enough to detect order sensitivity in the cases that settle versus refuse, and the partial coverage is stated rather than implied.",
+    "controls": {
+      "calldata": "identical offer struct and argument widths across every case; the wrong-offer-field case necessarily differs and its calldata length is recorded beside its gas",
+      "storage": "each case runs in its own epoch and quote, with an identical warm-up read of the same slots before measurement",
+      "order": "fixed forward order, plus a partial reverse pass compared against it",
+      "tokenState": "each vault funded with exactly expectedBuyerAssets from a fresh mint",
+      "approvalState": "zero allowance asserted before every measurement, not assumed",
+      "quoteState": "Executable, Consumed and Cancelled all reached by real transitions on distinct quotes"
+    }
+  }
+}
