@@ -42,12 +42,7 @@ contract LocalMidnightFixture {
 
     Market[4] internal _markets;
     bytes32[4] internal _marketIds;
-    string[4] public marketKeys = [
-        "usdc-30d-weth",
-        "usdc-90d-weth",
-        "usdc-30d-wsteth",
-        "usdc-90d-multi"
-    ];
+    string[4] public marketKeys = ["usdc-30d-weth", "usdc-90d-weth", "usdc-30d-wsteth", "usdc-90d-multi"];
 
     /// @dev Deploys the full substrate. `maturityAnchor` is the absolute unix time all maturities
     /// are measured from, passed in rather than read from the block so runs are reproducible.
@@ -111,8 +106,7 @@ contract LocalMidnightFixture {
 
     function _single(address token, uint256 lltv, address oracle) internal pure returns (CollateralParams[] memory) {
         CollateralParams[] memory cp = new CollateralParams[](1);
-        cp[0] =
-            CollateralParams({token: token, lltv: lltv, liquidationCursor: LIQUIDATION_CURSOR, oracle: oracle});
+        cp[0] = CollateralParams({token: token, lltv: lltv, liquidationCursor: LIQUIDATION_CURSOR, oracle: oracle});
         return cp;
     }
 
@@ -120,10 +114,7 @@ contract LocalMidnightFixture {
     /// deployment addresses are not knowable in advance, so the pair is sorted at construction.
     function _sortedPair() internal view returns (CollateralParams[] memory) {
         CollateralParams memory a = CollateralParams({
-            token: address(weth),
-            lltv: LLTV_WETH,
-            liquidationCursor: LIQUIDATION_CURSOR,
-            oracle: address(wethOracle)
+            token: address(weth), lltv: LLTV_WETH, liquidationCursor: LIQUIDATION_CURSOR, oracle: address(wethOracle)
         });
         CollateralParams memory b = CollateralParams({
             token: address(wsteth),

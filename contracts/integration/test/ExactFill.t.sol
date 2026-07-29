@@ -102,9 +102,8 @@ contract ExactFillTest is Test {
     }
 
     function _supplyCollateral(address who, uint256 units) internal {
-        uint256 collateral = units.mulDivUp(WAD, fixtureContract.LLTV_WETH()).mulDivUp(
-            ORACLE_PRICE_SCALE, fixtureContract.wethOracle().price()
-        );
+        uint256 collateral = units.mulDivUp(WAD, fixtureContract.LLTV_WETH())
+            .mulDivUp(ORACLE_PRICE_SCALE, fixtureContract.wethOracle().price());
         fixtureContract.weth().mint(who, collateral);
         vm.startPrank(who);
         fixtureContract.weth().approve(address(midnight), collateral);
@@ -182,9 +181,7 @@ contract ExactFillTest is Test {
     /// @dev PRD 20.2 "Quote theft" / 30.6 invariant 5.
     function test_attack_wrongTaker_reverts() public {
         _supplyCollateral(attacker, exactUnits);
-        vm.expectRevert(
-            abi.encodeWithSelector(KyrveQuoteRatifier.UnauthorisedTaker.selector, borrower, attacker)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KyrveQuoteRatifier.UnauthorisedTaker.selector, borrower, attacker));
         _take(exactUnits, attacker);
     }
 
@@ -237,9 +234,7 @@ contract ExactFillTest is Test {
     /// @dev PRD 20.2 "Callback spoofing".
     function test_attack_directCallbackCall_reverts() public {
         vm.prank(attacker);
-        vm.expectRevert(
-            abi.encodeWithSelector(KyrveExactFillVault.CallbackCallerNotMidnight.selector, attacker)
-        );
+        vm.expectRevert(abi.encodeWithSelector(KyrveExactFillVault.CallbackCallerNotMidnight.selector, attacker));
         vault.onBuy(marketId, market, expectedBuyerAssets, exactUnits, 0, address(vault), abi.encode(QUOTE_ID));
     }
 

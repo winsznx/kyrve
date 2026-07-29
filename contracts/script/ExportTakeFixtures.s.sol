@@ -126,9 +126,8 @@ contract ExportTakeFixtures is Script {
 
         fixtureContract.usdc().mint(address(vault), expected);
 
-        uint256 collateral = units.mulDivUp(WAD, fixtureContract.LLTV_WETH()).mulDivUp(
-            ORACLE_PRICE_SCALE, fixtureContract.wethOracle().price()
-        );
+        uint256 collateral = units.mulDivUp(WAD, fixtureContract.LLTV_WETH())
+            .mulDivUp(ORACLE_PRICE_SCALE, fixtureContract.wethOracle().price());
         fixtureContract.weth().mint(BORROWER, collateral);
 
         vm.startPrank(BORROWER);
@@ -140,9 +139,8 @@ contract ExportTakeFixtures is Script {
 
         uint256 secondsToMaturity = market.maturity - block.timestamp;
 
-        string memory record = string.concat(
-            vm.toString(tick), "|", vm.toString(units), "|", vm.toString(secondsToMaturity), "|"
-        );
+        string memory record =
+            string.concat(vm.toString(tick), "|", vm.toString(units), "|", vm.toString(secondsToMaturity), "|");
         for (uint256 i = 0; i < 7; i++) {
             record = string.concat(record, vm.toString(uint256(fixtureContract.feeCbp(i))), ",");
         }

@@ -97,9 +97,8 @@ contract QuoteMathDifferentialTest is Test {
 
         fixtureContract.usdc().mint(address(vault), expected);
 
-        uint256 collateral = units.mulDivUp(WAD, fixtureContract.LLTV_WETH()).mulDivUp(
-            ORACLE_PRICE_SCALE, fixtureContract.wethOracle().price()
-        );
+        uint256 collateral = units.mulDivUp(WAD, fixtureContract.LLTV_WETH())
+            .mulDivUp(ORACLE_PRICE_SCALE, fixtureContract.wethOracle().price());
         fixtureContract.weth().mint(borrower, collateral);
         vm.startPrank(borrower);
         fixtureContract.weth().approve(address(midnight), collateral);
