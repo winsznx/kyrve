@@ -114,19 +114,8 @@ const GATES: readonly Gate[] = [
   },
   {
     section: "LOCAL SUBSTRATE",
-    name: "rate grids regenerate deterministically",
-    execute: () => {
-      run("pnpm", ["exec", "tsx", "scripts/generate/rate-grids.ts"]);
-      const diff = run(
-        "git",
-        ["diff", "--stat", "--", "deployments/rate-grids.json", "docs/phase1/RATE-GRIDS.md"],
-        {
-          allowFailure: true,
-        },
-      ).stdout.trim();
-      if (diff.length > 0) throw new Error(`regeneration changed committed output:\n${diff}`);
-      return "byte-identical on regeneration";
-    },
+    name: "generated artifacts regenerate byte-identically",
+    execute: () => summarise(run("pnpm", ["exec", "tsx", "scripts/verify/generated.ts"]).stdout, 1),
   },
   {
     section: "LOCAL SUBSTRATE",
