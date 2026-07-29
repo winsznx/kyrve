@@ -1,5 +1,5 @@
 {
-  "chainId": 31337,
+  "chainId": 11155111,
   "compiler": {
     "bytecodeHash": "none",
     "evmVersion": "osaka",
@@ -10,118 +10,118 @@
   },
   "contracts": {
     "KyrveDeploymentVerifier": {
-      "address": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
+      "address": "0xa7D60Be81889777C54CB1AF4afAe8FaBFe8C20e0",
       "constructorArgs": [
-        "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f"
+        "0xB7790e3f28eD688C81f09C0Cad72f7f45f4D3957"
       ],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0x92e9c3872ae73ccd208fa4c99a7f6db74098b3105e9356af032963dbb5771b22",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0xa7D60Be81889777C54CB1AF4afAe8FaBFe8C20e0",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/registry/KyrveDeploymentVerifier.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "KyrveOsakaProbe": {
-      "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+      "address": "0xbbec3e83090F764bB7C55006042aa0438cF6974A",
       "constructorArgs": [],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0x562ae7c4606643c843eab4f52e3bc3a06a59722bea1dadb6edd928db0abd5eb0",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0xbbec3e83090F764bB7C55006042aa0438cF6974A",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/registry/KyrveOsakaProbe.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "KyrveProtocolRegistry": {
-      "address": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
+      "address": "0xB7790e3f28eD688C81f09C0Cad72f7f45f4D3957",
       "constructorArgs": [
-        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2"
       ],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0xbe83dbdf85723cae6149ca0afb43d669fc2a1eb74f23def3e79306ac1e8fc85f",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0xB7790e3f28eD688C81f09C0Cad72f7f45f4D3957",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/registry/KyrveProtocolRegistry.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "Midnight": {
-      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "address": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
       "constructorArgs": [],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0x3fed4d244663441acb039ce149d9a35b952f44a36a8eded17f017db5e500a1d6",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
       "runtimeBytecodeHash": "0x94dfc372cddf727c3cb9649ffab79f400260e1f50c380324e4ad0cf5ab29d9a7",
       "sourcePath": "vendor/midnight/src/Midnight.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "TestUSDC": {
-      "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+      "address": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
       "constructorArgs": [],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0xd145f0e5c7486da70b4a3bd9a78c3d81e40bc28151a012876f8b966290ec7263",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/integration/TestERC20.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "TestWETH": {
-      "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "address": "0x900777F598CBcb440dBcdfC2007E379F3374D61C",
       "constructorArgs": [],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0xc29c78447ef89deeae0a55bf4665b788e99aaae3fdfdc705c651e3edcaaa5fa6",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0x900777F598CBcb440dBcdfC2007E379F3374D61C",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/integration/TestERC20.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "TestWstETH": {
-      "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "address": "0x6200312Afb642782530D423E3ad2b233357d0417",
       "constructorArgs": [],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0x22600df89ae18b4cf43f1d64c98d54007f5b2ab364b8576f0a0635f65073cb3d",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0x6200312Afb642782530D423E3ad2b233357d0417",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/integration/TestERC20.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "WethOracle": {
-      "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "address": "0xc284dF918bC120C66996746692DaC67696A131A8",
       "constructorArgs": [],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0xb700b2f9f6caf7ef3ff324dc70ebb720672fab3a9600d071c067e5bebf079c95",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0xc284dF918bC120C66996746692DaC67696A131A8",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/integration/FixedPriceOracle.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     },
     "WstethOracle": {
-      "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "address": "0x812c49bA623765C23E42Aba4fEd8d33D21027F5f",
       "constructorArgs": [],
-      "deploymentTxHash": null,
-      "explorerUrl": null,
+      "deploymentTxHash": "0xf473ae1c9101b0c0daef01f65f0ea48831933d3678c8389dd0851cebd014bb50",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0x812c49bA623765C23E42Aba4fEd8d33D21027F5f",
       "runtimeBytecodeHash": "0xa16cfc6601085072126a5bb095ed381ca064b37453cc4f6ac9b2df1191fc0211",
       "sourcePath": "contracts/integration/FixedPriceOracle.sol",
-      "verifiedSource": "not-applicable"
+      "verifiedSource": "verified"
     }
   },
-  "deployedAt": "2026-07-29T05:29:41.000Z",
-  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "deploymentBlock": "26",
+  "deployedAt": "2026-07-29T05:37:36.000Z",
+  "deployer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "deploymentBlock": "11373556",
   "disclosure": "Non-production testnet replica of the pinned Morpho Midnight release 2026-07-23 (dbd8d3d5). Deployed by Kyrve under BUSL-1.1 non-production use; the Additional Use Grant was resolved on 2026-07-28 and found empty. This is NOT an official Morpho deployment, is not maintained by Morpho Association, and carries no Morpho branding.",
-  "environment": "local",
+  "environment": "sepolia",
   "licenceDisclosureHash": "0x6fb2665ca973e77be56bf0aaae21f853ec4cf9780659a2bfe5e39c9ee6b2b049",
   "markets": [
     {
       "continuousFee": "1000",
-      "id": "0x45de7986b59233ae943f9c94f8c2487851219d85984b878e2d2d2041c278fe31",
+      "id": "0x10e4bf7d5d586cee190fcd15c4ba68fd24a9b738068fbac2534568718678196a",
       "key": "usdc-30d-weth",
       "label": "USDC 30d / WETH",
       "market": {
-        "chainId": "31337",
+        "chainId": "11155111",
         "collateralParams": [
           {
             "liquidationCursor": "300000000000000000",
             "lltv": "770000000000000000",
-            "oracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-            "token": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+            "oracle": "0xc284dF918bC120C66996746692DaC67696A131A8",
+            "token": "0x900777F598CBcb440dBcdfC2007E379F3374D61C"
           }
         ],
         "enterGate": "0x0000000000000000000000000000000000000000",
         "liquidatorGate": "0x0000000000000000000000000000000000000000",
-        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
         "maturity": "1801353600",
-        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
         "rcfThreshold": "0"
       },
       "rateGridHash": "0xb9465f3e68188a2b9b750cdf70a354fb138a0a5919d797af360a5927c6c458db",
@@ -138,24 +138,24 @@
     },
     {
       "continuousFee": "1000",
-      "id": "0x588b948019978d9168c5d25b890249989bf715d1fb61816990495fc2bbd3a9f0",
+      "id": "0xd3cb37a754429601735a16349771482103c5dc40848b51970c4dcec6241163e6",
       "key": "usdc-90d-weth",
       "label": "USDC 90d / WETH",
       "market": {
-        "chainId": "31337",
+        "chainId": "11155111",
         "collateralParams": [
           {
             "liquidationCursor": "300000000000000000",
             "lltv": "770000000000000000",
-            "oracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-            "token": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+            "oracle": "0xc284dF918bC120C66996746692DaC67696A131A8",
+            "token": "0x900777F598CBcb440dBcdfC2007E379F3374D61C"
           }
         ],
         "enterGate": "0x0000000000000000000000000000000000000000",
         "liquidatorGate": "0x0000000000000000000000000000000000000000",
-        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
         "maturity": "1806537600",
-        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
         "rcfThreshold": "0"
       },
       "rateGridHash": "0x840069a1fb7df9f20317cdff292ddd97290e74d28d12771510bbbde15c013019",
@@ -172,24 +172,24 @@
     },
     {
       "continuousFee": "1000",
-      "id": "0x6aa53c3ce2028f72f8bd30375046a65ed9523547429d83b8b90b898b19582142",
+      "id": "0xe36e890864679677d9d1e2817574d61e0c8ae42a6329251cd01f93b743bb4a81",
       "key": "usdc-30d-wsteth",
       "label": "USDC 30d / wstETH",
       "market": {
-        "chainId": "31337",
+        "chainId": "11155111",
         "collateralParams": [
           {
             "liquidationCursor": "300000000000000000",
             "lltv": "860000000000000000",
-            "oracle": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
-            "token": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+            "oracle": "0x812c49bA623765C23E42Aba4fEd8d33D21027F5f",
+            "token": "0x6200312Afb642782530D423E3ad2b233357d0417"
           }
         ],
         "enterGate": "0x0000000000000000000000000000000000000000",
         "liquidatorGate": "0x0000000000000000000000000000000000000000",
-        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
         "maturity": "1801353600",
-        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
         "rcfThreshold": "0"
       },
       "rateGridHash": "0x7a9cd05ace11c0cc29ab8600e50f0dc7e4a11f06faa897ea3a17c61b493e7d30",
@@ -206,30 +206,30 @@
     },
     {
       "continuousFee": "1000",
-      "id": "0x0d9cbb561a77fdb2fb5881007c9287488e2fa537936d01ae831354dd3e35bef0",
+      "id": "0x97870262408061213d3753437dcec435b340c6bfb8d3c7f4ff3ce3f208adfebc",
       "key": "usdc-90d-multi",
       "label": "USDC 90d / WETH + wstETH",
       "market": {
-        "chainId": "31337",
+        "chainId": "11155111",
         "collateralParams": [
           {
             "liquidationCursor": "300000000000000000",
             "lltv": "860000000000000000",
-            "oracle": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
-            "token": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+            "oracle": "0x812c49bA623765C23E42Aba4fEd8d33D21027F5f",
+            "token": "0x6200312Afb642782530D423E3ad2b233357d0417"
           },
           {
             "liquidationCursor": "300000000000000000",
             "lltv": "770000000000000000",
-            "oracle": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-            "token": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+            "oracle": "0xc284dF918bC120C66996746692DaC67696A131A8",
+            "token": "0x900777F598CBcb440dBcdfC2007E379F3374D61C"
           }
         ],
         "enterGate": "0x0000000000000000000000000000000000000000",
         "liquidatorGate": "0x0000000000000000000000000000000000000000",
-        "loanToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
         "maturity": "1806537600",
-        "midnight": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
         "rcfThreshold": "0"
       },
       "rateGridHash": "0xeae235bfd080419d9383f24f152cf7a78be274ffb16f237170c1273288ff9bd4",
@@ -253,10 +253,10 @@
     "noxProtocolContracts": "0.2.4"
   },
   "roles": {
-    "configurator": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "feeClaimer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "feeSetter": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "tickSpacingSetter": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    "configurator": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+    "feeClaimer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+    "feeSetter": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+    "tickSpacingSetter": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2"
   },
   "schemaVersion": 1,
   "sourceUrl": "https://github.com/kyrve/kyrve"

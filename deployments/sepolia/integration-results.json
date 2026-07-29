@@ -1,0 +1,56 @@
+{
+  "$comment": "Write-path integration results against the REAL Ethereum Sepolia deployment. Public data only: no RPC URL, no API key, no key material.",
+  "chainId": 11155111,
+  "ethSpent": "0.002294631706645439",
+  "harness": {
+    "ratifier": "0x83b1157e98a8bb000326e80546b35b9f0174c31f",
+    "vault": "0x6577f68a5b91235d125d1f138dabbb44d621a35a"
+  },
+  "marketId": "0xd3cb37a754429601735a16349771482103c5dc40848b51970c4dcec6241163e6",
+  "marketKey": "usdc-90d-weth",
+  "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+  "passed": 7,
+  "steps": [
+    {
+      "detail": "vault 0x6577f68a5b91235d125d1f138dabbb44d621a35a, ratifier 0x83b1157e98a8bb000326e80546b35b9f0174c31f",
+      "name": "deploy permanent exact-fill harness",
+      "outcome": "PASS",
+      "txHash": "0xb4c36e7cbee0390fea620592055848c02ca24f4bb093f279093ab1ac594940ee"
+    },
+    {
+      "detail": "isAuthorized[vault][ratifier] is true on Sepolia",
+      "name": "maker authorises ratifier (PRD v1.1 A-2)",
+      "outcome": "PASS"
+    },
+    {
+      "detail": "1298702 tWETH collateral supplied on Sepolia",
+      "name": "normal Midnight lifecycle (supplyCollateral)",
+      "outcome": "PASS"
+    },
+    {
+      "detail": "take(999999) against exactUnits 1000000 reverts WrongUnits in KyrveExactFillVault.onBuy",
+      "name": "rejected partial fill reverts WrongUnits",
+      "outcome": "PASS",
+      "txHash": "0x811ab405ab166a6dfd7dd29c8d584d6913fe98a9bc33913cca634a518ccf832b"
+    },
+    {
+      "detail": "a mined, reverted partial fill changed group consumption, vault credit and taker debt by exactly zero",
+      "name": "rollback leaves no residue",
+      "outcome": "PASS"
+    },
+    {
+      "detail": "credit +1000000, debt +1000000, consumed +1000000, buyerAssets 999998 (quote-math predicted 999998), 1 ExactFill event(s)",
+      "gasUsed": "221944",
+      "name": "exact fill settles through unmodified Midnight",
+      "outcome": "PASS",
+      "txHash": "0xd1fd01b06a6afdaad0b680898b318318fd9db5820e27f01283a37452ee1bfbaf"
+    },
+    {
+      "detail": "second take reverts QuoteNotExecutable — quote consumed and group exhausted",
+      "name": "replay after settlement is rejected",
+      "outcome": "PASS"
+    }
+  ],
+  "taker": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "total": 7
+}

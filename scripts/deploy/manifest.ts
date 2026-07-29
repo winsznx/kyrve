@@ -71,6 +71,8 @@ export interface BuildArgs {
   readonly deployedAt: Date;
   readonly verifiedSource: ContractRecord["verifiedSource"];
   readonly explorerBase: string | null;
+  /** Deployment transaction hashes by lowercased contract address, from the broadcast log. */
+  readonly transactionHashes?: ReadonlyMap<string, string>;
 }
 
 export interface BuildResult {
@@ -176,7 +178,7 @@ export function buildManifest(args: BuildArgs): BuildResult {
   ): ContractRecord => ({
     address,
     runtimeBytecodeHash: runtimeHash,
-    deploymentTxHash: null,
+    deploymentTxHash: (args.transactionHashes?.get(address.toLowerCase()) ?? null) as Hex | null,
     constructorArgs,
     sourcePath,
     verifiedSource: args.verifiedSource,

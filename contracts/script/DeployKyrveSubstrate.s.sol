@@ -45,11 +45,15 @@ contract DeployKyrveSubstrate is Script {
         uint256 anchor = vm.envUint("KYRVE_MATURITY_ANCHOR");
         string memory outPath = vm.envString("KYRVE_DEPLOYMENT_OUT");
 
-        vm.startBroadcast();
+        // The signing key arrives through the environment, never through argv: command-line
+        // arguments are visible in process listings and land in shell history.
+        uint256 deployerKey = vm.envUint("KYRVE_DEPLOYER_KEY");
+        vm.startBroadcast(deployerKey);
 
         Midnight midnight = new Midnight();
-        midnight.setFeeSetter(msg.sender);
-        midnight.setTickSpacingSetter(msg.sender);
+        address owner = vm.addr(deployerKey);
+        midnight.setFeeSetter(owner);
+        midnight.setTickSpacingSetter(owner);
         midnight.enableLltv(LLTV_WETH);
         midnight.enableLltv(LLTV_WSTETH);
         midnight.enableLiquidationCursor(LIQUIDATION_CURSOR);
@@ -86,7 +90,7 @@ contract DeployKyrveSubstrate is Script {
         // that will misbehave at settlement time.
         probe.assertOsaka();
 
-        KyrveProtocolRegistry registry = new KyrveProtocolRegistry(msg.sender);
+        KyrveProtocolRegistry registry = new KyrveProtocolRegistry(owner);
         KyrveDeploymentVerifier verifier = new KyrveDeploymentVerifier(address(registry));
 
         vm.stopBroadcast();
@@ -179,7 +183,7 @@ contract DeployKyrveSubstrate is Script {
         vm.serializeString(OBJ, "midnightCommit", "dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0");
         vm.serializeUint(OBJ, "chainId", block.chainid);
         vm.serializeUint(OBJ, "maturityAnchor", anchor);
-        vm.serializeAddress(OBJ, "deployer", msg.sender);
+        vm.serializeAddress(OBJ, "deployer", vm.addr(vm.envUint("KYRVE_DEPLOYER_KEY")));
 
         vm.serializeAddress(OBJ, "Midnight", midnight);
         vm.serializeAddress(OBJ, "TestUSDC", usdc);

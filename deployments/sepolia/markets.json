@@ -1,0 +1,146 @@
+{
+  "markets": [
+    {
+      "continuousFee": "1000",
+      "id": "0x10e4bf7d5d586cee190fcd15c4ba68fd24a9b738068fbac2534568718678196a",
+      "key": "usdc-30d-weth",
+      "label": "USDC 30d / WETH",
+      "market": {
+        "chainId": "11155111",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "770000000000000000",
+            "oracle": "0xc284dF918bC120C66996746692DaC67696A131A8",
+            "token": "0x900777F598CBcb440dBcdfC2007E379F3374D61C"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
+        "maturity": "1801353600",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0xb9465f3e68188a2b9b750cdf70a354fb138a0a5919d797af360a5927c6c458db",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "id": "0xd3cb37a754429601735a16349771482103c5dc40848b51970c4dcec6241163e6",
+      "key": "usdc-90d-weth",
+      "label": "USDC 90d / WETH",
+      "market": {
+        "chainId": "11155111",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "770000000000000000",
+            "oracle": "0xc284dF918bC120C66996746692DaC67696A131A8",
+            "token": "0x900777F598CBcb440dBcdfC2007E379F3374D61C"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
+        "maturity": "1806537600",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0x840069a1fb7df9f20317cdff292ddd97290e74d28d12771510bbbde15c013019",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "id": "0xe36e890864679677d9d1e2817574d61e0c8ae42a6329251cd01f93b743bb4a81",
+      "key": "usdc-30d-wsteth",
+      "label": "USDC 30d / wstETH",
+      "market": {
+        "chainId": "11155111",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "860000000000000000",
+            "oracle": "0x812c49bA623765C23E42Aba4fEd8d33D21027F5f",
+            "token": "0x6200312Afb642782530D423E3ad2b233357d0417"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
+        "maturity": "1801353600",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0x7a9cd05ace11c0cc29ab8600e50f0dc7e4a11f06faa897ea3a17c61b493e7d30",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    },
+    {
+      "continuousFee": "1000",
+      "id": "0x97870262408061213d3753437dcec435b340c6bfb8d3c7f4ff3ce3f208adfebc",
+      "key": "usdc-90d-multi",
+      "label": "USDC 90d / WETH + wstETH",
+      "market": {
+        "chainId": "11155111",
+        "collateralParams": [
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "860000000000000000",
+            "oracle": "0x812c49bA623765C23E42Aba4fEd8d33D21027F5f",
+            "token": "0x6200312Afb642782530D423E3ad2b233357d0417"
+          },
+          {
+            "liquidationCursor": "300000000000000000",
+            "lltv": "770000000000000000",
+            "oracle": "0xc284dF918bC120C66996746692DaC67696A131A8",
+            "token": "0x900777F598CBcb440dBcdfC2007E379F3374D61C"
+          }
+        ],
+        "enterGate": "0x0000000000000000000000000000000000000000",
+        "liquidatorGate": "0x0000000000000000000000000000000000000000",
+        "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
+        "maturity": "1806537600",
+        "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+        "rcfThreshold": "0"
+      },
+      "rateGridHash": "0xeae235bfd080419d9383f24f152cf7a78be274ffb16f237170c1273288ff9bd4",
+      "settlementFeeCbp": [
+        14,
+        14,
+        98,
+        400,
+        1000,
+        2500,
+        5000
+      ],
+      "tickSpacing": 4
+    }
+  ]
+}

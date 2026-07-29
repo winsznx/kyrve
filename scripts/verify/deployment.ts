@@ -17,6 +17,7 @@ import {
   parseDeploymentManifest,
   requireContract,
 } from "../../packages/config/src/index.js";
+import { sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath } from "../lib/shell.js";
 
 /** bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1) */
@@ -50,16 +51,19 @@ async function main(): Promise<void> {
   const manifest = parseDeploymentManifest(readJson(manifestPath));
   const chain = chainById(manifest.chainId);
 
-  const rpcUrl =
-    process.env["SEPOLIA_RPC_URL"] ??
-    (environment === "local" ? "http://127.0.0.1:8545" : undefined);
-  if (rpcUrl === undefined) {
-    console.error(
-      "SEPOLIA_RPC_URL is not set. See .env.example; the pinned default is https://sepolia.drpc.org",
-    );
-    process.exitCode = 1;
-    return;
+  // Local uses anvil; every other environment goes through the owner's configured provider,
+  // resolved by sepoliaRpc() so a public endpoint can never be silently substituted.
+  let rpcUrl: string;
+  let rpcLabel: string;
+  if (environment === "local") {
+    rpcUrl = "http://127.0.0.1:8545";
+    rpcLabel = rpcUrl;
+  } else {
+    const rpc = sepoliaRpc();
+    rpcUrl = rpc.url;
+    rpcLabel = `${rpc.redacted} (from ${rpc.source})`;
   }
+  console.log(`  rpc ${rpcLabel}`);
 
   const client = createPublicClient({ transport: http(rpcUrl), cacheTime: 0 });
   const failures: string[] = [];

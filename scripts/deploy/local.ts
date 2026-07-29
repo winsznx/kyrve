@@ -73,14 +73,15 @@ async function main(): Promise<void> {
         "--rpc-url",
         ANVIL_RPC,
         "--broadcast",
-        "--private-key",
-        ANVIL_DEPLOYER_KEY,
         "--slow",
       ],
       {
         env: {
           KYRVE_MATURITY_ANCHOR: String(MATURITY_ANCHOR),
           KYRVE_DEPLOYMENT_OUT: rawPath,
+          // Through the environment, not argv. anvil's key is public, but the mechanism must be
+          // identical to the Sepolia path so the safe route is the only route that is exercised.
+          KYRVE_DEPLOYER_KEY: ANVIL_DEPLOYER_KEY,
         },
       },
     );
