@@ -4,13 +4,13 @@
     {
       "outcome": "valid-exact-fill",
       "pass": "forward",
-      "settlementGas": 327594,
+      "settlementGas": 327570,
       "settlementGasUnavailableReason": null,
       "calldataBytes": 992,
       "succeeded": true,
       "revertSelector": null,
       "revertName": null,
-      "activationGas": 709103
+      "activationGas": 709139
     },
     {
       "outcome": "partial-fill",
@@ -21,7 +21,7 @@
       "succeeded": false,
       "revertSelector": "0x1f4e7466",
       "revertName": "WrongUnits",
-      "activationGas": 682501
+      "activationGas": 682513
     },
     {
       "outcome": "oversized-fill",
@@ -54,7 +54,7 @@
       "succeeded": false,
       "revertSelector": "0xe2f03efd",
       "revertName": "QuoteNotExecutable",
-      "activationGas": 665413
+      "activationGas": 665437
     },
     {
       "outcome": "replay",
@@ -65,7 +65,7 @@
       "succeeded": false,
       "revertSelector": "0xe2f03efd",
       "revertName": "QuoteNotExecutable",
-      "activationGas": 665401
+      "activationGas": 665413
     },
     {
       "outcome": "wrong-offer-field",
@@ -76,7 +76,7 @@
       "succeeded": false,
       "revertSelector": "0x6b912538",
       "revertName": "AlteredOffer",
-      "activationGas": 665389
+      "activationGas": 665437
     },
     {
       "outcome": "invalid-proof-binding",
@@ -98,7 +98,7 @@
       "succeeded": false,
       "revertSelector": "0x9cb13087",
       "revertName": "OfferExpired",
-      "activationGas": 665413
+      "activationGas": 665425
     },
     {
       "outcome": "partial-fill",
@@ -109,18 +109,18 @@
       "succeeded": false,
       "revertSelector": "0x1f4e7466",
       "revertName": "WrongUnits",
-      "activationGas": 665425
+      "activationGas": 665437
     },
     {
       "outcome": "valid-exact-fill",
       "pass": "reverse",
-      "settlementGas": 251927,
+      "settlementGas": 251903,
       "settlementGasUnavailableReason": null,
       "calldataBytes": 992,
       "succeeded": true,
       "revertSelector": null,
       "revertName": null,
-      "activationGas": 665437
+      "activationGas": 665449
     }
   ],
   "verdict": {

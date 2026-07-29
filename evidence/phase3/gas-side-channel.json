@@ -27,20 +27,6 @@
     },
     {
       "group": "fillable",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "no-fill",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "fillable",
       "finalizeGas": 738942,
       "accumulateGas": 620355,
       "logCount": 35,
@@ -48,33 +34,19 @@
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "fillable",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "no-fill",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "fillable",
       "finalizeGas": 738942,
       "accumulateGas": 620355,
       "logCount": 35,
       "quoteReady": true
     },
     {
+      "group": "fillable",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
       "group": "no-fill",
       "finalizeGas": 738954,
       "accumulateGas": 620367,
@@ -92,6 +64,34 @@
       "group": "no-fill",
       "finalizeGas": 738954,
       "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738942,
+      "accumulateGas": 620355,
       "logCount": 35,
       "quoteReady": true
     }
@@ -102,7 +102,7 @@
       "max": 738954
     },
     "noFill": {
-      "min": 738954,
+      "min": 738942,
       "max": 738954
     }
   },
