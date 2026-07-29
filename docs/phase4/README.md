@@ -53,6 +53,8 @@ universe chunk width is 192 rather than 256.
 3. `docs/phase4/SECURITY.md` — every attack, the Slither triage, the gas measurement.
 4. `docs/phase3/PHASE-4-PREREQUISITES.md` — what Phase 3 said had to be true first, and which of it
    this phase discharged.
+5. `docs/phase4/PHASE-5-PREREQUISITES.md` — what must be true before confidential series ownership,
+   and the four constraints Phase 4 established by measurement.
 
 ## Commands
 
