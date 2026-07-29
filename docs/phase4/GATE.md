@@ -6,6 +6,22 @@ Phase 4 turns one verified confidential curve result into one executable Midnigh
 it exactly, or not at all. This file records what is proven, what is not, and what a reader should
 not conclude from either.
 
+## The gate
+
+```
+31 passed, 0 failed, 1 skipped
+VERDICT: CONDITIONAL PASS — every executable gate passed.
+```
+
+The one skip is `verify:settlement local`, and it names what is unavailable rather than what to type:
+a **standing local chain** carrying the Phase 2 confidential layer and the Phase 3 curve layer. The
+confidential suite's node is created and torn down per run, so a local manifest would outlive the
+chain it describes — which is why it is not simply generated. The same checks run against Sepolia,
+on a chain that persists, and pass there.
+
+Counts behind the summary: **122 Foundry tests**, **360 unit tests**, **124 confidential-suite tests**
+against the real Nox stack, and **9 Chromium steps**.
+
 ---
 
 ## What is proven

@@ -11,7 +11,7 @@
   "stages": {
     "sealProvider": {
       "calls": 16,
-      "total": 22884352,
+      "total": 22884364,
       "max": 1446304
     },
     "sealRequest": {
@@ -51,8 +51,8 @@
     },
     "proveWinner": {
       "calls": 1,
-      "total": 112665,
-      "max": 112665
+      "total": 112653,
+      "max": 112653
     },
     "allocateChunk": {
       "calls": 1,
