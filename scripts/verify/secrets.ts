@@ -25,6 +25,12 @@ import { repoPath, run } from "../lib/shell.js";
 const SENSITIVE = [
   "ALCHEMY_API_KEY",
   "DEPLOYER_PRIVATE_KEY",
+  // Disposable Sepolia funding wallets (`pnpm dust:generate`). They hold testnet ETH for minutes,
+  // but they are funded-wallet material and `.claude/rules/git.md` makes no exception for small
+  // amounts — so they are scanned for exactly like the deployer key.
+  "DUST_PRIVATE_KEY_1",
+  "DUST_PRIVATE_KEY_2",
+  "DUST_PRIVATE_KEY_3",
   "ETHERSCAN_API_KEY",
   "CLOUDFLARE_API_TOKEN",
   "CLOUDFLARE_ACCOUNT_ID",

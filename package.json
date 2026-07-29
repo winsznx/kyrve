@@ -19,6 +19,8 @@
     "deploy:curve": "tsx scripts/deploy/curve.ts",
     "deploy:local": "tsx scripts/deploy/local.ts",
     "deploy:sepolia": "tsx scripts/deploy/sepolia.ts",
+    "dust:generate": "tsx scripts/dust/generate.ts",
+    "dust:sweep": "tsx scripts/dust/sweep.ts",
     "format": "biome check --write . && forge fmt",
     "generate": "tsx scripts/generate/abis.ts && tsx scripts/generate/deployments.ts && tsx scripts/generate/webmanifest.ts",
     "grids:build": "tsx scripts/generate/rate-grids.ts",
