@@ -29,6 +29,13 @@ import { describe, it } from "node:test";
 import { deployCurveHarness } from "./curve-helpers.js";
 import { deployFoundry } from "./settlement-helpers.js";
 
+/**
+ * EIP-7825, introduced in Osaka: no single transaction may specify more than 2^24 gas, whatever the
+ * block gas limit is. Measured here rather than cited, because this number decides whether Kyrve's
+ * launch-scale epoch is executable at all — see delta S-2.
+ */
+const OSAKA_TRANSACTION_GAS_CAP = 16_777_216n;
+
 describe("Phase 4: the local chain executes Osaka, like Sepolia", () => {
   it("S-1. CLZ is a real opcode here, not an invalid one", async () => {
     const h = await deployCurveHarness();
@@ -47,5 +54,48 @@ describe("Phase 4: the local chain executes Osaka, like Sepolia", () => {
       true,
       "the node must execute Osaka, or `Midnight.take` dies with a bare `invalid opcode`",
     );
+  });
+
+  /**
+   * S-2. The limit that decides whether the launch universe is executable at all.
+   *
+   * Osaka caps a single transaction at 2^24 gas regardless of the block gas limit, which on this
+   * node is 60,000,000. Phase 3 sized its stage widths against a 24,000,000 "transaction gas
+   * ceiling" measured on a pre-Osaka local node, and recorded a peak stage transaction of
+   * 20,300,000 — both ABOVE this cap. So the 16 x 128 launch epoch cannot execute on Ethereum
+   * Sepolia as currently configured. `pnpm verify:gas-cap` says so with the numbers.
+   *
+   * Measured, not cited, and asserted on both sides of the boundary: exactly the cap is accepted,
+   * one gas more is refused.
+   */
+  it("S-2. a single transaction may not exceed 2^24 gas, whatever the block limit is", async () => {
+    const h = await deployCurveHarness();
+    const block = await h.publicClient.getBlock();
+    assert.ok(
+      block.gasLimit > OSAKA_TRANSACTION_GAS_CAP,
+      "the block limit must exceed the transaction cap, or this proves nothing about the cap",
+    );
+
+    const accepted = await h.wallets[0].sendTransaction({
+      to: h.wallets[1].account.address,
+      value: 1n,
+      gas: OSAKA_TRANSACTION_GAS_CAP,
+      account: h.wallets[0].account,
+    });
+    const receipt = await h.publicClient.waitForTransactionReceipt({ hash: accepted });
+    assert.equal(receipt.status, "success", "exactly the cap is accepted");
+
+    let refused = "";
+    try {
+      await h.wallets[0].sendTransaction({
+        to: h.wallets[1].account.address,
+        value: 1n,
+        gas: OSAKA_TRANSACTION_GAS_CAP + 1n,
+        account: h.wallets[0].account,
+      });
+    } catch (error) {
+      refused = (error as Error).message;
+    }
+    assert.ok(refused.length > 0, "one gas above the cap must be refused");
   });
 });

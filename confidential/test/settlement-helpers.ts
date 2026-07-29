@@ -436,6 +436,10 @@ export interface ActivatedQuote {
   readonly expectedBuyerAssets: bigint;
   readonly leafIndex: number;
   readonly graphRoot: `0x${string}`;
+  /** Gas the activation transaction used. Feeds the Sepolia funding budget. */
+  readonly activationGas: bigint;
+  /** Gas the public funding transfer used, so the budget covers the whole sequence. */
+  readonly fundingGas: bigint;
 }
 
 /**
@@ -492,8 +496,10 @@ export async function activateQuote(
     client: { public: h.publicClient, wallet: h.wallets[0] },
   });
 
+  let fundingGas = 0n;
   if (options.fund !== false) {
-    await mine(h, await s.usdc.write.mint([vaultAddress, size.buyerAssets]));
+    const funding = await mine(h, await s.usdc.write.mint([vaultAddress, size.buyerAssets]));
+    fundingGas = funding.gasUsed as bigint;
   }
 
   const graphRoot = (await h.graph.read.rootOf([epoch.epochId])) as `0x${string}`;
@@ -560,6 +566,8 @@ export async function activateQuote(
     expectedBuyerAssets: size.buyerAssets,
     leafIndex,
     graphRoot,
+    activationGas: receipt.gasUsed as bigint,
+    fundingGas,
   };
 }
 
