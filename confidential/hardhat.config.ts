@@ -102,7 +102,26 @@ const config: HardhatUserConfig = {
      */
     noxHost: {
       type: "edr-simulated",
-      chainType: "op",
+      /**
+       * L1 AT OSAKA, NOT THE PLUGIN'S OP DEFAULT — and this is a correctness fix, not a preference.
+       *
+       * The Nox plugin configures its node as `chainType: "op"`, whose latest hardfork in EDR is
+       * Isthmus. Kyrve's Foundry contracts and the vendored Midnight core compile at
+       * `evm_version = "osaka"`, because Ethereum Sepolia is on Osaka and one artifact must deploy
+       * to both environments. Osaka adds CLZ (EIP-7939, opcode 0x1e), and solc emits it.
+       *
+       * On the OP node CLZ is an INVALID opcode. Deployment succeeds, every constructor runs, every
+       * view returns — and then one execution path deep inside `Midnight.take` hits it and the
+       * transaction dies with `invalid opcode`: no revert reason, no selector, nothing naming the
+       * cause. `KyrveOsakaProbe.verifyOsaka()` reverts on that node, which is the check that found
+       * it. Recorded as delta S-1.
+       *
+       * `hardfork: "osaka"` is stated explicitly rather than left to EDR's "latest stable", so a
+       * future EDR that promotes Amsterdam cannot silently move the chain out from under a suite
+       * whose whole purpose is executing the exact bytecode Sepolia will execute.
+       */
+      chainType: "l1",
+      hardfork: "osaka",
       allowUnlimitedContractSize: true,
       allowBlocksWithSameTimestamp: true,
     },

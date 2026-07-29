@@ -41,7 +41,14 @@ describe("Phase 2: an expired input proof is refused (runs last — it moves cha
 
     // The proof binds `createdAt` and NoxCompute checks `createdAt + proofExpirationDuration`.
     // Advancing the chain past that window is the only way to test it honestly.
-    await h.publicClient.request({ method: "evm_increaseTime" as any, params: [3601] as any });
+    //
+    // 4,200 rather than 3,601, and the extra ten minutes are not padding for its own sake. The
+    // gateway stamps `createdAt` from its own wall clock when it FINISHES encrypting, and a mandate
+    // is 35 separate handles — so on a loaded machine `createdAt` lands a second or more after the
+    // chain timestamp this test measured from, and a 1-second margin decides the outcome. That is a
+    // race, and a race in a security test resolves to "passes on my machine". The property under
+    // test is unchanged: the window is 3,600 seconds and the chain is now well past it.
+    await h.publicClient.request({ method: "evm_increaseTime" as any, params: [4200] as any });
     await h.publicClient.request({ method: "evm_mine" as any, params: [] as any });
 
     const nonce = await book.read.nextNonce([provider.account.address]);

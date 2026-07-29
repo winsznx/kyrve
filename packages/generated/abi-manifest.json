@@ -82,8 +82,8 @@
       "source": "vendor/midnight/src/Midnight.sol"
     },
     "QuoteActivator": {
-      "abiEntries": 36,
-      "contentHash": "sha256:db93ffc78758a45326f8c579c192dbbc3d58e6d6e54c237c51b19c11b4c62ed6",
+      "abiEntries": 37,
+      "contentHash": "sha256:dda1020236fec668f12caa53d039aa47c72fef0acecbc65ab3743b058fee826d",
       "source": "contracts/kyrve/QuoteActivator.sol"
     },
     "TestERC20": {

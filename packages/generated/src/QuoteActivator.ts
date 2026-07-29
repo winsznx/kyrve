@@ -8,7 +8,7 @@
  * Command:   pnpm generate
  * Verify:    pnpm verify:generated  (regenerates and asserts `git diff` is empty)
  * Pinned:    Midnight 2026-07-23 @ dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0
- * Content:   sha256:db93ffc78758a45326f8c579c192dbbc3d58e6d6e54c237c51b19c11b4c62ed6
+ * Content:   sha256:dda1020236fec668f12caa53d039aa47c72fef0acecbc65ab3743b058fee826d
  *
  * TIMESTAMP POLICY: none is emitted, deliberately. A generation timestamp would change this file
  * on every run with no source change, which would make the diff check above worthless. The pinned
@@ -515,6 +515,25 @@ export const QuoteActivatorAbi = [
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OfferPublished",
+    "inputs": [
+      {
+        "name": "quoteId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "offer",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
       }
     ],
     "anonymous": false

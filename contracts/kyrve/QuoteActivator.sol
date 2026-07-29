@@ -102,6 +102,21 @@ contract QuoteActivator {
     error ZeroAddress(string field);
 
     event FactoryBound(address indexed factory);
+    /**
+     * @notice The complete offer, `abi.encode`d, so it can be recovered exactly.
+     *
+     * WHY AN EVENT AND NOT A RETURN VALUE. `activate` returns the offer, but a caller that
+     * simulated the transaction to read it would get an offer built at the SIMULATED block —
+     * `start` is `block.timestamp` — and the mined one would differ in exactly the field the hash
+     * covers. A borrower would then present an offer no ratifier accepts, for a reason nothing on
+     * chain explains.
+     *
+     * The registry stores only the hash, deliberately: storing the offer would cost several
+     * kilobytes of state for a value nobody reads on the hot path. So the offer is emitted once,
+     * and any client can recover it, hash it and compare against `QuoteExecution.offerHash` —
+     * which is exactly what the ratifier will do.
+     */
+    event OfferPublished(bytes32 indexed quoteId, bytes offer);
     event QuoteActivated(
         bytes32 indexed quoteId,
         bytes32 indexed epochId,
@@ -237,6 +252,7 @@ contract QuoteActivator {
         }
         vault.prepareQuote(quoteId);
 
+        emit OfferPublished(quoteId, abi.encode(offer));
         emit QuoteActivated(
             quoteId,
             request.epochId,
