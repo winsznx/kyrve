@@ -58,16 +58,22 @@ describe("the full 16 x 128 launch universe is executable", () => {
   it("REGRESSION PIN: the shape of the launch epoch", () => {
     // Pinned so a change to any stage cost shows up here as an intentional edit with a reason,
     // rather than as a quietly different schedule. Update deliberately, never to make this pass.
+    //
+    // These are the MEASURED figures, not the Day 0 ones: 22 transactions and ~301M gas against
+    // Day 0's 18 and ~243M. The difference is real contract overhead a primitive benchmark cannot
+    // see — storage, external calls, calldata and the graph commitment (delta R-3). The Day 0
+    // conclusion survives it: the peak transaction is 19M against a 24M ceiling, and 22
+    // transactions fit the 15-minute window several times over.
     expect({
       transactions: plan.transactionCount,
       cells: plan.cells,
       totalGasMillions: Math.round(plan.totalGas / 1_000_000),
       peakGasMillions: Math.round(plan.peakTransactionGas / 1_000_000),
     }).toEqual({
-      transactions: 18,
+      transactions: 22,
       cells: 2_048,
-      totalGasMillions: 243,
-      peakGasMillions: 20,
+      totalGasMillions: 301,
+      peakGasMillions: 19,
     });
   });
 });

@@ -126,12 +126,17 @@ describe("every chunk width stays inside the measured gas ceiling", () => {
     });
   }
 
-  it("the accumulate maximum is exactly what the measured cell cost permits", () => {
-    const derived = Math.floor(
+  it("the declared accumulate maximum is at or below what the measured cell cost permits", () => {
+    // Not equality. 311 is the ceiling Day 0 declared and PRD §9.1 carries, and the Phase 3
+    // measurement permits 329 — so the declared value is deliberately the tighter of the two. The
+    // property that matters is that the declared maximum can never exceed what measurement
+    // supports, because that is the direction in which the mistake is a 40M gas transaction.
+    const permitted = Math.floor(
       (curve.CURVE_TRANSACTION_GAS_CEILING - curve.CURVE_STAGE_GAS.accumulateChunkOverhead) /
         curve.CURVE_STAGE_GAS.accumulateCell,
     );
-    expect(derived).toBe(curve.CURVE_MAX_CELLS_PER_TRANSACTION);
+    expect(curve.CURVE_MAX_CELLS_PER_TRANSACTION).toBeLessThanOrEqual(permitted);
+    expect(curve.CURVE_MAX_CELLS_PER_TRANSACTION).toBe(311);
   });
 
   it("the recommended width keeps real headroom rather than sitting at the limit", () => {

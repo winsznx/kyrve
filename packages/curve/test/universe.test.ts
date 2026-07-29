@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildUniverse,
+  CURVE_MAX_CELLS_PER_TRANSACTION,
   CURVE_MAX_LEAVES,
   gridHash,
   makeGrid,
@@ -132,8 +133,12 @@ describe("the shape limits each refuse on their own", () => {
   });
 
   it("refuses a chunk width above the measured per-transaction budget", () => {
-    expect(() => buildUniverse(draft({ cellsPerChunk: 312 }))).toThrow(/outside 1\.\.311/);
-    expect(() => buildUniverse(draft({ cellsPerChunk: 311 }))).not.toThrow();
+    expect(() =>
+      buildUniverse(draft({ cellsPerChunk: CURVE_MAX_CELLS_PER_TRANSACTION + 1 })),
+    ).toThrow(/outside 1\.\.311/);
+    expect(() =>
+      buildUniverse(draft({ cellsPerChunk: CURVE_MAX_CELLS_PER_TRANSACTION })),
+    ).not.toThrow();
   });
 
   it("refuses a public priority that would wrap into the market-index bits", () => {

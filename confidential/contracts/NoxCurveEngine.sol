@@ -469,11 +469,56 @@ contract NoxCurveEngine is KyrveCurveBase {
         euint256 zero256 = Nox.toEuint256(0);
         euint16 zero16 = Nox.toEuint16(0);
 
+        // LEAF-MAJOR, and the shape is worth 27,000 gas per cell rather than being a tidiness
+        // preference. Cells are numbered `leafIndex * providers + slot`, so a chunk covers whole
+        // runs of one leaf, and three things that are per-LEAF were being paid per CELL:
+        //
+        //   `toEuint16(rateIndex)`   6,256 gas for a public handle identical across the run
+        //   two `allowThis`          11,712 gas persisting an accumulator that is about to be
+        //                            overwritten by the next provider in the same transaction
+        //   two SSTOREs              writing an intermediate nobody will ever read
+        //
+        // Hoisting them cut the measured cell cost from 128,914 to the figure recorded in
+        // `evidence/phase3/stage-gas.json`. The accumulator is carried in memory across the run
+        // and persisted once, at the end of the run, which is the only point another transaction
+        // could observe it.
         bytes32 commitment = bytes32(0);
-        for (uint256 cell = start; cell < end; ++cell) {
+        uint256 cell = start;
+        while (cell < end) {
             uint256 leafIndex = cell / epoch.providerCount;
-            uint256 slot = cell % epoch.providerCount;
-            commitment = _accumulateOne(epochId, leafIndex, slot, zero256, zero16, commitment);
+            uint256 leafBase = leafIndex * epoch.providerCount;
+            uint256 slotEnd = leafBase + epoch.providerCount;
+            if (slotEnd > end) slotEnd = end;
+
+            uint32 packed = _leafTable[epochId][leafIndex];
+            uint256 market = packed >> 24;
+            euint16 rateHandle = Nox.toEuint16(uint16((packed >> 16) & 0xff));
+
+            euint256 capacity = _capacityAcc[epochId][leafIndex];
+            euint16 count = _countAcc[epochId][leafIndex];
+
+            for (uint256 slot = cell - leafBase; slot < slotEnd - leafBase; ++slot) {
+                Cached storage cached = _cached[epochId][slot][market];
+
+                // The sixth predicate, and the only one that varies by leaf. A PUBLIC rate index
+                // against an ENCRYPTED minimum is one comparison; encrypted-against-encrypted
+                // would cost an indicator conversion and a multiply on top.
+                ebool rateOk = Nox.ge(rateHandle, _snapshots[epochId][slot].minRateIndexes[market]);
+
+                capacity = Nox.add(capacity, Nox.select(rateOk, cached.capacity, zero256));
+                count = Nox.add(count, Nox.select(rateOk, cached.count, zero16));
+
+                commitment = keccak256(
+                    abi.encode(commitment, leafIndex, slot, euint256.unwrap(capacity), euint16.unwrap(count))
+                );
+            }
+
+            _capacityAcc[epochId][leafIndex] = capacity;
+            _countAcc[epochId][leafIndex] = count;
+            Nox.allowThis(capacity);
+            Nox.allowThis(count);
+
+            cell = slotEnd;
         }
 
         graph.foldChunk(epochId, QuoteEpochController.Stage.Accumulate, chunkIndex, commitment);
@@ -992,38 +1037,6 @@ contract NoxCurveEngine is KyrveCurveBase {
             keccak256(
                 abi.encode(commitment, slot, market, euint256.unwrap(cached.capacity), euint16.unwrap(cached.count))
             );
-    }
-
-    function _accumulateOne(
-        bytes32 epochId,
-        uint256 leafIndex,
-        uint256 slot,
-        euint256 zero256,
-        euint16 zero16,
-        bytes32 commitment
-    ) private returns (bytes32) {
-        uint32 packed = _leafTable[epochId][leafIndex];
-        uint256 market = packed >> 24;
-        uint16 rateIndex = uint16((packed >> 16) & 0xff);
-
-        Cached storage cached = _cached[epochId][slot][market];
-
-        // The sixth predicate, and the only one that varies by leaf. A PUBLIC rate index against
-        // an ENCRYPTED minimum is one comparison; encrypted-against-encrypted would cost an
-        // indicator conversion and a multiply on top.
-        ebool rateOk = Nox.ge(Nox.toEuint16(rateIndex), _snapshots[epochId][slot].minRateIndexes[market]);
-
-        euint256 contribution = Nox.select(rateOk, cached.capacity, zero256);
-        euint256 capacity = Nox.add(_capacityAcc[epochId][leafIndex], contribution);
-        euint16 counted = Nox.select(rateOk, cached.count, zero16);
-        euint16 count = Nox.add(_countAcc[epochId][leafIndex], counted);
-
-        _capacityAcc[epochId][leafIndex] = capacity;
-        _countAcc[epochId][leafIndex] = count;
-        Nox.allowThis(capacity);
-        Nox.allowThis(count);
-
-        return keccak256(abi.encode(commitment, leafIndex, slot, euint256.unwrap(capacity), euint16.unwrap(count)));
     }
 
     function _finalizeOne(

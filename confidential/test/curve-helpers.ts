@@ -50,6 +50,31 @@ import {
   SUITE_POLL,
 } from "./helpers.js";
 
+/**
+ * The poll policy a FULL-SCALE epoch needs.
+ *
+ * MEASURED, not guessed. A 16 x 128 epoch issues roughly fifteen thousand Nox operations, and the
+ * off-chain runner processes them asynchronously with no callback into the contract — readiness is
+ * discoverable only by polling. At that volume the runner falls minutes behind the chain, and the
+ * suite's ordinary 30-second policy gives up long before the first published handle is computable.
+ *
+ * That is not a defect and it is not a Kyrve latency: it is the honest throughput of the stack at
+ * launch scale, and it is exactly the number a keeper's timeout has to be sized against. Recorded
+ * in `evidence/phase3/stage-gas.json` and as delta R-7. Testnet latency remains UNVERIFIED (AS-1).
+ */
+export interface PollOptions {
+  readonly policy: {
+    readonly initialDelayMs: number;
+    readonly maxDelayMs: number;
+    readonly multiplier: number;
+    readonly timeoutMs: number;
+  };
+}
+
+export const BENCH_POLL: PollOptions = {
+  policy: { initialDelayMs: 1_000, maxDelayMs: 15_000, multiplier: 2, timeoutMs: 900_000 },
+} as const;
+
 /** Matches `QuoteEpochController.Stage`. */
 export const STAGE = {
   Open: 0,
@@ -519,6 +544,7 @@ export async function runEpoch(
   h: CurveHarness,
   epoch: EpochState,
   keeperIndex = 9,
+  poll: PollOptions = SUITE_POLL,
 ): Promise<EpochState> {
   const keeper = h.wallets[keeperIndex];
 
@@ -528,7 +554,7 @@ export async function runEpoch(
   await runStage(h, epoch, STAGE.ReduceWinner, "reduceWinnerChunk", keeper);
   await runStage(h, epoch, STAGE.PublishWinner, "publishWinner", keeper);
 
-  await proveWinner(h, epoch, keeper);
+  await proveWinner(h, epoch, keeper, poll);
 
   await runStage(h, epoch, STAGE.Allocate, "allocateChunk", keeper);
   await runStage(h, epoch, STAGE.PublishAggregate, "publishAggregate", keeper);
@@ -537,12 +563,17 @@ export async function runEpoch(
 }
 
 /** Publicly decrypts the selected market and rate, then proves both on chain. */
-export async function proveWinner(h: CurveHarness, epoch: EpochState, keeper: any): Promise<void> {
+export async function proveWinner(
+  h: CurveHarness,
+  epoch: EpochState,
+  keeper: any,
+  poll: PollOptions = SUITE_POLL,
+): Promise<void> {
   const published = await h.engine.read.publishedOf([epoch.epochId]);
   const client = await clientFor(h, 0);
 
-  const market = await client.publicDecrypt(published.marketIndex as Handle, SUITE_POLL);
-  const rate = await client.publicDecrypt(published.rateIndex as Handle, SUITE_POLL);
+  const market = await client.publicDecrypt(published.marketIndex as Handle, poll);
+  const rate = await client.publicDecrypt(published.rateIndex as Handle, poll);
 
   const receipt = await mine(
     h,
@@ -564,6 +595,7 @@ export async function proveWinner(h: CurveHarness, epoch: EpochState, keeper: an
 export async function verifyPublishedQuote(
   h: CurveHarness,
   epoch: EpochState,
+  poll: PollOptions = SUITE_POLL,
 ): Promise<{
   marketIndex: number;
   rateIndex: number;
@@ -575,11 +607,11 @@ export async function verifyPublishedQuote(
   const client = await clientFor(h, 0);
 
   const [market, rate, floor, ready, aggregate] = [
-    await client.publicDecrypt(published.marketIndex as Handle, SUITE_POLL),
-    await client.publicDecrypt(published.rateIndex as Handle, SUITE_POLL),
-    await client.publicDecrypt(published.floorPassed as Handle, SUITE_POLL),
-    await client.publicDecrypt(published.quoteReady as Handle, SUITE_POLL),
-    await client.publicDecrypt(published.aggregateFill as Handle, SUITE_POLL),
+    await client.publicDecrypt(published.marketIndex as Handle, poll),
+    await client.publicDecrypt(published.rateIndex as Handle, poll),
+    await client.publicDecrypt(published.floorPassed as Handle, poll),
+    await client.publicDecrypt(published.quoteReady as Handle, poll),
+    await client.publicDecrypt(published.aggregateFill as Handle, poll),
   ];
 
   const result = await h.verifier.read.verifyQuote([

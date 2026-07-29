@@ -1,0 +1,79 @@
+{
+  "$comment": "MEASURED against the real local Nox stack during the Phase 3 benchmark. These supersede the Day 0 figures for stages B and E — see docs/phase3/PRD-DELTA.md R-3. Local node, local stack: testnet gas remains UNVERIFIED (AS-1).",
+  "universe": {
+    "providers": 16,
+    "markets": 8,
+    "rates": 16,
+    "leaves": 128,
+    "cells": 2048
+  },
+  "cellsPerChunk": 256,
+  "stages": {
+    "sealProvider": {
+      "calls": 16,
+      "total": 22850968,
+      "max": 1444219
+    },
+    "sealRequest": {
+      "calls": 1,
+      "total": 668460,
+      "max": 668460
+    },
+    "prepareEpoch": {
+      "calls": 1,
+      "total": 3086748,
+      "max": 3086748
+    },
+    "cacheProviderChunk": {
+      "calls": 4,
+      "total": 59910008,
+      "max": 14977505
+    },
+    "accumulateLeafChunk": {
+      "calls": 8,
+      "total": 145394836,
+      "max": 18174356
+    },
+    "finalizeLeafChunk": {
+      "calls": 3,
+      "total": 37734426,
+      "max": 14131610
+    },
+    "reduceWinnerChunk": {
+      "calls": 4,
+      "total": 44213206,
+      "max": 11059405
+    },
+    "publishWinner": {
+      "calls": 1,
+      "total": 827525,
+      "max": 827525
+    },
+    "proveWinner": {
+      "calls": 1,
+      "total": 112632,
+      "max": 112632
+    },
+    "allocateChunk": {
+      "calls": 1,
+      "total": 8434758,
+      "max": 8434758
+    },
+    "publishAggregate": {
+      "calls": 1,
+      "total": 341135,
+      "max": 341135
+    }
+  },
+  "perUnit": {
+    "accumulateCell": 70994,
+    "cacheUnit": 468047,
+    "finalizeLeaf": 294800,
+    "reduceLeaf": 345416,
+    "allocateProvider": 527172
+  },
+  "limits": {
+    "transactionGasCeiling": 24000000,
+    "peakTransactionGas": 18174356
+  }
+}

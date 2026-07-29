@@ -22,48 +22,58 @@ export const CURVE_RATE_RANK_STRIDE = 512;
 /** Above every reachable rank (15*512 + 3*128 + 119 = 8,183), so a leaf with no fill never wins. */
 export const CURVE_RANK_CEILING = 8_192;
 
-// ── Measured transaction budget ─────────────────────────────────────────────────────────────
+// ── Measured transaction budget (Phase 3, delta R-3) ────────────────────────────────────────
 export const CURVE_TRANSACTION_GAS_CEILING = 24_000_000;
 export const CURVE_MAX_CELLS_PER_TRANSACTION = 311;
 export const CURVE_RECOMMENDED_CELLS_PER_TRANSACTION = 256;
 
 // ── Stage chunk widths ──────────────────────────────────────────────────────────────────────
-export const CURVE_CACHE_CHUNK_UNITS = 48;
-export const CURVE_FINALIZE_CHUNK_LEAVES = 96;
-export const CURVE_REDUCE_CHUNK_LEAVES = 64;
+export const CURVE_CACHE_CHUNK_UNITS = 32;
+export const CURVE_FINALIZE_CHUNK_LEAVES = 48;
+export const CURVE_REDUCE_CHUNK_LEAVES = 32;
 export const CURVE_ALLOCATE_CHUNK_PROVIDERS = 16;
 
 /** The lowest privacy floor a universe may declare. A floor of 1 is not a privacy floor. */
 export const CURVE_MIN_PRIVACY_FLOOR = 2;
 
 /**
- * Stage gas, MEASURED against the real local stack in Phase 3 and corrected from the Day 0 figures.
+ * Stage gas, MEASURED against the real local Nox stack by the Phase 3 benchmark.
  *
- * Day 0 measured stage B on a single-market spike and recorded it per PROVIDER. The predicates it
- * caches — enabled, the market cap, the portfolio caps — all vary by MARKET, and a leaf carries a
- * market, so the real unit is (provider, market). Recorded as delta R-3. The stage-E figure grew
- * for a different reason: the fold carries six values rather than three, because the winning leaf's
- * total capacity and its privacy-floor flag are both needed downstream.
+ * These REPLACE the Day 0 figures rather than refining them. Day 0 measured isolated Nox
+ * primitives and summed them; the contract additionally pays for storage, external calls,
+ * calldata and the graph commitment, which is 1.7x to 3.6x more per stage. Stage B moved for a
+ * second, independent reason: its unit is (provider, market), not provider, because every
+ * predicate it caches varies by market and a leaf carries a market. Both recorded as delta R-3.
  *
- * These are what `planCurveEpoch` sizes against. `evidence/phase3/stage-gas.json` is the raw
- * measurement and `verify:phase3` fails if the two disagree by more than the recorded tolerance.
+ * Raw data: `evidence/phase3/stage-gas.json`. `verify:phase3` fails if the recorded measurement
+ * and these values disagree, so a future optimisation has to be reflected here deliberately.
+ *
+ * Local node, local stack. Testnet gas remains UNVERIFIED (AS-1).
  */
 export const CURVE_STAGE_GAS = {
-  /** Per (provider, market). Day 0 recorded 256,553 per provider. */
-  cacheUnit: 344_000,
-  /** Per (provider, leaf) cell. Unchanged from Day 0 and re-confirmed. */
-  accumulateCell: 76_402,
+  /** Per (provider, market). Day 0 recorded 256,553 per PROVIDER. */
+  cacheUnit: 468_047,
+  /**
+   * Per (provider, leaf) cell. Day 0 recorded 76,402 from summed primitives.
+   *
+   * The first Phase 3 measurement was 128,914 — 69% worse — because stage C was paying three
+   * per-LEAF costs once per CELL: a `toEuint16` of the leaf's public rate index, two `allowThis`
+   * calls persisting an accumulator about to be overwritten, and two SSTOREs of an intermediate
+   * nobody would read. Restructuring the loop leaf-major brought it to 72,226, which is where it
+   * should have been all along and is what makes the Day 0 ceiling of 311 cells survive.
+   */
+  accumulateCell: 72_226,
   accumulateChunkOverhead: 166_954,
   /** Per leaf. Day 0 recorded 158,847. */
-  finalizeLeaf: 160_000,
-  /** Per leaf. Day 0 recorded 94,649 for a three-value fold. */
-  reduceLeaf: 130_000,
-  /** Once per epoch. Day 0 recorded 90,076, before handle isolation existed. */
-  publishWinner: 400_000,
-  /** Per provider, including the ledger's reservation. Day 0 recorded 166,423. */
-  allocateProvider: 210_000,
-  publishAggregate: 120_000,
+  finalizeLeaf: 294_800,
+  /** Per leaf. Day 0 recorded 94,649 for a three-value fold; this one carries six. */
+  reduceLeaf: 345_416,
+  /** Once per epoch, including four isolations and four irreversible publications. */
+  publishWinner: 830_000,
+  /** Per provider, including the ledger's safe subtraction and two isolations. */
+  allocateProvider: 527_172,
+  publishAggregate: 345_000,
   /** Per provider, paid once at seal rather than once per epoch. */
-  sealProvider: 800_000,
-  prepareEpoch: 900_000,
+  sealProvider: 1_450_000,
+  prepareEpoch: 3_100_000,
 } as const;

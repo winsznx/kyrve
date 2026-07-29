@@ -42,24 +42,30 @@ uint16 constant CURVE_RATE_RANK_STRIDE = 512;
 // or an empty leaf could win.
 uint16 constant CURVE_RANK_CEILING = 8_192;
 
-// ── Measured transaction budget (OPERATION-BUDGET section 4)
-// ────────────────────────────────
+// ── Measured transaction budget (Phase 3, delta R-3)
+// ───────────────────────────────────────
+// Day 0 derived these from isolated primitive costs. Phase 3 executed the full 16 x 128 universe
+// against the real stack and measured what the CONTRACT actually pays, which is 1.7x to 3.6x more
+// per stage: storage, external-call and calldata overhead that a primitive benchmark never sees.
+// Raw data in `evidence/phase3/stage-gas.json`. The Day 0 conclusion is unchanged — the full
+// universe is executable — but it takes about 30 transactions rather than 18.
 uint256 constant CURVE_TRANSACTION_GAS_CEILING = 24_000_000;
-// floor((24,000,000 - 166,954) / 76,402). Derived from measurement, not chosen.
+// 311 x 72,226 + 166,954 = 22.6M, so the Day 0 ceiling of 311 SURVIVES the remeasurement — but
+// only after stage C was restructured leaf-major. Before that the measured cell cost was 128,914
+// and 311 cells would have been a 40M transaction, above a whole block.
 uint256 constant CURVE_MAX_CELLS_PER_TRANSACTION = 311;
-// 256 x 76,402 + 166,954 = 19.7M, about 18% margin.
+// 256 x 72,226 + 166,954 = 18.7M, about 22% margin. Deliberately under the maximum: this is a
+// local-node measurement and testnet gas is UNVERIFIED (AS-1).
 uint256 constant CURVE_RECOMMENDED_CELLS_PER_TRANSACTION = 256;
 
-// ── Stage chunk widths
-// ──────────────────────────────────────────────────────────────────────
-// Stage B costs about 344k gas per (provider, market) unit, not the 256,553 the Day 0 spike
-// recorded for a single-market universe (delta R-3). 48 x 344k = 16.5M, about 31% margin.
-uint32 constant CURVE_CACHE_CHUNK_UNITS = 48;
-// Stage D costs about 160k per leaf. 96 x 160k = 15.4M.
-uint32 constant CURVE_FINALIZE_CHUNK_LEAVES = 96;
-// Stage E costs about 130k per leaf, above the 94,649 Day 0 figure because the fold carries six
-// values rather than three — the winning leaf's total capacity and its privacy-floor flag are
-// both needed downstream. 64 x 130k = 8.3M.
-uint32 constant CURVE_REDUCE_CHUNK_LEAVES = 64;
-// Stage F costs about 210k per provider including the ledger's reservation. 16 x 210k = 3.4M.
+// ── Stage chunk widths, all derived from the measured per-unit cost
+// ────────────────────────
+// 468,047 gas per (provider, market), measured. 32 x 468k = 15.0M.
+uint32 constant CURVE_CACHE_CHUNK_UNITS = 32;
+// 294,800 gas per leaf, measured. 48 x 295k = 14.2M.
+uint32 constant CURVE_FINALIZE_CHUNK_LEAVES = 48;
+// 345,416 gas per leaf, measured. 32 x 345k = 11.1M.
+uint32 constant CURVE_REDUCE_CHUNK_LEAVES = 32;
+// 527,172 gas per provider, measured, including the ledger's reservation. 16 is the
+// whole provider ceiling, so this stage is always one transaction.
 uint32 constant CURVE_ALLOCATE_CHUNK_PROVIDERS = 16;
