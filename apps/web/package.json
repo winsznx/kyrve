@@ -1,0 +1,28 @@
+{
+  "name": "@kyrve/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "description": "The Kyrve local confidential terminal. Wrap, private balance, mandate, borrower request, and the public/private boundary preview.",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview --port 4173 --strictPort",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@kyrve/config": "workspace:*",
+    "@kyrve/nox": "workspace:*",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "viem": "2.55.10"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "vite": "8.1.5"
+  }
+}

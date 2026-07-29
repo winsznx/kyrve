@@ -1,0 +1,383 @@
+/*
+ * Kyrve terminal styling.
+ *
+ * Every value here comes from `design.md`, which is the visual source of truth. The rules that are
+ * easy to violate by accident, and are therefore stated at the point of use:
+ *
+ *   - the canvas is Onyx and cards are Graphite, ONE step lighter. Separation comes from that lift
+ *     alone: there are no shadows anywhere in this file, and none may be added.
+ *   - Cobalt is the only chromatic note and is reserved for the single primary action on a page.
+ *     Never as decoration, never as an icon fill, never two within 32px.
+ *   - body text is Ivory, never pure white. Muted text is Ash.
+ *   - headings are weight 480. Never 700.
+ *   - interactive controls use pill radius. Sharp corners are structural only.
+ *   - 72px between major sections.
+ */
+
+:root {
+  --color-onyx-canvas: #171721;
+  --color-graphite-card: #1e1e2a;
+  --color-obsidian-button: #272735;
+  --color-slate-border: #70707d;
+  --color-ash-text: #c3c3cc;
+  --color-ivory-text: #ededf3;
+  --color-cobalt: #5266eb;
+
+  --font-body:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  --text-caption: 12px;
+  --text-body-sm: 14px;
+  --text-body: 16px;
+  --text-subheading: 21px;
+  --text-heading-sm: 28px;
+  --text-heading: 32px;
+
+  --weight-regular: 400;
+  --weight-w420: 420;
+  --weight-w480: 480;
+
+  --page-max-width: 1200px;
+  --section-gap: 72px;
+  --card-padding: 32px;
+  --element-gap: 12px;
+
+  --radius-md: 4px;
+  --radius-xl: 12px;
+  --radius-3xl: 32px;
+  --radius-pill: 40px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-onyx-canvas);
+  color: var(--color-ivory-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numerals throughout: a balance that shifts width as it changes reads as unstable. */
+.numeric,
+td,
+th {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.page {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 56px 24px 112px;
+}
+
+header.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(112, 112, 125, 0.35);
+}
+
+/*
+ * The dark header uses the lowercase wordmark set as text in Ivory.
+ *
+ * The approved brand symbol is authored for light backgrounds — measured across all 45,374 opaque
+ * pixels, 0.0% clear 4.5:1 against Onyx, at a median of 1.30:1. A reversed master is commissioned
+ * and not yet delivered (docs/brand/REVERSED-MASTER-BRIEF.md), so the symbol is not rendered here,
+ * no background plate is added, and the positive master is not recoloured.
+ */
+.wordmark {
+  font-size: var(--text-heading);
+  font-weight: var(--weight-w480);
+  letter-spacing: 0.48px;
+  color: var(--color-ivory-text);
+}
+
+.tagline {
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+section.band {
+  margin-top: var(--section-gap);
+}
+
+h2 {
+  font-size: var(--text-heading-sm);
+  font-weight: var(--weight-w480);
+  letter-spacing: 0.42px;
+  margin: 0 0 var(--element-gap);
+}
+
+h3 {
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  margin: 0 0 var(--element-gap);
+}
+
+p.lede {
+  color: var(--color-ash-text);
+  margin: 0 0 24px;
+  max-width: 68ch;
+}
+
+.card {
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+  /* No shadow. Separation is the one-step value lift and nothing else. */
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+label {
+  display: block;
+  font-size: var(--text-body-sm);
+  color: var(--color-ash-text);
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--color-obsidian-button);
+  border: 1px solid rgba(112, 112, 125, 0.4);
+  border-radius: var(--radius-3xl);
+  color: var(--color-ivory-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-cobalt);
+  outline-offset: 2px;
+}
+
+button {
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(112, 112, 125, 0.4);
+  background: var(--color-obsidian-button);
+  color: var(--color-ivory-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-w420);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--color-slate-border);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Cobalt: one per page, on the single primary action. */
+button.primary {
+  background: var(--color-cobalt);
+  border-color: var(--color-cobalt);
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+}
+
+.row {
+  display: flex;
+  gap: var(--element-gap);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.field {
+  flex: 1 1 200px;
+}
+
+/* ── Confidential state ─────────────────────────────────────────────────────────────────── */
+
+.confidential {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: var(--radius-xl);
+  background: rgba(39, 39, 53, 0.55);
+  border: 1px solid rgba(112, 112, 125, 0.25);
+}
+
+.confidential .state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-caption);
+  letter-spacing: 0.12px;
+  text-transform: uppercase;
+  color: var(--color-ash-text);
+}
+
+.confidential .glyph {
+  font-family: var(--font-mono);
+  color: var(--color-ash-text);
+}
+
+.confidential .value {
+  font-family: var(--font-mono);
+  font-size: var(--text-subheading);
+  font-variant-numeric: tabular-nums;
+}
+
+.confidential .explanation {
+  font-size: var(--text-body-sm);
+  color: var(--color-ash-text);
+}
+
+.handle {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+  word-break: break-all;
+}
+
+/*
+ * A redacted value shows deliberate structure — never a zero and never sample data.
+ *
+ * Showing "0" for something encrypted would be a claim about its contents. The bars carry no
+ * information at all, which is the honest representation of a value this wallet cannot read.
+ */
+.redacted {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  height: 28px;
+}
+
+.redacted span {
+  display: block;
+  width: 14px;
+  height: 20px;
+  border-radius: var(--radius-md);
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(195, 195, 204, 0.22),
+    rgba(195, 195, 204, 0.22) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+/* ── Boundary preview ───────────────────────────────────────────────────────────────────── */
+
+.boundary {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.boundary ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+.boundary li {
+  margin-bottom: 6px;
+}
+
+.boundary .public-side h4,
+.boundary .private-side h4 {
+  margin: 0 0 8px;
+  font-size: var(--text-caption);
+  letter-spacing: 0.12px;
+  text-transform: uppercase;
+  font-weight: var(--weight-w480);
+}
+
+.boundary .public-side h4 {
+  color: var(--color-ivory-text);
+}
+
+.boundary .private-side h4 {
+  color: var(--color-ash-text);
+}
+
+/*
+ * A reveal warning cannot be collapsed or hidden while a signature is pending.
+ *
+ * There is deliberately no toggle, no `<details>`, and no dismiss control anywhere in this block.
+ */
+.reveal-warning {
+  border: 1px solid var(--color-slate-border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  margin-top: 24px;
+  background: rgba(39, 39, 53, 0.7);
+}
+
+.reveal-warning strong {
+  display: block;
+  font-weight: var(--weight-w480);
+  margin-bottom: 6px;
+}
+
+.reveal-warning p {
+  margin: 0;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+/* ── Status and errors ──────────────────────────────────────────────────────────────────── */
+
+.status {
+  margin-top: 16px;
+  font-size: var(--text-body-sm);
+  color: var(--color-ash-text);
+  min-height: 21px;
+}
+
+.status.error {
+  color: var(--color-ivory-text);
+  border-left: 2px solid var(--color-slate-border);
+  padding-left: 12px;
+}
+
+.status .phase {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body-sm);
+}
+
+td,
+th {
+  text-align: left;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(112, 112, 125, 0.2);
+  color: var(--color-ash-text);
+  font-weight: var(--weight-regular);
+}
+
+th {
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w420);
+}

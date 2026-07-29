@@ -39,6 +39,14 @@ export {
   SUPPORTED_CHAINS,
 } from "./chains.js";
 export {
+  CONFIDENTIAL_COMPILER,
+  CONFIDENTIAL_CONTRACTS,
+  CONFIDENTIAL_WIRING,
+  type ConfidentialContract,
+  NOX_COMPUTE_BY_CHAIN,
+  NOX_GATEWAY_BY_CHAIN,
+} from "./confidential.js";
+export {
   ENVIRONMENTS,
   type Environment,
   type EnvironmentName,

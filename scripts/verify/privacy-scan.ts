@@ -34,6 +34,7 @@ import { REPO_ROOT, repoPath, run } from "../lib/shell.js";
 
 interface Fixtures {
   readonly $scanned: readonly string[];
+  readonly $publicByConstruction: { readonly reason: string; readonly values: readonly string[] };
   readonly $notScanned: { readonly reason: string; readonly fields: readonly string[] };
 }
 
@@ -215,6 +216,19 @@ function main(): void {
     return;
   }
 
+  // The two sets must be disjoint. Without this, the way to make a leak go away would be to move
+  // the value into `$publicByConstruction` — which is exactly the mistake a scanner exists to stop.
+  const publicValues = new Set(fixtures.$publicByConstruction.values);
+  const misclassified = needles.filter((needle) => publicValues.has(needle));
+  if (misclassified.length > 0) {
+    console.error(
+      `privacy-scan: ${misclassified.join(", ")} is listed as BOTH private and public by ` +
+        "construction. A value is one or the other; reclassifying a private value is not a fix.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   // Extra paths supplied by the caller — in practice the captured output of the confidential
   // suite, which is where a stray `console.log` of a decrypted value would land first and which is
   // not a repository file at all.
@@ -240,6 +254,10 @@ function main(): void {
   console.log(`  permitted appearances (fixture)    : ${permittedHits}`);
   console.log(`  leaks found                        : ${leaks.length}`);
   console.log(`  structural violations              : ${structural.length}`);
+  console.log(
+    `  public by construction, not a leak : ${fixtures.$publicByConstruction.values.join(", ")}`,
+  );
+  console.log(`    ${fixtures.$publicByConstruction.reason}\n`);
   console.log(`  not scanned by value               : ${fixtures.$notScanned.fields.join(", ")}`);
   console.log(`    ${fixtures.$notScanned.reason}\n`);
 

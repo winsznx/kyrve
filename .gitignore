@@ -32,3 +32,10 @@ scripts/brand/verify-report.json
 
 # Python bytecode from the brand scripts.
 __pycache__/
+
+# Local confidential deployments are not reproducible across runs: the deployer's nonce differs
+# depending on what else the suite did first, so CREATE addresses differ. The Sepolia record IS
+# committed — it is a real, one-time deployment.
+deployments/local/confidential.json
+apps/web/public/deployment.json
+evidence/phase2/confidential-suite.log

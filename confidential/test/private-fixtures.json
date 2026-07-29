@@ -1,5 +1,6 @@
 {
-  "$comment": "The plaintext values the Phase 2 suite encrypts, decrypts and asserts on. THIS FILE IS THE ONLY PLACE IN THE REPOSITORY THEY ARE ALLOWED TO APPEAR. `scripts/verify/privacy-scan.ts` reads them from here and then fails the build if any of them is found in a log, an evidence file, a deployment manifest, a generated artifact, a Worker source, a test snapshot or any other tracked or untracked file. They are deliberately high-entropy so a match cannot be a coincidence: a scan for a round number like 1000000 would false-positive on unrelated code and would prove nothing.",
+  "$comment": "The values the Phase 2 suite encrypts, submits and decrypts against the real Nox stack. `scripts/verify/privacy-scan.ts` reads them from here — this file is the only place a PRIVATE value is allowed to appear anywhere in the repository. Every value is deliberately high-entropy: a scan for a round number like 1000000 would match unrelated bytes across the tree and prove nothing.",
+
   "wrapAmount": "1000000741",
   "vaultDeposit": "400000269",
   "mandate": {
@@ -20,8 +21,8 @@
     "enabledFlags": [1, 1, 0, 1],
     "preferredMaturityIndex": 1
   },
+
   "$scanned": [
-    "1000000741",
     "400000269",
     "5000000317",
     "2000000581",
@@ -35,8 +36,14 @@
     "1200000487",
     "1000000373"
   ],
+
+  "$publicByConstruction": {
+    "reason": "The wrap amount is a plain uint256 in `wrap(address,uint256)` calldata. It is public the moment the transaction is sent, permanently, and no amount of care changes that — it is the honest cost of entering the confidential layer from a public ERC-20. The suite PRINTS it deliberately, recovered from calldata, because demonstrating the public half of the boundary is part of the evidence. Listing it here rather than in `$scanned` is a classification, and the scanner enforces that the two sets are disjoint so a private value cannot be quietly moved into this one.",
+    "values": ["1000000741"]
+  },
+
   "$notScanned": {
-    "reason": "Rate indexes, enabled flags, maturity indexes and allocation weights are small integers (0-100). They are just as private as the amounts, but a repository-wide scan for the string '12' or '25' would match thousands of unrelated bytes and prove nothing at all. Their confidentiality rests on the same mechanism as the amounts — the same handles, the same ACL, the same client-only decryption — and is covered by the structural half of the scan, which checks that no code path can write a decrypted value anywhere.",
+    "reason": "Rate indexes, enabled flags, maturity indexes and allocation weights are small integers (0-100). They are exactly as private as the amounts, but a repository-wide scan for the string '12' or '25' would match thousands of unrelated bytes and prove nothing. Their confidentiality rests on the same mechanism as the amounts — the same handles, the same ACL, the same client-only decryption — and is covered by the structural half of the scan, which proves no code path can write a decrypted value anywhere at all.",
     "fields": [
       "minRateIndexes",
       "enabledFlags",

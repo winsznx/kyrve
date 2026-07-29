@@ -10,3 +10,23 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - workerd
+
+# Transitive advisories in the Hardhat 3 toolchain the confidential workspace needs to drive the
+# real Nox stack. Every one of these arrives through `hardhat` or
+# `@nomicfoundation/hardhat-toolbox-viem`, is development-only, and reaches no bundle and no
+# deployed artifact — but "it is only a dev dependency" is how a supply-chain compromise gets in,
+# and every one of these has a published fix. So they are pulled forward rather than excused.
+#
+# Each entry names the advisories it closes. Versions are EXACT, like every other pin in this
+# repository: a range here would let the thing that fixed a supply-chain advisory drift on the next
+# install without any commit saying so. Re-check with `pnpm audit --audit-level moderate` after any
+# toolchain bump, and delete an override that has become unnecessary rather than leaving it to rot.
+overrides:
+  # Six advisories: WebSocket memory exhaustion (GHSA-vrm6-8vpv-qv8q), an unhandled exception in the
+  # WebSocket client (GHSA-v9p9-hfj2-hcw8), request/response smuggling, an unbounded decompression
+  # chain, CRLF injection via `upgrade`, and Set-Cookie header injection.
+  undici: 6.28.0
+  # Code injection via `_.template` import key names, plus two prototype-pollution advisories.
+  lodash-es: 4.18.1
+  # A crafted ZIP triggers a 4 GB allocation.
+  adm-zip: 0.6.0
