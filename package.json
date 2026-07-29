@@ -57,6 +57,7 @@
     "verify:osaka": "tsx scripts/verify/osaka.ts",
     "verify:phase1": "tsx scripts/phase1/gate.ts",
     "verify:phase2": "tsx scripts/phase2/gate.ts",
+    "verify:phase3": "tsx scripts/phase3/gate.ts",
     "verify:privacy-scan": "tsx scripts/verify/privacy-scan.ts",
     "verify:secrets": "tsx scripts/verify/secrets.ts",
     "verify:security": "pnpm verify:secrets && pnpm verify:licence && pnpm verify:slither && pnpm audit:deps && pnpm lint:imports && pnpm verify:bundles",
