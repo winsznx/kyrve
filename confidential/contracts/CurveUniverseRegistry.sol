@@ -33,7 +33,7 @@ import {
  * collapses to a single encrypted comparison — a PUBLIC leaf rate index against the provider's
  * ENCRYPTED minimum — instead of an encrypted-to-encrypted comparison plus an indicator conversion
  * plus a multiply. That is the difference between 76,402 gas per cell and 146,865, and between a
- * 16 x 128 universe costing ~226M gas and one costing ~380M (docs/day0/OPERATION-BUDGET.md §2).
+ * 16 x 128 universe costing ~243M gas and one costing ~390M (docs/day0/OPERATION-BUDGET.md §2).
  *
  * Nothing private is disclosed by it. The grid says which rates MAY be quoted. It says nothing
  * about which provider will lend, at what rate, in what size, or whether any of them will at all.
@@ -428,7 +428,7 @@ contract CurveUniverseRegistry {
      *
      *      512 = 4 maturity buckets x 128, and the tail occupies exactly 7 bits, so the gap
      *      reserved for the encrypted maturity term cannot be reached by any tail value. The
-     *      maximum rank is 15*512 + 3*128 + 127 = 8,191, comfortably inside `euint16`, which is
+     *      maximum rank is 15*512 + 3*128 + 119 = 8,183, comfortably inside `euint16`, which is
      *      what lets the whole reduction run at `euint16` width — 13% cheaper per select than
      *      `euint256` (OPERATION-BUDGET §6).
      */

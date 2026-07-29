@@ -153,12 +153,25 @@ export function graphRoot(binding: Hex, operations: readonly OperationDescriptor
 }
 
 /**
- * The handle this request's published aggregate MUST be, computed before any proof arrives.
+ * A commitment to a stage output's POSITION in the graph. NOT a Nox handle.
  *
- * `QuoteActivator` compares the proven handle against this. Without this check, any replayed
- * decryption proof for any handle would satisfy "a valid proof exists".
+ * ⚠ THIS WAS WRITTEN AS "the handle this request's published aggregate MUST be" AND IT IS NOT ONE.
+ *
+ * NoxCompute derives a handle as
+ *
+ *     keccak256(abi.encode(operator, operands, noxCompute, uniqueSeed, outputIndex))
+ *
+ * shifted and tagged with a version, chain id, TEE type and attribute byte
+ * (`modules/Compute.sol::_generateHandle`). The fold below shares none of those inputs, so it can
+ * never equal a real handle — any check comparing a live decryption proof's handle against it would
+ * fail for every honest quote, and the obvious "fix" would be to weaken the check until it passed.
+ * Phase 1 could not catch this because it had no live gateway to compare against.
+ *
+ * **Use {deriveHandle} and {deriveIsolatedHandle} from `handle-derivation.ts` for handle
+ * prediction.** This function is retained under an honest name because the ordered position of a
+ * stage output is still worth committing to inside {graphRoot}. Recorded as delta R-4.
  */
-export function expectedAggregateHandle(root: Hex, stage: EpochStage, outputIndex: number): Handle {
+export function stageOutputCommitment(root: Hex, stage: EpochStage, outputIndex: number): Handle {
   assertIndex(outputIndex, "outputIndex");
   return keccak256(
     encodeAbiParameters(

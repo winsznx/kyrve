@@ -36,8 +36,10 @@ uint16 constant CURVE_MAX_PUBLIC_PRIORITY = 7;
 uint16 constant CURVE_MATURITY_RANK_STRIDE = 128;
 // 4 maturity buckets x the stride. One step above the whole maturity field.
 uint16 constant CURVE_RATE_RANK_STRIDE = 512;
-// 15*512 + 3*128 + 127 = 8,191, so 8,192 sits above every reachable rank and is the score a leaf
-// with no fill is pushed to. It must never be reachable, or an empty leaf could win.
+// The largest reachable rank is 15*512 + 3*128 + 119 = 8,183, where 119 = (7<<4)|7 is the widest
+// tail the three priority bits and four market-index bits can produce. 8,192 therefore sits above
+// every reachable score and is what a leaf with no fill is pushed to. It must never be reachable,
+// or an empty leaf could win.
 uint16 constant CURVE_RANK_CEILING = 8_192;
 
 // ── Measured transaction budget (OPERATION-BUDGET section 4)

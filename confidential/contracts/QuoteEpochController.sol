@@ -19,8 +19,8 @@ import {EncryptedMandateBook} from "./EncryptedMandateBook.sol";
  * THE EPOCH IS THE ATOMIC UNIT, NOT THE TRANSACTION
  * ────────────────────────────────────────────────────────────────────────────────────────────
  *
- * A 16 x 128 universe costs roughly 226M gas — nine block-limits' worth — so one quote is
- * physically many transactions. Everything that makes that safe lives here:
+ * A 16 x 128 universe costs roughly 243M gas — eight block-limits' worth — so one quote is
+ * physically 18 transactions. Everything that makes that safe lives here:
  *
  *   deterministic ids     a chunk is identified by (epoch, stage, index) and nothing else. No
  *                         timestamp, no random value, no address. Cloudflare Workflow step names

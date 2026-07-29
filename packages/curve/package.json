@@ -1,0 +1,26 @@
+{
+  "name": "@kyrve/curve",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "The plaintext reference model for the confidential curve engine, and the universe builder both it and the contracts are checked against.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json"
+  },
+  "dependencies": {
+    "@kyrve/config": "workspace:*",
+    "viem": "2.55.10"
+  }
+}

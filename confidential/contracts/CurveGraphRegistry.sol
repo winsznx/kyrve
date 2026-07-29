@@ -47,7 +47,7 @@ import {QuoteEpochController} from "./QuoteEpochController.sol";
  *   terminator the stage cursor at seal
  *
  * A sequential fold rather than a Merkle tree, deliberately: the graph executes in a fixed order
- * across ~16 transactions, so **order is the structure**. An omitted, reordered or duplicated chunk
+ * across 18 transactions, so **order is the structure**. An omitted, reordered or duplicated chunk
  * changes the root; a Merkle root over an unordered set would not notice.
  *
  * ────────────────────────────────────────────────────────────────────────────────────────────

@@ -65,14 +65,12 @@ export {
   type VerifiedDecryption,
   verificationCalldata,
 } from "./decryption.js";
-
 export {
   assertHandleMatchesGraph,
   chunkId,
   EPOCH_STAGES,
   type EpochStage,
   encodeOperation,
-  expectedAggregateHandle,
   GraphError,
   graphRoot,
   HandleBindingError,
@@ -80,8 +78,25 @@ export {
   type OperationDescriptor,
   requestBinding,
   stageId,
+  stageOutputCommitment,
   universeBinding,
 } from "./graph.js";
+export {
+  AllPublicOperandsError,
+  ATTR_IS_UNIQUE_HANDLE,
+  chainIdOf,
+  type DeriveHandleInput,
+  deriveHandle,
+  deriveIsolatedHandle,
+  HandleDerivationError,
+  isPublicHandle,
+  NOX_OPERATOR,
+  NOX_TEE_TYPE,
+  type NoxOperator,
+  publicHandleFor,
+  teeTypeOf,
+  zeroHandle,
+} from "./handle-derivation.js";
 
 export {
   ABSENT_OPERATIONS,

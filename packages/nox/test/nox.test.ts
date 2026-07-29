@@ -22,13 +22,13 @@ import {
 import {
   assertHandleMatchesGraph,
   chunkId,
-  expectedAggregateHandle,
   graphRoot,
   HandleBindingError,
   inputCommitment,
   type OperationDescriptor,
   requestBinding,
   stageId,
+  stageOutputCommitment,
   universeBinding,
 } from "../src/graph.js";
 import {
@@ -215,11 +215,11 @@ describe("graph root commits to the whole sealed graph, in order", () => {
 
   it("derives a distinct expected handle per stage and output index", () => {
     const root = graphRoot(binding, ops);
-    expect(expectedAggregateHandle(root, "publishWinner", 0)).not.toBe(
-      expectedAggregateHandle(root, "publishWinner", 1),
+    expect(stageOutputCommitment(root, "publishWinner", 0)).not.toBe(
+      stageOutputCommitment(root, "publishWinner", 1),
     );
-    expect(expectedAggregateHandle(root, "publishWinner", 0)).not.toBe(
-      expectedAggregateHandle(root, "finalizeLeaf", 0),
+    expect(stageOutputCommitment(root, "publishWinner", 0)).not.toBe(
+      stageOutputCommitment(root, "finalizeLeaf", 0),
     );
   });
 

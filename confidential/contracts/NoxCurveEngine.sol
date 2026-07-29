@@ -38,7 +38,7 @@ import {ReservationLedger} from "./ReservationLedger.sol";
  *
  *   docs/phase3/HANDLE-LINEAGE.md    why every granted handle is isolated, and what breaks if not
  *   docs/phase3/SELECTION-POLICY.md  how a public ordering and one encrypted term pick a leaf
- *   docs/day0/OPERATION-BUDGET.md    why this is ~17 transactions and not one
+ *   docs/day0/OPERATION-BUDGET.md    why this is 18 transactions and not one
  *
  * ════════════════════════════════════════════════════════════════════════════════════════════
  * THREE THINGS THAT ARE NOT OPTIONAL
