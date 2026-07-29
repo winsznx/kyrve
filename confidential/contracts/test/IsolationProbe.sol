@@ -38,6 +38,10 @@ contract IsolationProbe is KyrveCurveBase {
 
     bytes32 public domainA;
     bytes32 public domainB;
+    /// @dev Exposed so the suite can reproduce the isolation off chain and compare it to the real
+    ///      handle NoxCompute returned. Without the condition the derivation cannot be checked at
+    ///      all, and the graph binding would rest on an unverified formula.
+    ebool public epochCondition;
 
     constructor(KyrveEmergencyController controller) KyrveCurveBase(controller) {}
 
@@ -60,7 +64,7 @@ contract IsolationProbe is KyrveCurveBase {
         naiveA = Nox.add(ea, eb);
         naiveB = Nox.add(ea, eb);
 
-        ebool epochCondition = _buildEpochCondition(epochId, ea);
+        epochCondition = _buildEpochCondition(epochId, ea);
         Nox.allowThis(epochCondition);
 
         domainA = isolationDomain(epochId, ROLE_ALLOCATION, 0);

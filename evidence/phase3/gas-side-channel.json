@@ -1,0 +1,121 @@
+{
+  "$comment": "The V-24 / T-1 measurement, repeated against NoxCurveEngine as Phase 1 P-5 and Phase 2 Q-9 both required. Method: interleaved sampling of two groups differing in exactly one encrypted comparison, asking whether the RANGES separate.",
+  "method": {
+    "groups": [
+      "fillable",
+      "no-fill"
+    ],
+    "differingBy": "whether the leaf's fill clears the borrower's encrypted minimum",
+    "interleaved": true,
+    "rounds": 6,
+    "identicalPublicSurface": true
+  },
+  "samples": [
+    {
+      "group": "fillable",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738614,
+      "accumulateGas": 619931,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738626,
+      "accumulateGas": 619943,
+      "logCount": 35,
+      "quoteReady": true
+    }
+  ],
+  "ranges": {
+    "fillable": {
+      "min": 738614,
+      "max": 738626
+    },
+    "noFill": {
+      "min": 738626,
+      "max": 738626
+    }
+  },
+  "verdict": {
+    "groupsSeparatedByGas": false,
+    "noiseFloorGas": 12,
+    "claim": "This experiment falsifies a leak claim for the branch measured. It does NOT establish gas indistinguishability, and Kyrve must not claim it. Local node, local stack, one contract, six samples per group. Testnet gas is UNVERIFIED (AS-1).",
+    "limits": [
+      "local Hardhat node, not a live network",
+      "local Nox stack, not the hosted iExec services",
+      "one contract and one confidential branch",
+      "6 samples per group",
+      "gas only — no timing, no memory, no network-level observation"
+    ]
+  }
+}
