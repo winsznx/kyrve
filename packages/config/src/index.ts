@@ -1,4 +1,19 @@
 export {
+  BRAND_ASSETS,
+  BRAND_COLOURS,
+  BRAND_DESCRIPTION,
+  BRAND_NAME,
+  BRAND_TAGLINE,
+  BRAND_WORDMARK,
+  type BrandColour,
+  HEADER_MARK_PENDING_OWNER_DECISION,
+  type ManifestIcon,
+  type SiteMetadata,
+  siteMetadata,
+  type WebAppManifest,
+  webAppManifest,
+} from "./brand.js";
+export {
   assertChunkWithinBudget,
   COMPOSITE_GAS,
   type EpochPlan,

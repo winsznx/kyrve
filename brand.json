@@ -1,0 +1,269 @@
+{
+  "$comment": "Machine-readable Kyrve brand lock. docs/brand/KYRVE-BRAND-LOCK.md is the prose form of this file; verify-assets.py enforces the hashes. Change nothing here without an owner decision recorded in the lock document.",
+  "brand": {
+    "name": "Kyrve",
+    "wordmark": "kyrve",
+    "wordmarkCase": "lowercase in product branding; sentence-case 'Kyrve' in prose, legal text and documentation",
+    "thesis": "Many confidential curves. One selected executable quote.",
+    "positioning": "Institutional fixed-income terminal. Private price discovery, public settlement.",
+    "symbol": "Layered private-curve form converging into one selected cobalt leaf \u2014 the quote point."
+  },
+  "colour": {
+    "canvas": {
+      "token": "onyx",
+      "hex": "#171721",
+      "role": "page canvas"
+    },
+    "card": {
+      "token": "graphite",
+      "hex": "#1e1e2a",
+      "role": "card surface, one value step above canvas, no shadow"
+    },
+    "control": {
+      "token": "obsidian",
+      "hex": "#272735",
+      "role": "secondary and tertiary controls"
+    },
+    "textMuted": {
+      "token": "ash",
+      "hex": "#c3c3cc",
+      "role": "secondary text, labels, units"
+    },
+    "text": {
+      "token": "ivory",
+      "hex": "#ededf3",
+      "role": "body and headings; never #ffffff"
+    },
+    "accent": {
+      "token": "cobalt",
+      "hex": "#5266eb",
+      "role": "the single primary action per page; never decoration"
+    },
+    "contrastOnCanvas": {
+      "cobalt": 3.78,
+      "ivory": 15.25,
+      "ash": 10.16,
+      "graphite": 1.08,
+      "obsidian": 1.21,
+      "$comment": "WCAG 2.x contrast ratio against #171721, computed by scripts/brand/verify-assets.py."
+    }
+  },
+  "logo": {
+    "clearSpace": {
+      "rule": "no element within 12% of the mark's longest edge on any side",
+      "ratio": 0.12,
+      "$comment": "The shipped symbol master already carries this padding; SYMBOL_PADDING in scripts/brand/build-assets.py is the same constant."
+    },
+    "minimumSize": {
+      "symbolPx": 24,
+      "symbolPrintMm": 8,
+      "fullLockupPx": 96,
+      "$comment": "Below 24px the curve layers collapse into a single stroke and the cobalt leaf stops resolving. 96px is where the descender in 'kyrve' survives hinting."
+    },
+    "permittedLockups": [
+      "symbol alone",
+      "symbol with the kyrve wordmark set horizontally to its right",
+      "wordmark alone, where the symbol already appears elsewhere on the same surface"
+    ],
+    "backgrounds": {
+      "approvedMasterIsAuthoredFor": "light",
+      "$comment": "SEE THE OPEN DECISION IN docs/brand/KYRVE-BRAND-LOCK.md. Measured on the approved master: 100% of opaque mark pixels clear 4.5:1 against white; 0.0% clear 4.5:1 against Onyx #171721, median 1.20:1. The dark presentation exists only baked into the approved OG and CTA rasters, on a near-black #01091a field rather than on Onyx.",
+      "light": "approved, unmodified",
+      "darkNearBlack": "approved only as it appears inside the OG and CTA rasters",
+      "darkOnyxCanvas": "NOT approved \u2014 the master is not legible there and must not be recoloured to make it so"
+    },
+    "monochrome": {
+      "rule": "one-colour reproduction uses the mark's silhouette in a single ink, never a flattened greyscale of the gradient",
+      "onLight": "#132748",
+      "onDark": "#ededf3"
+    },
+    "forbidden": [
+      "recolouring the mark, including to make it legible on Onyx",
+      "regenerating, redrawing or auto-tracing the mark",
+      "rotating, skewing, mirroring or non-uniformly scaling",
+      "applying shadow, glow, outline, stroke or bevel",
+      "placing the mark on a photographic or patterned background",
+      "reconstructing the wordmark in a substitute typeface",
+      "cropping the symbol, or altering the trim padding",
+      "using the symbol as a repeating pattern or watermark",
+      "upscaling any export beyond its approved source resolution"
+    ]
+  },
+  "favicon": {
+    "simplification": {
+      "rule": "the favicon is the symbol alone, trimmed and centred on a square canvas \u2014 never the wordmark, never a letterform",
+      "atOrBelow32px": "the layered curves read as mass, not as separate strokes; the cobalt leaf is the only element that must stay individually identifiable",
+      "$comment": "No separate simplified drawing is authored. Legibility at 16px comes from premultiplied downscaling of the approved master, verified against a composite-then-downscale reference in scripts/brand/verify-assets.py."
+    },
+    "renderSizes": [16, 24, 32, 48, 64, 128, 192, 512],
+    "icoFrames": [16, 24, 32, 48, 64, 128, 256]
+  },
+  "vector": {
+    "svgAvailable": false,
+    "$comment": "There is no SVG master and none is claimed. The approved artwork carries soft radial glow and gradient fills whose geometry cannot be faithfully reconstructed as editable vector paths. Auto-tracing the raster edge and shipping the result as a production SVG would misstate what the file is. If a true vector master is ever required it must come from the original design source, not from these rasters."
+  },
+  "assets": {
+    "sources": {
+      "cta": {
+        "file": "kyrve-cta-source.png",
+        "width": 1672,
+        "height": 941,
+        "mode": "RGB",
+        "bytes": 1246190,
+        "sha256": "da8800e056eac9f8058b79e07bd4f0a07f0135903a6db4ed9678b49904491525"
+      },
+      "logo": {
+        "file": "kyrve-logo-source.png",
+        "width": 1024,
+        "height": 1024,
+        "mode": "RGBA",
+        "bytes": 1407063,
+        "sha256": "ae94d3fcfa4017af9480345e4bfb91c50a3ce68172ee64cc27b07aa8a2e3158c"
+      },
+      "og": {
+        "file": "kyrve-og-source.png",
+        "width": 1731,
+        "height": 909,
+        "mode": "RGB",
+        "bytes": 1364956,
+        "sha256": "2f3fefd7bd39ede72ae6e8aab7ea6379a3b3850917c5bf7902b5e8f5120278a0"
+      },
+      "symbol": {
+        "file": "kyrve-favicon-source.png",
+        "width": 1024,
+        "height": 1024,
+        "mode": "RGBA",
+        "bytes": 1379423,
+        "sha256": "cc93166a495c58ce131316d8a4f0f8b5b16eb1088fc069982b54e1d12467f345"
+      }
+    },
+    "derivatives": {
+      "public/brand/cta/kyrve-cta.png": {
+        "bytes": 1138298,
+        "sha256": "b749568745c55901d42bf59e783ced989f011b3102a2f3d0062bf7050ed098e4",
+        "width": 1672,
+        "height": 941,
+        "mode": "RGB"
+      },
+      "public/brand/cta/kyrve-cta.webp": {
+        "bytes": 64456,
+        "sha256": "edd52adf65a243827273634bd3f6bee642c0c11efa8d07bad977175741a9a9c5",
+        "width": 1672,
+        "height": 941,
+        "mode": "RGB"
+      },
+      "public/brand/favicon/apple-touch-icon.png": {
+        "bytes": 19041,
+        "sha256": "1f7aadf4703aeea8927020a60fbf715607b418e8cc10670f5da0d0b26ed86a25",
+        "width": 180,
+        "height": 180,
+        "mode": "RGBA"
+      },
+      "public/brand/favicon/favicon-16.png": {
+        "bytes": 638,
+        "sha256": "e032e91dfec94a5dba0f96b4783386133ab2d852268bcee5352ad90a1355aac6",
+        "width": 16,
+        "height": 16,
+        "mode": "RGBA"
+      },
+      "public/brand/favicon/favicon-180.png": {
+        "bytes": 19041,
+        "sha256": "1f7aadf4703aeea8927020a60fbf715607b418e8cc10670f5da0d0b26ed86a25",
+        "width": 180,
+        "height": 180,
+        "mode": "RGBA"
+      },
+      "public/brand/favicon/favicon-192.png": {
+        "bytes": 20834,
+        "sha256": "202d32cbd3b5f80c0a8cdd5cf06e651d953875e97f6387b552fa367f2be8ab9b",
+        "width": 192,
+        "height": 192,
+        "mode": "RGBA"
+      },
+      "public/brand/favicon/favicon-32.png": {
+        "bytes": 1627,
+        "sha256": "265918a3333d15a3fdfa38e3e0d494608c170bc294506ad32248cadcf3b36fa9",
+        "width": 32,
+        "height": 32,
+        "mode": "RGBA"
+      },
+      "public/brand/favicon/favicon-48.png": {
+        "bytes": 2736,
+        "sha256": "7b6ac9413805f45c3f935cea569ae92e710c82b90171ce00d1d033fed6999ca5",
+        "width": 48,
+        "height": 48,
+        "mode": "RGBA"
+      },
+      "public/brand/favicon/favicon-512.png": {
+        "bytes": 123920,
+        "sha256": "8e7fa29e7caa6e3fe833501ca994ed76cbbc4974fc2e9ce3024a766c037ab919",
+        "width": 512,
+        "height": 512,
+        "mode": "RGBA"
+      },
+      "public/brand/favicon/favicon.ico": {
+        "bytes": 55348,
+        "sha256": "ea9cb88b7b8a9f5af2a1cbe6b078719c96c3c7e3a9e301ce0f677deb701c3ceb",
+        "width": 256,
+        "height": 256,
+        "mode": "RGBA"
+      },
+      "public/brand/logo/kyrve-logo.png": {
+        "bytes": 1264560,
+        "sha256": "5ecd797da4ae96807499e5fbacaa8e53f6aaae4dcb9138215a6c7640d66648dd",
+        "width": 1024,
+        "height": 1024,
+        "mode": "RGBA"
+      },
+      "public/brand/logo/kyrve-logo.webp": {
+        "bytes": 97898,
+        "sha256": "7acc1f34c4d63f49bfcbd96b4891216434fae7b63672a80fbd0a476d199dc4df",
+        "width": 1024,
+        "height": 1024,
+        "mode": "RGBA"
+      },
+      "public/brand/logo/kyrve-symbol.png": {
+        "bytes": 211795,
+        "sha256": "e7bdd79731aee45f17877a9ad037cad9dda082bd3e4378a1f12ccfd40fa537d3",
+        "width": 541,
+        "height": 405,
+        "mode": "RGBA"
+      },
+      "public/brand/logo/kyrve-symbol.webp": {
+        "bytes": 82168,
+        "sha256": "35bfb4975e4fc5962bc440bd4a61dc88aaf2916eff8bb0738398c5452c96834e",
+        "width": 541,
+        "height": 405,
+        "mode": "RGBA"
+      },
+      "public/brand/social/kyrve-og-1200x630.png": {
+        "bytes": 690138,
+        "sha256": "c44c90d419e0371d4e76023b3c72d68cee3c460e0faac11d52ea6439da15e752",
+        "width": 1200,
+        "height": 630,
+        "mode": "RGB"
+      },
+      "public/brand/social/kyrve-og-1200x630.webp": {
+        "bytes": 41218,
+        "sha256": "727d914726223e9beeb9e690c996f44765cd2d412958e4c08f70925b957f6bd3",
+        "width": 1200,
+        "height": 630,
+        "mode": "RGB"
+      },
+      "public/brand/social/kyrve-og.png": {
+        "bytes": 1259724,
+        "sha256": "2bd8381c18c7f0bf95bf067d83fc351161e454d002f93a15fb94e8145e30c85e",
+        "width": 1731,
+        "height": 909,
+        "mode": "RGB"
+      },
+      "public/brand/social/kyrve-og.webp": {
+        "bytes": 64898,
+        "sha256": "1b56431e3d3c295fa1069201cf5dcfbef345641518ef6e630d5e18004c710529",
+        "width": 1731,
+        "height": 909,
+        "mode": "RGB"
+      }
+    }
+  }
+}

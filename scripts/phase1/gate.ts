@@ -119,6 +119,20 @@ const GATES: readonly Gate[] = [
   },
   {
     section: "LOCAL SUBSTRATE",
+    name: "brand assets and brand lock",
+    execute: () => {
+      const out = run("python3", ["scripts/brand/verify-assets.py"]).stdout;
+      const summary = out.split("\n").find((l) => l.startsWith("brand:verify")) ?? "";
+      const mark =
+        out
+          .split("\n")
+          .find((l) => l.includes("approved mark:"))
+          ?.trim() ?? "";
+      return [summary.replace("brand:verify PASS — ", ""), mark].filter(Boolean).join(" | ");
+    },
+  },
+  {
+    section: "LOCAL SUBSTRATE",
     name: "local Midnight deployment",
     skipIf: () =>
       existsSync(repoPath("deployments/local/manifest.json"))

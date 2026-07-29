@@ -16,7 +16,7 @@ These three files are the source of truth. **Never edit them.** Record every req
 | File | Authority |
 |---|---|
 | `hack.md` | Hackathon and submission requirements |
-| `design.md` | Visual and interaction design |
+| `design.md` | Visual and interaction design — rewritten for Kyrve under explicit owner instruction; see `docs/phase1/PRD-DELTA.md` P-6. Immutable again from that point. |
 | `kyrve-production-prd.md` | Product and architecture |
 
 Where the PRD and verified reality disagree, **reality wins and the delta gets recorded** — do not

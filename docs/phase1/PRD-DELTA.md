@@ -1,8 +1,11 @@
 # Phase 1 PRD delta
 
-Corrections found during Phase 1. The three immutable documents — `hack.md`, `design.md`,
-`kyrve-production-prd.md` — are **never edited**; `kyrve-production-prd-v1.1.md` is the Day 0
-normative amendment. This file records what Phase 1 found on top of both.
+Corrections found during Phase 1. `hack.md` and `kyrve-production-prd.md` are **never edited**;
+`kyrve-production-prd-v1.1.md` is the Day 0 normative amendment. This file records what Phase 1
+found on top of both.
+
+`design.md` was also immutable until **P-6**, where the owner explicitly instructed that it be
+rewritten for Kyrve. That override is recorded below rather than applied silently.
 
 Grading matches `docs/day0/PRD-DELTA.md`:
 
@@ -160,6 +163,53 @@ constant at 548 bytes) that appears identically in both groups.
 **Unchanged:** Kyrve still must not claim gas indistinguishability. This proves the Day 0 evidence
 never showed a leak; it does not prove no leak exists. Sample size is small, the contract is a toy,
 and the measurement is local-only. Phase 2 must repeat it against the real curve engine.
+
+---
+
+## P-6 · `design.md` — rewritten for Kyrve under explicit owner instruction · CORRECTION
+
+*Evidence: `docs/brand/KYRVE-BRAND-LOCK.md`, `docs/brand/VALIDATION.md`, `pnpm brand:verify`.*
+
+`design.md` was inherited as a style reference for **Mercury**, a consumer business-banking brand,
+carrying Mercury's name, product statements, navigation, CTA labels ("Open account"), typography
+rationale, "alpine banking at blue hour" positioning, and a direction for full-bleed photographic
+heroes of misty mountains. Kyrve is a confidential institutional fixed-income terminal. Roughly a
+third of the document described a different product.
+
+**The immutability rule was overridden by the owner**, in writing, with the instruction to correct
+`design.md` so the brand is Kyrve throughout while preserving the dark visual system. That is the
+only reason this file was edited, and the rule stands for `hack.md` and `kyrve-production-prd.md`.
+
+**What was preserved exactly:** every colour token and hex value, the full type scale, the weight
+axis (360/420/480/530), both typefaces and their fallbacks, the spacing scale, every border radius,
+the 1200px/72px/32px/12px layout constants, the surface levels, the no-shadow elevation rule, and
+both CSS custom-property and Tailwind v4 blocks. The visual system is unchanged.
+
+**What was rewritten:** brand name and tagline; the overview; all product statements; component
+names and roles; CTA labels; the navigation example; the imagery direction; the "similar brands"
+list; and the addendum.
+
+**What was added, because the inherited document had no concept of it:** the four confidential
+states and their treatment; the Redacted Curve, Quote Card, Confidential Value, Reveal Warning,
+Status Line and Error Surface components; tabular numerals; and the honesty rules from
+`.claude/rules/frontend.md` that were previously only in the rules directory.
+
+**Also recorded here — an open decision, not a correction.** The approved brand mark is authored
+for light backgrounds. Measured across all 45,374 opaque pixels of the symbol master, 100% clear
+4.5:1 against white and **0.0%** clear it against the Onyx canvas, at a median of **1.30:1**. The
+dark presentation exists only baked into the approved OG and CTA rasters, on a near-black `#01091a`
+field rather than on Onyx. So there is no approved asset for the case the application needs most —
+the symbol in the header, on the canvas.
+
+This is **not** resolved by recolouring the mark, which the brand lock forbids and which
+`scripts/brand/verify-assets.py` now fails on. Three options are set out in
+`docs/brand/KYRVE-BRAND-LOCK.md`; the decision is the owner's, and
+`HEADER_MARK_PENDING_OWNER_DECISION` in `@kyrve/config` carries it into code so a later phase
+cannot quietly build past it.
+
+**Required change:** none to the protocol. `design.md` is now the Kyrve style reference and remains
+the visual source of truth. Frontend implementation is still a later phase — the brand assets and
+their metadata are all that Phase 1 ships.
 
 ---
 
