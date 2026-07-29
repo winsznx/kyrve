@@ -19,6 +19,12 @@ importers:
       '@kyrve/config':
         specifier: workspace:*
         version: link:packages/config
+      '@kyrve/curve':
+        specifier: workspace:*
+        version: link:packages/curve
+      '@kyrve/nox':
+        specifier: workspace:*
+        version: link:packages/nox
       '@types/node':
         specifier: 26.1.2
         version: 26.1.2

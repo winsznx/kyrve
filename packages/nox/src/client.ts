@@ -26,9 +26,15 @@
  */
 
 import { createViemHandleClient } from "@iexec-nox/handle";
-import type { WalletClient } from "viem";
+import { publicActions, type WalletClient } from "viem";
 
-import { type HandleStatus, type WaitOptions, waitForHandle } from "./runtime.js";
+import { readAcl } from "./acl-chain.js";
+import {
+  DEFAULT_POLL_POLICY,
+  type HandleStatus,
+  type WaitOptions,
+  waitForHandle,
+} from "./runtime.js";
 import {
   type Address,
   assertFitsType,
@@ -219,21 +225,54 @@ export async function createHandleClient(
       );
     },
 
+    /**
+     * Decrypts, tolerating the gateway's authorisation view lagging the chain.
+     *
+     * MEASURED ON SEPOLIA, not anticipated. `NoxCompute.isAllowed(handle, owner)` returned true
+     * while the hosted gateway answered `403 access_denied: not a viewer` for the same handle and
+     * the same account. The gateway authorises from its own indexed view of ACL state, which is
+     * eventually consistent with the chain, and neither the SDK nor the documentation says so.
+     *
+     * The rule below, and why it is safe: **the chain is authoritative.** If the chain agrees the
+     * account holds no grant, the refusal is final and correct — that is the confidentiality model
+     * working, and every unauthorised-read test depends on it failing fast rather than hanging. If
+     * the chain says the account IS allowed, a refusal can only be lag, so it is retried with
+     * backoff until the caller's own timeout. Recorded as delta R-9.
+     */
     async decrypt(handle, options) {
       await waitForHandle(network, handle, options);
-      try {
-        const { value } = await sdk.decrypt(handle);
-        if (typeof value === "bigint") return value;
-        if (typeof value === "boolean") return value ? 1n : 0n;
-        throw new NoxClientError(
-          `the gateway returned a ${typeof value} for handle ${handle}; Kyrve only stores numeric ` +
-            "and boolean encrypted values.",
-        );
-      } catch (error) {
-        if (isAuthorisationRefusal(error)) {
-          throw new NotAuthorisedToDecryptError(handle, account as Address);
+
+      const policy = { ...DEFAULT_POLL_POLICY, ...options?.policy };
+      const reader = walletClient.extend(publicActions);
+      const deadline = Date.now() + policy.timeoutMs;
+      let delay = policy.initialDelayMs;
+
+      for (;;) {
+        try {
+          const { value } = await sdk.decrypt(handle);
+          if (typeof value === "bigint") return value;
+          if (typeof value === "boolean") return value ? 1n : 0n;
+          throw new NoxClientError(
+            `the gateway returned a ${typeof value} for handle ${handle}; Kyrve only stores ` +
+              "numeric and boolean encrypted values.",
+          );
+        } catch (error) {
+          if (!isAuthorisationRefusal(error)) throw error;
+
+          const acl = await readAcl(reader as never, network, handle, account as Address);
+          if (!acl.canDecrypt) throw new NotAuthorisedToDecryptError(handle, account as Address);
+
+          if (Date.now() >= deadline) {
+            throw new NoxClientError(
+              `the chain says ${account} may decrypt ${handle}, but the gateway still refuses ` +
+                `after ${policy.timeoutMs} ms. Its authorisation view is indexed and eventually ` +
+                "consistent with the chain, so this is lag rather than a permission problem — the " +
+                "timeout is a Kyrve policy choice, not a limit of the protocol.",
+            );
+          }
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          delay = Math.min(delay * policy.multiplier, policy.maxDelayMs);
         }
-        throw error;
       }
     },
   };

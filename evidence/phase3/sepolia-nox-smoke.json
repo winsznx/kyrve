@@ -1,0 +1,26 @@
+{
+  "$comment": "The first encrypted input this repository has ever submitted to the HOSTED iExec Nox stack. Discharges AS-1 for the round trip measured here and for nothing wider. The decrypted VALUE is deliberately absent: no Kyrve artifact ever records one.",
+  "block": "11376417",
+  "call": "ConfidentialRequestBook.submitRequest",
+  "chainId": 11155111,
+  "contract": "0x96aa8b16ec3e91c5a3d8ce526f196a4934cb3b39",
+  "ethSpent": "0.001498569711940526",
+  "gasUsed": "2302299",
+  "gateway": "https://gateway-testnets.noxprotocol.dev",
+  "handles": 19,
+  "latencyMs": {
+    "encryptAll": 15453,
+    "encryptPerHandle": 813,
+    "runnerAndDecrypt": 2696,
+    "submitAndConfirm": 17919
+  },
+  "measuredAt": "2026-07-29T15:39:42.221Z",
+  "noxCompute": "0x24Ef36Ec5b626D7DCD09a98F3083c2758F0F77bF",
+  "ownerCanDecrypt": true,
+  "proofBytes": 137,
+  "resultHandleIsConfidential": true,
+  "transaction": "0x35352a0f399494fbae5a6fc754cb18ff9814920f969ddff35983ade65a119f2a",
+  "valueRecorded": false,
+  "verdict": "PASS — the hosted gateway issued a proof, NoxCompute accepted it on chain, the hosted runner made the sealed handles computable, and the owner decrypted one back. This discharges AS-1 for a nineteen-handle round trip. It does NOT establish throughput for a 2,048-cell epoch, and it does not make the hosted services a Kyrve availability guarantee."
+}
+

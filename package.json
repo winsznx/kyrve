@@ -33,6 +33,7 @@
     "test:midnight": "forge test --match-path 'contracts/integration/test/*' -vv",
     "test:nox": "pnpm --dir spikes/nox exec hardhat test",
     "test:sepolia": "tsx scripts/test/sepolia-integration.ts",
+    "test:sepolia-nox": "tsx scripts/test/sepolia-nox-smoke.ts",
     "test:unit": "vitest run",
     "test:workers": "pnpm --filter './workers/*' test",
     "typecheck": "tsc --build --force",
@@ -66,6 +67,8 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
     "@kyrve/config": "workspace:*",
+    "@kyrve/curve": "workspace:*",
+    "@kyrve/nox": "workspace:*",
     "@types/node": "26.1.2",
     "tsx": "4.23.1",
     "typescript": "5.9.3",
