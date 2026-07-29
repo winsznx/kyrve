@@ -1,0 +1,80 @@
+# Read-only verification against the live Ethereum Sepolia deployment.
+#
+# Broadcasts nothing, signs nothing and needs no deployer key. The only credential is a read RPC
+# endpoint, supplied as a repository secret and never echoed: every script reduces an RPC URL to
+# scheme and host before it can reach a log, because provider API keys live in the path.
+name: deployment-verification
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "deployments/**"
+      - "contracts/**"
+      - ".github/workflows/deployment-verification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-sepolia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Skips cleanly rather than failing when the read credential is absent, so a fork PR does not
+    # report a false failure.
+    if: github.event_name != 'pull_request'
+    # Job-level, so the per-step `if` guards below can actually see it. Defined at step level the
+    # guard reads an empty value and the step silently always skips — a check that never runs is
+    # worse than no check.
+    env:
+      ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+      ALCHEMY_API_URL: ${{ vars.ALCHEMY_API_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Markets and rate grids (no network)
+        run: pnpm exec tsx scripts/verify/markets.ts sepolia
+
+      - name: Chain freshness, bytecode, Osaka, Nox implementation
+        if: ${{ env.ALCHEMY_API_KEY != '' }}
+        run: pnpm verify:sepolia
+
+      - name: Deployed bytecode matches the current build
+        if: ${{ env.ALCHEMY_API_KEY != '' }}
+        run: pnpm verify:deployed-bytecode sepolia
+
+      - name: Report when the read credential is absent
+        if: ${{ env.ALCHEMY_API_KEY == '' }}
+        run: |
+          echo "ALCHEMY_API_KEY is not configured; live-chain verification was SKIPPED."
+          echo "Offline checks above still ran. Set the repository secret to enable it."
+
+      - name: Etherscan verification coverage
+        run: |
+          node -e "
+            const r = require('./deployments/sepolia/etherscan-verification.json');
+            if (r.verifiedCount !== r.totalCount) {
+              console.error(\`only \${r.verifiedCount}/\${r.totalCount} contracts verified\`);
+              process.exit(1);
+            }
+            console.log(\`\${r.verifiedCount}/\${r.totalCount} contracts verified on Etherscan V2\`);
+          "

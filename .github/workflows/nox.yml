@@ -1,0 +1,67 @@
+# Nox runtime compatibility.
+#
+# Separate from core CI because it starts the official local Nox services in Docker, which pulls
+# multi-gigabyte images and takes minutes. It is the drift detector for a dependency that moves
+# underneath us: published contracts lag repository HEAD, the deployed testnet implementations lag
+# both, and the handle SDK is a beta with an unpublished breaking redesign already on main.
+#
+# Nothing on the Nox path is mocked.
+name: nox
+
+on:
+  schedule:
+    # Daily. Upstream drift is the failure mode, and it happens on their schedule, not ours.
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "spikes/nox/**"
+      - "packages/nox/**"
+      - "source-lock.json"
+      - ".github/workflows/nox.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  nox-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Record Docker and service health
+        run: |
+          docker --version
+          docker info --format 'server version: {{.ServerVersion}}'
+
+      - name: Install Nox spike dependencies
+        working-directory: spikes/nox
+        run: pnpm install --frozen-lockfile
+
+      - name: Nox runtime suite (real local stack)
+        working-directory: spikes/nox
+        run: pnpm exec hardhat test
+
+      - name: Pin check against source-lock
+        run: pnpm exec tsx scripts/verify/nox-runtime.ts
+
+      - name: Upload Docker logs on failure
+        if: failure()
+        run: docker ps -a && docker logs $(docker ps -aq | head -1) 2>&1 | tail -200 || true
+
+      - name: Stop services
+        if: always()
+        run: docker ps -q | xargs -r docker stop

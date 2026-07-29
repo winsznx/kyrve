@@ -1,0 +1,57 @@
+# Worker CI. Builds and tests under workerd and inspects the bundles.
+#
+# `wrangler deploy --dry-run` publishes nothing and requires no Cloudflare account, so this job
+# needs no secrets. Cloudflare deployment is deferred until the complete product works end to end
+# and is deliberately NOT automated here.
+name: workers
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: workers-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Workers import workspace packages through their built dist output.
+      - name: Build workspace packages
+        run: pnpm exec tsc --build
+
+      - name: Worker tests under workerd
+        run: pnpm test:workers
+
+      - name: Wrangler dry-run and bundle inspection
+        run: pnpm verify:bundles
+
+      - name: D1 migrations are valid SQL
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq sqlite3
+          for f in migrations/*.sql; do
+            echo "checking $f"
+            sqlite3 :memory: < "$f"
+          done

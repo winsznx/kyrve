@@ -1,0 +1,118 @@
+# Core CI: everything that needs no credentials and no network beyond the package registry.
+#
+# Pinned by digest-free but exact version wherever a version exists. `--frozen-lockfile` is the
+# point of the first step: if the lockfile does not satisfy package.json, that is a failure, not
+# something to resolve on the fly.
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # vendor/midnight is a pinned submodule; without it nothing compiles.
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Source and toolchain locks
+        run: |
+          pnpm verify:toolchain
+          pnpm verify:vendor
+
+      - name: Lint and format
+        run: |
+          pnpm lint:ts
+          pnpm lint:sol
+          pnpm lint:imports
+
+      - name: TypeScript build
+        run: pnpm exec tsc --build --force
+
+      - name: Solidity build
+        run: forge build
+
+      - name: Midnight bytecode reproducibility
+        run: pnpm verify:midnight-bytecode
+
+      - name: Unit and property tests
+        run: pnpm test:unit
+
+      - name: Foundry suites (exact fill, quote math, registry)
+        run: forge test -vv
+
+      - name: Generated artifacts are byte-identical after regeneration
+        run: pnpm verify:generated
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Slither
+        run: pip install slither-analyzer==0.11.3
+
+      # No .env exists in CI, so the secret scan runs its pattern pass only. That is stated rather
+      # than silently reduced: the known-value pass needs values it must never have here.
+      - name: Secret scan (pattern pass; no .env in CI by design)
+        run: pnpm verify:secrets
+
+      - name: Licence scan
+        run: pnpm verify:licence
+
+      - name: Slither (scoped to deployed contracts)
+        run: pnpm verify:slither
+
+      - name: Dependency audit
+        run: pnpm audit --audit-level moderate
