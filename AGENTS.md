@@ -63,24 +63,38 @@ it **cannot** enforce fill size; `onBuy` is the only place actual fill size reac
 
 Detailed rules live in `.claude/rules/`, path-scoped. Read `CLAUDE.md` first.
 
-## Phase 2 — the confidential layer
+## Phase 3 — the confidential curve engine
 
 `confidential/` is a separate Hardhat project at solc **0.8.36**, because
 `nox-protocol-contracts@0.2.4` requires `^0.8.35` while the Midnight substrate is pinned at 0.8.34
 for bytecode comparability. Anything importing `sdk/Nox.sol` belongs there, not in `contracts/`.
 
-Its tests run against the **real** iExec Nox stack in Docker — real handles, real gateway proofs. A
-mocked NoxCompute would be a mocked confidentiality path and is forbidden.
+Its tests run against the **real** iExec Nox stack in Docker — real handles, real gateway proofs.
+A mocked NoxCompute would be a mocked confidentiality path and is forbidden.
 
-Three constraints that are easy to violate and hard to notice:
+Six constraints that are easy to violate and hard to notice:
 
 - **Nox handles are deterministic in their operands.** Two logically distinct encrypted quantities
-  computed identically from identical inputs are ONE handle with ONE permanent ACL entry. Prove any
-  new aggregate is non-colliding; value inequality is not enough. `docs/phase2/PRD-DELTA.md` Q-5.
-- **Input proofs carry no nonce and no consumption marker.** Replay protection is the application's
-  job. Use `KyrveConfidentialBase`'s one-shot handle consumption and per-owner nonce on every entry
-  point. Q-2.
+  computed identically from identical inputs are ONE handle with ONE permanent ACL entry. Everything
+  granted to a user or the public goes through `KyrveCurveBase._isolate` first; intermediates collide
+  freely and harmlessly. `docs/phase3/HANDLE-LINEAGE.md` is the proof, and delta R-6 explains why the
+  obvious test for this passes with the defence removed.
+- **The local node is more permissive than any real chain, in two ways.** It allows unlimited
+  contract size — and cannot be made not to, because NoxCompute itself is over EIP-170 — so
+  `verify:contract-size` carries that check. Its clock outruns wall clock until every gateway proof
+  looks expired, which `allowBlocksWithSameTimestamp` prevents. Deltas R-10 and R-12.
+- **A valid decryption proof says nothing about which quote a value belongs to.** Bind through
+  `CurveGraphRegistry`, and predict handles with `@kyrve/nox`'s `deriveHandle` — which is verified
+  against handles a live NoxCompute returned, unlike the Phase 1 formula it replaced. Delta R-4.
+- **The gateway returns a plaintext at its NATURAL width.** A published `euint16` is two bytes and
+  `abi.decode` reverts with no reason. Use `DecryptedValue.toUint`. Delta R-5.
+- **Input proofs carry no nonce and no consumption marker.** Use `KyrveConfidentialBase`'s one-shot
+  handle consumption and per-owner nonce on every entry point. Q-2.
 - **The pause enum has no recovery member, and must never gain one.** Q-6 and PRD invariant 20.
 
-Run `pnpm verify:phase2`. Read `docs/phase2/PHASE-3-PREREQUISITES.md` before starting the curve
-engine.
+The measured operation budget replaces the Day 0 one: every stage costs more, stage B's unit is
+(provider, market) rather than provider, and the launch epoch is 22 transactions and ~297M gas.
+Size anything against `@kyrve/curve`'s `CURVE_STAGE_GAS`. Delta R-3.
+
+Run `pnpm verify:phase3`. Read `docs/phase3/PHASE-4-PREREQUISITES.md` before starting quote
+activation.

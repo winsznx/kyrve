@@ -43,7 +43,7 @@ never needed them:
 
 The first case is the collision hazard. The second is a *different* hazard: an all-public operation
 cannot be reproduced off chain, so it can never appear on a path whose handle must be precomputed —
-which is every published result handle (`docs/phase3/GRAPH-BINDING.md`).
+which is every published result handle. `CurveGraphRegistry` is where those are committed.
 
 `HandleUtils.isPublicHandle(h)` is `(h[6] & 0x01) == 0`. Every `_executeOperation` output sets that
 bit; `wrapAsPublicHandle` — which is what `Nox.toEuint16/toEuint256/toEbool` compile to — clears it.
@@ -105,42 +105,73 @@ Rows 10–13 are the granted ones, and every one of them is isolated first.
 ## 3 · The isolation primitive
 
 ```solidity
-function _isolate(euint256 value, bytes32 domain) private returns (euint256) {
+// Once per epoch. `anchor` is the borrower's `desiredAssets`, which the engine has just proved it
+// holds an ACL grant on.
+function _buildEpochCondition(bytes32 epochId, euint256 anchor) internal returns (ebool) {
+    _requireConfidential(euint256.unwrap(anchor));
+    euint256 salt = Nox.add(anchor, Nox.toEuint256(uint256(isolationDomain(epochId, ROLE_EPOCH_SALT, 0))));
+    return Nox.eq(salt, salt);            // encrypted TRUE, and unique to this epoch
+}
+
+// Per granted handle.
+function _isolate(euint256 value, ebool epochCondition, bytes32 domain) internal returns (euint256) {
     _requireConfidential(euint256.unwrap(value));
-    euint256 tag = Nox.toEuint256(uint256(domain));   // public handle, distinct per domain
-    ebool always  = Nox.eq(value, value);             // deterministic; always encrypted true
-    return Nox.select(always, value, tag);            // value unchanged; handle domain-separated
+    return Nox.select(epochCondition, value, Nox.toEuint256(uint256(domain)));
 }
 ```
 
-**Why it works.** `select`'s operands are `[always, value, tag]`. `always` and `value` are
-confidential, so the seed is `0` and the output handle is `keccak256(abi.encode(Select, [always,
-value, tag], nox, 0, 0))` truncated and tagged. Two granted quantities can only share a handle if
-they share all three operands — and `tag` is `toEuint256(domain)`, a deterministic function of a
-domain string that includes the role and the subject:
+with
 
 ```
-domain = keccak256(abi.encode(chainId, engine, universeId, requestId, epoch, role, subIndex))
+domain = keccak256(abi.encode(chainId, engine, epochId, role, subIndex))
 ```
 
-Distinct role ⇒ distinct `tag` ⇒ distinct handle. Distinct provider ⇒ distinct `subIndex` ⇒ distinct
-handle. **Two provider allocations that are numerically identical are still two handles with two ACL
-entries.** That is the whole point, and it is what demonstration 17 asserts.
+**Why it works.** `select`'s operands are `[epochCondition, value, tag]`. The condition is
+confidential, so the seed is `0` and the output handle is deterministic in the three operands. Two
+granted quantities can share a handle only if they share all three — and distinctness holds on two
+independent axes: the **condition** separates epochs, the **tag** separates roles and subjects.
 
-**Why the value is unchanged.** `always` is `eq(value, value)`, encrypted `true` for every value
-including zero, so `select` returns `value`. `tag` is never taken. Its plaintext is a public hash
-with no relation to anything private, and it is only ever the untaken branch.
+**Two provider allocations that are numerically identical are still two handles with two ACL
+entries.** That is the whole point.
 
-**Why `_requireConfidential` is not decoration.** If `value` were a public handle — an unset slot, or
-a `toEuint256` constant — then `eq(value, value)` would have two public operands, the seed would come
-from the storage counter, and the output handle would become **unpredictable off chain**, silently
-breaking the graph binding that `QuoteActivator` depends on. So the engine asserts the attribute bit
-instead of hoping. A stage run out of order fails with a public revert naming the stage, which is a
-public fault about ordering and discloses nothing confidential.
+**Why the value is unchanged.** The condition is `eq(salt, salt)`, encrypted `true` for every value,
+so `select` returns `value` and `tag` is never taken. The tag's plaintext is a domain hash with no
+relation to anything private, and it is only ever the untaken branch.
 
-`_isolate` costs `toEuint256` 6,256 + `eq` 10,398 + `select256` 15,263 = **31,917 gas**, or 29,981
-for the `euint16` form. It is paid 16 times for allocations, 16 for remaining, 16 for reserved and 5
-for published results — never per cell.
+### Why an epoch condition, and not simply `eq(value, value)`
+
+The obvious primitive is `select(eq(v, v), v, tag)`, which needs no per-epoch setup. It was the first
+design here and it is **wrong for `euint16`**.
+
+A `euint256` tag carries the full 256-bit domain hash. A `euint16` tag cannot: it truncates to
+sixteen bits, so two epochs' `quoteReady` handles could coincide, and a decryption proof issued for
+one epoch would then bind to the other. Both values are public either way, so nothing leaks — but the
+graph binding would be weaker than it claims, which is the kind of gap this project treats as a
+defect rather than a technicality. `packages/nox/test/handle-derivation.test.ts` demonstrates the
+collision deliberately, so the reason this design exists is executable rather than asserted.
+
+Threading a per-epoch condition also makes the seed deterministic regardless of the value's own
+attributes, which is what keeps the published handle predictable off chain.
+
+### Why `_requireConfidential` is not decoration
+
+A public handle bypasses **every** ACL gate in NoxCompute — `HandleUtils.isPublicHandle`'s own
+security note says so in those words — and an all-public operand set makes the output depend on a
+storage counter, so the handle becomes unpredictable off chain and the graph binding silently stops
+being checkable. Reaching that state means a stage ran out of order or an unset slot was read, both
+public scheduling faults, so a public revert is the correct signal and discloses nothing.
+
+This caught a real bug. The winner fold seeded its market and rate carries with `Nox.toEuint16(k)`,
+which is `wrapAsPublicHandle` — a public handle with no ACL. `allowThis` reverts on those, so a
+single-leaf universe would have failed at stage E2 with an opaque error while every multi-leaf
+universe passed. The seed now goes through a `select` as well.
+
+### Cost
+
+`_buildEpochCondition` is 6,256 + 10,377 + 10,398 = **27,031 gas, once per epoch**. `_isolate` is
+`toEuint256` + `select256` = **21,519 gas** per granted handle, or 19,556 for the `euint16` form.
+Paid 16 times for allocations, 16 for remaining, 16 for reserved and 5 for published results — never
+per cell.
 
 ---
 
@@ -219,11 +250,11 @@ So each claim above has an executable counterpart:
 | Claim | Test |
 |---|---|
 | identical operands produce one handle | `confidential/test/10-confidential-asset.ts`, Q-5 case (Phase 2, still runs) |
-| isolation changes the handle and not the value | `confidential/test/80-handle-isolation.ts` |
-| two numerically equal allocations are two handles with two ACL entries | `80`, demonstration 17 |
-| a provider is not an admin of another provider's allocation | `80`, on-chain `isAllowed` |
-| nothing but the five results is publicly decryptable | `86-public-surface.ts`, on-chain `isPubliclyDecryptable` over every handle the epoch produced |
-| the off-chain derivation reproduces a real handle | `packages/nox/test/handle-derivation.test.ts` against handles observed on the real stack |
+| isolation changes the handle and not the value | `confidential/test/81-curve-attacks.ts` 17b, via `IsolationProbe` |
+| two numerically equal allocations are two handles with two ACL entries | `81` 17c — and see delta R-6, because the obvious form of this test passes with the isolation removed |
+| a provider is not an admin of another provider's allocation | `81` 17c, on-chain `isAllowed` |
+| nothing but the five results is publicly decryptable | `84-curve-public-surface.ts`, exhaustive over every handle the epoch produced |
+| the off-chain derivation reproduces a real handle | `84-curve-public-surface.ts`, against handles a live NoxCompute returned — and it was WRONG until this ran, delta R-4 |
 
 The last row is the one that would be easiest to fake and hardest to notice: it compares a handle
 computed from the source formula against a handle a live NoxCompute actually returned. If the

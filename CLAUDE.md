@@ -67,6 +67,12 @@ Do not re-derive these; they are locked in `source-lock.json` with reproduction 
 - Nox has **no** encrypted `and`/`or`/`not`/`xor`, and `select` has no `ebool` overload. Boolean
   composition must be arithmetised.
 - Nox viewer grants and public-decryption marks are **permanent** — there is no `removeViewer`.
+- A Nox handle is deterministic in its operands, so two logically distinct quantities computed
+  identically are **one handle with one permanent ACL entry**. Isolate anything granted or published.
+- The Nox Hardhat node allows **unlimited contract size** and cannot be made not to — NoxCompute
+  itself exceeds EIP-170. `pnpm verify:contract-size` is the only thing that catches an oversize
+  contract before a deployment does.
+- The handle gateway returns a decrypted plaintext at its **natural width**, not ABI-padded.
 
 ## Layout
 
