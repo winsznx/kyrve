@@ -8,7 +8,7 @@
  * Command:   pnpm generate
  * Verify:    pnpm verify:generated  (regenerates and asserts `git diff` is empty)
  * Pinned:    Midnight 2026-07-23 @ dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0
- * Content:   sha256:d8983debec7ce3dd244c82c74fbbf475e890bd8ae8bdebd37109d1f61c85e394
+ * Content:   sha256:5f3f9f95199496f2a3310a2461b3f1b48fb141b6cca22fcaf4822d4f9c4f1729
  *
  * TIMESTAMP POLICY: none is emitted, deliberately. A generation timestamp would change this file
  * on every run with no source change, which would make the diff check above worthless. The pinned
@@ -400,6 +400,22 @@ export const KyrveExactFillVaultAbi = [
   },
   {
     "type": "error",
+    "name": "ApprovalRejected",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "CallbackCallerNotMidnight",
     "inputs": [
       {
@@ -519,6 +535,17 @@ export const KyrveExactFillVaultAbi = [
         "name": "actual",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": [
+      {
+        "name": "field",
+        "type": "string",
+        "internalType": "string"
       }
     ]
   }

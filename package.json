@@ -10,6 +10,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "audit:deps": "pnpm audit --audit-level moderate",
     "build": "tsc --build",
     "clean": "tsc --build --clean && rm -rf packages/*/dist workers/*/dist",
     "deploy:local": "tsx scripts/deploy/local.ts",
@@ -32,6 +33,7 @@
     "test:workers": "pnpm --filter './workers/*' test",
     "typecheck": "tsc --build --force",
     "verify:bundles": "tsx scripts/verify/bundles.ts",
+    "verify:deployed-bytecode": "tsx scripts/verify/deployed-bytecode.ts",
     "verify:deployment": "tsx scripts/verify/deployment.ts",
     "verify:etherscan": "tsx scripts/verify/etherscan.ts",
     "verify:generated": "tsx scripts/verify/generated.ts",
@@ -43,7 +45,9 @@
     "verify:osaka": "tsx scripts/verify/osaka.ts",
     "verify:phase1": "tsx scripts/phase1/gate.ts",
     "verify:secrets": "tsx scripts/verify/secrets.ts",
+    "verify:security": "pnpm verify:secrets && pnpm verify:licence && pnpm verify:slither && pnpm audit:deps && pnpm lint:imports && pnpm verify:bundles",
     "verify:sepolia": "tsx scripts/verify/deployment.ts sepolia",
+    "verify:slither": "tsx scripts/verify/slither.ts",
     "verify:source-lock": "tsx scripts/verify/source-lock.ts",
     "verify:toolchain": "tsx scripts/verify/toolchain.ts",
     "verify:vendor": "tsx scripts/verify/vendor.ts",

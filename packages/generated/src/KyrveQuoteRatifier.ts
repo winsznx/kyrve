@@ -8,7 +8,7 @@
  * Command:   pnpm generate
  * Verify:    pnpm verify:generated  (regenerates and asserts `git diff` is empty)
  * Pinned:    Midnight 2026-07-23 @ dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0
- * Content:   sha256:bf68020cffa942fd8c93acf6dfe5321ac8d1387800eaf7a3542d0c6bd945a92c
+ * Content:   sha256:81f33d8dc7eeb41588637ff596df199e73a0869e067f0eb44c7cc5378794c71f
  *
  * TIMESTAMP POLICY: none is emitted, deliberately. A generation timestamp would change this file
  * on every run with no source change, which would make the diff check above worthless. The pinned
@@ -284,6 +284,17 @@ export const KyrveQuoteRatifierAbi = [
         "name": "actual",
         "type": "address",
         "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": [
+      {
+        "name": "field",
+        "type": "string",
+        "internalType": "string"
       }
     ]
   }

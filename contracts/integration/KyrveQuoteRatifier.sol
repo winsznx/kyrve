@@ -23,11 +23,14 @@ contract KyrveQuoteRatifier is IRatifier {
     error QuoteNotExecutable(bytes32 quoteId);
     error QuoteExpired(uint256 expiry, uint256 nowTs);
     error UnauthorisedTaker(address expected, address actual);
+    error ZeroAddress(string field);
 
     address public immutable MIDNIGHT;
     IKyrveQuoteBinding public immutable BINDING;
 
     constructor(address midnight, address binding) {
+        require(midnight != address(0), ZeroAddress("midnight"));
+        require(binding != address(0), ZeroAddress("binding"));
         MIDNIGHT = midnight;
         BINDING = IKyrveQuoteBinding(binding);
     }

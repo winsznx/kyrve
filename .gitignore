@@ -24,3 +24,4 @@ spikes/**/types/
 *.log
 deployments/**/.raw-deployment.json
 workers/*/dist/
+slither-report.json

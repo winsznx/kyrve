@@ -27,8 +27,8 @@
       "source": "contracts/registry/KyrveDeploymentVerifier.sol"
     },
     "KyrveExactFillVault": {
-      "abiEntries": 20,
-      "contentHash": "sha256:d8983debec7ce3dd244c82c74fbbf475e890bd8ae8bdebd37109d1f61c85e394",
+      "abiEntries": 22,
+      "contentHash": "sha256:5f3f9f95199496f2a3310a2461b3f1b48fb141b6cca22fcaf4822d4f9c4f1729",
       "source": "contracts/integration/KyrveExactFillVault.sol"
     },
     "KyrveOsakaProbe": {
@@ -42,8 +42,8 @@
       "source": "contracts/registry/KyrveProtocolRegistry.sol"
     },
     "KyrveQuoteRatifier": {
-      "abiEntries": 8,
-      "contentHash": "sha256:bf68020cffa942fd8c93acf6dfe5321ac8d1387800eaf7a3542d0c6bd945a92c",
+      "abiEntries": 9,
+      "contentHash": "sha256:81f33d8dc7eeb41588637ff596df199e73a0869e067f0eb44c7cc5378794c71f",
       "source": "contracts/integration/KyrveQuoteRatifier.sol"
     },
     "Midnight": {

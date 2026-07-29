@@ -32,9 +32,11 @@ interface IERC20Approve {
 /// been shown to be the handle derived from that request's sealed operation graph — a valid proof
 /// alone proves nothing about which quote a value belongs to (PRD v1.1 A-11).
 contract KyrveExactFillVault is IBuyCallback, IKyrveQuoteBinding {
+    error ApprovalRejected(address token, uint256 amount);
     error CallbackCallerNotMidnight(address caller);
     error FeeAboveCap(uint256 cap, uint256 actual);
     error NotActivator(address caller);
+    error ZeroAddress(string field);
     error QuoteAlreadyActivated(bytes32 quoteId);
     error QuoteNotExecutable(bytes32 quoteId);
     error WrongBuyer(address expected, address actual);
@@ -52,6 +54,8 @@ contract KyrveExactFillVault is IBuyCallback, IKyrveQuoteBinding {
     mapping(bytes32 quoteId => ActivatedQuote) internal _quotes;
 
     constructor(address midnight, address activator) {
+        require(midnight != address(0), ZeroAddress("midnight"));
+        require(activator != address(0), ZeroAddress("activator"));
         MIDNIGHT = midnight;
         ACTIVATOR = activator;
     }
@@ -125,7 +129,15 @@ contract KyrveExactFillVault is IBuyCallback, IKyrveQuoteBinding {
         // the same quote twice.
         q.status = QuoteStatus.Consumed;
 
-        IERC20Approve(market.loanToken).approve(MIDNIGHT, buyerAssets);
+        // The return value is checked rather than discarded. A token that signals failure by
+        // returning false instead of reverting would otherwise leave the allowance unset, and the
+        // failure would surface later as an opaque revert inside Midnight's transferFrom.
+        //
+        // This requires a token that actually returns a bool. Kyrve's series assets do; a
+        // non-standard token that returns nothing would need SafeTransferLib-style handling, and
+        // Midnight's own SafeTransferLib provides no safeApprove to reuse.
+        bool approved = IERC20Approve(market.loanToken).approve(MIDNIGHT, buyerAssets);
+        require(approved, ApprovalRejected(market.loanToken, buyerAssets));
 
         emit ExactFill(quoteId, id, units, buyerAssets);
         return CALLBACK_SUCCESS;
