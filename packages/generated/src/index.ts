@@ -27,3 +27,9 @@ export { KyrveSettlementRatifierAbi } from "./KyrveSettlementRatifier.js";
 export { MidnightAbi } from "./Midnight.js";
 export { QuoteActivatorAbi } from "./QuoteActivator.js";
 export { TestERC20Abi } from "./TestERC20.js";
+export {
+  DEPLOYMENT_ENVIRONMENTS,
+  DEPLOYMENTS,
+  embeddedDeployment,
+  type EmbeddedDeployment,
+} from "./deployments.js";
