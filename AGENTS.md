@@ -62,3 +62,25 @@ it **cannot** enforce fill size; `onBuy` is the only place actual fill size reac
 5. No decrypted value ever reaches a server, log, metric or database.
 
 Detailed rules live in `.claude/rules/`, path-scoped. Read `CLAUDE.md` first.
+
+## Phase 2 — the confidential layer
+
+`confidential/` is a separate Hardhat project at solc **0.8.36**, because
+`nox-protocol-contracts@0.2.4` requires `^0.8.35` while the Midnight substrate is pinned at 0.8.34
+for bytecode comparability. Anything importing `sdk/Nox.sol` belongs there, not in `contracts/`.
+
+Its tests run against the **real** iExec Nox stack in Docker — real handles, real gateway proofs. A
+mocked NoxCompute would be a mocked confidentiality path and is forbidden.
+
+Three constraints that are easy to violate and hard to notice:
+
+- **Nox handles are deterministic in their operands.** Two logically distinct encrypted quantities
+  computed identically from identical inputs are ONE handle with ONE permanent ACL entry. Prove any
+  new aggregate is non-colliding; value inequality is not enough. `docs/phase2/PRD-DELTA.md` Q-5.
+- **Input proofs carry no nonce and no consumption marker.** Replay protection is the application's
+  job. Use `KyrveConfidentialBase`'s one-shot handle consumption and per-owner nonce on every entry
+  point. Q-2.
+- **The pause enum has no recovery member, and must never gain one.** Q-6 and PRD invariant 20.
+
+Run `pnpm verify:phase2`. Read `docs/phase2/PHASE-3-PREREQUISITES.md` before starting the curve
+engine.

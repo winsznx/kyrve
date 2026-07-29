@@ -197,6 +197,24 @@ contract KyrveConfidentialAssetVault is KyrveConfidentialBase {
      * @dev No pause flag exists for this path and none can be added — {KyrveEmergencyController}
      *      has no enum member for it. Requesting more than is available moves encrypted zero and
      *      leaves the balance unchanged; the transaction still succeeds and says nothing.
+     *
+     * THE ORDERING HAZARD HERE, AND WHY IT IS SAFE. The internal balance is debited BEFORE the
+     * ERC-7984 transfer, and that transfer can silently move encrypted zero if this vault's own
+     * wrapper balance were short — which would burn the provider's claim while paying them nothing.
+     * Nothing about the transfer's success is branchable, so the ordering cannot be defended by a
+     * check; it is defended by an accounting invariant:
+     *
+     *     sum(available) + sum(locked)  <=  asset.confidentialBalanceOf(this)
+     *
+     * It holds because `deposit` credits exactly the handle the token returned — encrypted zero if
+     * the provider's own balance was short — `withdraw` debits at most what is available, and
+     * reservations only move value between `available` and `locked`. There is no path that creates
+     * internal credit without a matching increase in the wrapper balance.
+     *
+     * ANY FUTURE PATH THAT CREDITS `_available` MUST PRESERVE THAT. A credit not backed by a
+     * wrapper-balance increase would not fail loudly; it would make some later withdrawal silently
+     * pay zero. `confidentialCoverage()` exposes the right-hand side so Phase 3's solvency verifier
+     * can check it on chain rather than by argument.
      */
     function withdraw(externalEuint256 encryptedAmount, bytes calldata inputProof, uint256 nonce)
         external

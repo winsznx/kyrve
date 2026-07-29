@@ -181,8 +181,18 @@ describe("Phase 2: emergency pause stops entry and never blocks recovery", () =>
 
   it("14c. RECOVERY: a provider still withdraws from the vault while everything is paused", async () => {
     const client = await clientFor(h, 1);
-    const amount = await client.encrypt(VAULT_DEPOSIT, "euint256", h.vault.address);
 
+    // The wallet balance BEFORE, so the withdrawal is proven to have PAID rather than merely to have
+    // debited. The vault debits its internal ledger before the ERC-7984 transfer, and that transfer
+    // moves encrypted zero if the vault's own wrapper balance is short — which would burn the claim
+    // and pay nothing, silently. Asserting only that `available` reached zero would pass in exactly
+    // that case, which is the failure this assertion exists to catch.
+    const walletBefore = await client.decrypt(
+      await h.asset.read.confidentialBalanceOf([provider.account.address]),
+      SUITE_POLL,
+    );
+
+    const amount = await client.encrypt(VAULT_DEPOSIT, "euint256", h.vault.address);
     await mine(
       h,
       await h.vault.write.withdraw(
@@ -197,7 +207,20 @@ describe("Phase 2: emergency pause stops entry and never blocks recovery", () =>
       0n,
       "the vault balance is fully recovered",
     );
+
+    const walletAfter = await client.decrypt(
+      await h.asset.read.confidentialBalanceOf([provider.account.address]),
+      SUITE_POLL,
+    );
+    assert.equal(
+      walletAfter - walletBefore,
+      VAULT_DEPOSIT,
+      "the wallet must receive exactly what the vault debited — the accounting invariant " +
+        "`sum(available) + sum(locked) <= coverage`, checked by payment rather than by argument",
+    );
+
     console.log("  paused + withdraw : SUCCEEDED — no pause flag exists for this path");
+    console.log("  debited == paid   : the vault's coverage actually covered the claim");
   });
 
   it("14d. RECOVERY: a holder still unwraps to the public ERC-20 while everything is paused", async () => {
