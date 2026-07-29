@@ -27,6 +27,7 @@ import { formatEther, parseUnits } from "viem";
 
 import { BoundaryPreview } from "./components/BoundaryPreview.js";
 import { ConfidentialValue } from "./components/ConfidentialValue.js";
+import { QuoteBand } from "./components/QuoteBand.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "./components/Status.js";
 import { ERC20_ABI, MANDATE_BOOK_ABI, REQUEST_BOOK_ABI, WRAPPED_ASSET_ABI } from "./lib/abi.js";
 import { type Deployment, loadDeployment, noxNetworkFor } from "./lib/deployment.js";
@@ -39,6 +40,7 @@ import {
   type Session,
   subscribe,
 } from "./lib/session.js";
+import type { SettlementDeployment } from "./lib/settlement.js";
 
 const UNDERLYING_DECIMALS = 6;
 /** The single public universe this local terminal quotes into. */
@@ -140,6 +142,9 @@ function Terminal({
       <WrapBand deployment={deployment} session={session} />
       <MandateBand deployment={deployment} session={session} />
       <RequestBand deployment={deployment} session={session} />
+      {settlementOf(deployment) !== undefined ? (
+        <QuoteBand settlement={settlementOf(deployment)!} session={session} />
+      ) : null}
 
       <section className="band">
         <div className="card">
@@ -151,6 +156,18 @@ function Terminal({
       </section>
     </main>
   );
+}
+
+/**
+ * The settlement block, or nothing.
+ *
+ * A quote exists only after a confidential epoch has run and been publicly decrypted — minutes of
+ * off-chain computation the page cannot bootstrap. So the band appears when the served record
+ * carries a real finished epoch and is absent otherwise. Rendering it with placeholder terms would
+ * be a placeholder proof, which `.claude/rules/frontend.md` forbids outright.
+ */
+function settlementOf(deployment: Deployment) {
+  return (deployment as SettlementDeployment).settlement;
 }
 
 function PrivacyLock(): React.ReactElement {

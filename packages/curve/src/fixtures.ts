@@ -11,6 +11,7 @@
  * chosen so that a failing assertion is readable.
  */
 
+import { CURVE_RECOMMENDED_CELLS_PER_TRANSACTION } from "./constants.js";
 import type { CurveRequest, Mandate, MarketSpec } from "./types.js";
 import { COLLATERAL_FAMILY_SLOTS, MARKET_SLOTS, MATURITY_BUCKET_SLOTS } from "./types.js";
 import type { MarketGrid, UniverseDraft } from "./universe.js";
@@ -87,7 +88,7 @@ export function makeUniverseDraft(options: {
     maxProviders: options.maxProviders ?? 16,
     privacyFloor: options.privacyFloor ?? 2,
     minTicketAssets: options.minTicketAssets ?? UNIT,
-    cellsPerChunk: options.cellsPerChunk ?? 256,
+    cellsPerChunk: options.cellsPerChunk ?? CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
     markets: grids,
   };
 }

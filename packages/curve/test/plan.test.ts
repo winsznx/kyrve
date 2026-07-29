@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CURVE_MAX_CELLS_PER_TRANSACTION,
+  CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
   CURVE_TRANSACTION_GAS_CEILING,
   curveStepName,
   PlanError,
@@ -18,9 +19,18 @@ import {
 } from "../src/index.js";
 
 describe("the full 16 x 128 launch universe is executable", () => {
-  const plan = planCurveEpoch(16, 8, 128, 256, "0xepoch");
+  /**
+   * 192 cells per chunk, not 256.
+   *
+   * 256 was Phase 3's recommendation and it measured 18,193,386 gas — 1,416,170 over the Osaka
+   * per-transaction cap of 2^24, which is the only reason the launch universe was not executable.
+   * `CURVE_RECOMMENDED_CELLS_PER_TRANSACTION` is the width the planner is now sized against, and
+   * reading it from the constant rather than repeating a literal is what keeps this test honest when
+   * the width moves again. Phase 4 delta S-2.
+   */
+  const plan = planCurveEpoch(16, 8, 128, CURVE_RECOMMENDED_CELLS_PER_TRANSACTION, "0xepoch");
 
-  it("no single transaction exceeds the measured 24M ceiling", () => {
+  it("no single transaction exceeds the Osaka per-transaction gas cap", () => {
     expect(plan.peakTransactionGas).toBeLessThan(CURVE_TRANSACTION_GAS_CEILING);
   });
 
@@ -59,21 +69,32 @@ describe("the full 16 x 128 launch universe is executable", () => {
     // Pinned so a change to any stage cost shows up here as an intentional edit with a reason,
     // rather than as a quietly different schedule. Update deliberately, never to make this pass.
     //
-    // These are the MEASURED figures, not the Day 0 ones: 22 transactions and ~301M gas against
-    // Day 0's 18 and ~243M. The difference is real contract overhead a primitive benchmark cannot
-    // see — storage, external calls, calldata and the graph commitment (delta R-3). The Day 0
-    // conclusion survives it: the peak transaction is 19M against a 24M ceiling, and 22
-    // transactions fit the 15-minute window several times over.
+    // TWENTY-FIVE TRANSACTIONS, NOT TWENTY-TWO, and the reason is Phase 4 delta S-2. Phase 3
+    // measured 22 at 256 cells per chunk with a peak of 19M gas against a 24,000,000 ceiling. That
+    // ceiling was a judgement measured on a local node with no per-transaction cap; the real one is
+    // EIP-7825's 2^24 = 16,777,216, and 19M does not fit it. At 192 cells the peak is 14M and stage
+    // C needs 11 chunks instead of 8 — so the epoch is three transactions longer and costs the same
+    // total gas.
+    //
+    // AND THE PEAK MOVES. At 192 cells stage C is 13.6M, so the most expensive transaction in the
+    // epoch is no longer stage C but stage B: `cacheProviderChunk` at 32 x 468,047 = 15.0M, which
+    // fits with 1.8M to spare — about 11%. That is the tightest margin left, it is the next width
+    // that will need attention, and `pnpm verify:gas-cap` reports it as tight rather than waiting
+    // for it to become a failure.
+    //
+    // Day 0's conclusion still survives: 25 transactions fit the 15-minute window several times
+    // over. What does not survive is any keeper timeout sized against 22 — which is exactly the
+    // quantity delta R-7 says must scale with operation count rather than be a constant.
     expect({
       transactions: plan.transactionCount,
       cells: plan.cells,
       totalGasMillions: Math.round(plan.totalGas / 1_000_000),
       peakGasMillions: Math.round(plan.peakTransactionGas / 1_000_000),
     }).toEqual({
-      transactions: 22,
+      transactions: 25,
       cells: 2_048,
       totalGasMillions: 301,
-      peakGasMillions: 19,
+      peakGasMillions: 15,
     });
   });
 });
@@ -88,7 +109,12 @@ describe("smaller universes stay proportionate", () => {
 
   for (const [providers, markets, leaves] of shapes) {
     it(`${providers} x ${markets} x ${leaves} stays under the ceiling`, () => {
-      const plan = planCurveEpoch(providers, markets, leaves, 256);
+      const plan = planCurveEpoch(
+        providers,
+        markets,
+        leaves,
+        CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
+      );
       expect(plan.peakTransactionGas).toBeLessThan(CURVE_TRANSACTION_GAS_CEILING);
       expect(plan.cells).toBe(providers * leaves);
     });
@@ -101,7 +127,13 @@ describe("step names are deterministic, because they are memoisation keys", () =
   });
 
   it("different chunks never collide", () => {
-    const names = planCurveEpoch(16, 8, 128, 256, "0xepoch").transactions.map((t) => t.stepName);
+    const names = planCurveEpoch(
+      16,
+      8,
+      128,
+      CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
+      "0xepoch",
+    ).transactions.map((t) => t.stepName);
     expect(new Set(names).size).toBe(names.length);
   });
 
@@ -121,7 +153,7 @@ describe("the planner refuses rather than producing an unexecutable schedule", (
   });
 
   it("refuses non-positive dimensions", () => {
-    expect(() => planCurveEpoch(0, 8, 128, 256)).toThrow(/providers must be a positive integer/);
-    expect(() => planCurveEpoch(16, 8, 0, 256)).toThrow(/leaves must be a positive integer/);
+    expect(() => planCurveEpoch(0, 8, 128, 192)).toThrow(/providers must be a positive integer/);
+    expect(() => planCurveEpoch(16, 8, 0, 192)).toThrow(/leaves must be a positive integer/);
   });
 });

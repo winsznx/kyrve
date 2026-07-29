@@ -41,7 +41,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { before, describe, it } from "node:test";
 
-import { UNIT } from "@kyrve/curve";
+import { CURVE_RECOMMENDED_CELLS_PER_TRANSACTION, UNIT } from "@kyrve/curve";
 import { encodeOffer } from "@kyrve/midnight";
 import { keccak256 } from "viem";
 
@@ -110,9 +110,12 @@ describe("Phase 4: one confidential quote settles once, through unmodified Midni
       { market: second.market, marketId: second.marketId },
     ];
 
+    // 192 cells per chunk — the bound the registry now enforces, read from the constant rather
+    // than repeated. This universe has four cells, so the width is not what makes the epoch run;
+    // configuring it at the maximum is what proves the maximum is usable. Delta S-2.
     const created = await createSettlementUniverse(h, [first.grid, second.grid], {
       privacyFloor: 2,
-      cellsPerChunk: 64,
+      cellsPerChunk: CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
     });
     universe = created.universe;
     universeId = created.universeId;

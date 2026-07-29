@@ -14,6 +14,7 @@
   "dependencies": {
     "@kyrve/config": "workspace:*",
     "@kyrve/nox": "workspace:*",
+    "@kyrve/quote": "workspace:*",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "viem": "2.55.10"

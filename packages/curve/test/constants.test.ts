@@ -121,22 +121,42 @@ describe("every chunk width stays inside the measured gas ceiling", () => {
   ];
 
   for (const [stage, width, perUnit] of cases) {
-    it(`${stage}: ${width} units x ${perUnit} gas stays under 24M`, () => {
+    it(`${stage}: ${width} units x ${perUnit} gas stays under the Osaka cap`, () => {
       expect(width * perUnit).toBeLessThan(curve.CURVE_TRANSACTION_GAS_CEILING);
     });
   }
 
+  /**
+   * The ceiling is EIP-7825 now, not a judgement — Phase 4 delta S-2.
+   *
+   * Not equality against the permitted maximum, and deliberately so: the declared bound must never
+   * EXCEED what measurement supports, because that is the direction in which the mistake is a
+   * transaction the chain refuses. It is allowed to be tighter, and it is.
+   */
   it("the declared accumulate maximum is at or below what the measured cell cost permits", () => {
-    // Not equality. 311 is the ceiling Day 0 declared and PRD §9.1 carries, and the Phase 3
-    // measurement permits 329 — so the declared value is deliberately the tighter of the two. The
-    // property that matters is that the declared maximum can never exceed what measurement
-    // supports, because that is the direction in which the mistake is a 40M gas transaction.
     const permitted = Math.floor(
       (curve.CURVE_TRANSACTION_GAS_CEILING - curve.CURVE_STAGE_GAS.accumulateChunkOverhead) /
         curve.CURVE_STAGE_GAS.accumulateCell,
     );
     expect(curve.CURVE_MAX_CELLS_PER_TRANSACTION).toBeLessThanOrEqual(permitted);
-    expect(curve.CURVE_MAX_CELLS_PER_TRANSACTION).toBe(311);
+    expect(curve.CURVE_MAX_CELLS_PER_TRANSACTION).toBe(192);
+  });
+
+  /**
+   * The negative fixture the resolution of S-2 must retain.
+   *
+   * 256 cells is what Phase 3 recommended and what the benchmark ran. It measured 18,193,386 gas and
+   * is 1,416,170 over the Osaka cap. Keeping the arithmetic here means the old configuration can
+   * never quietly come back: raising the maximum to 256 fails this test, not just a gate.
+   */
+  it("256 cells — the old recommendation — exceeds the Osaka cap, and still would", () => {
+    const oldRecommendation = 256;
+    const gas =
+      oldRecommendation * curve.CURVE_STAGE_GAS.accumulateCell +
+      curve.CURVE_STAGE_GAS.accumulateChunkOverhead;
+    expect(gas).toBeGreaterThan(curve.CURVE_TRANSACTION_GAS_CEILING);
+    expect(curve.CURVE_MAX_CELLS_PER_TRANSACTION).toBeLessThan(oldRecommendation);
+    expect(oldRecommendation - 192).toBe(64);
   });
 
   it("the recommended width keeps real headroom rather than sitting at the limit", () => {

@@ -20,7 +20,12 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { before, describe, it } from "node:test";
 
-import { CURVE_TRANSACTION_GAS_CEILING, planCurveEpoch, UNIT } from "@kyrve/curve";
+import {
+  CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
+  CURVE_TRANSACTION_GAS_CEILING,
+  planCurveEpoch,
+  UNIT,
+} from "@kyrve/curve";
 
 import {
   BENCH_POLL,
@@ -53,7 +58,10 @@ describe("Phase 3 benchmark: the full 16 x 128 launch universe", () => {
       maxProviders: PROVIDERS,
       privacyFloor: 2,
       // The recommended width, not the 311 maximum, so a chunk keeps real headroom.
-      cellsPerChunk: 256,
+      // 192, not 256. 256 measured at 18,193,386 gas and Osaka refuses any transaction above
+      // 16,777,216 (EIP-7825) — the one stage width that did not fit, and the whole of delta S-2.
+      // Read from the constant so this width cannot drift from what the registry enforces.
+      cellsPerChunk: CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
       label: `bench-16x128-${Date.now()}`,
     });
 
@@ -96,7 +104,13 @@ describe("Phase 3 benchmark: the full 16 x 128 launch universe", () => {
   });
 
   it("19b. every cell was really evaluated — the plan and the chain agree on the chunk counts", async () => {
-    const plan = planCurveEpoch(PROVIDERS, MARKETS, LEAVES, 256, epoch.epochId);
+    const plan = planCurveEpoch(
+      PROVIDERS,
+      MARKETS,
+      LEAVES,
+      CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
+      epoch.epochId,
+    );
     const stages: readonly [number, string][] = [
       [1, "cacheProviders"],
       [2, "accumulate"],
@@ -136,9 +150,11 @@ describe("Phase 3 benchmark: the full 16 x 128 launch universe", () => {
       `${JSON.stringify(
         {
           $comment:
-            "MEASURED against the real local Nox stack during the Phase 3 benchmark. These " +
-            "supersede the Day 0 figures for stages B and E — see docs/phase3/PRD-DELTA.md R-3. " +
-            "Local node, local stack: testnet gas remains UNVERIFIED (AS-1).",
+            "MEASURED against the real local Nox stack. Supersedes the Day 0 figures for stages " +
+            "B and E (docs/phase3/PRD-DELTA.md R-3), and re-measured at 192 cells per chunk rather " +
+            "than 256 because Osaka caps a single transaction at 16,777,216 gas and 256 measured " +
+            "18,193,386 (docs/phase4/PRD-DELTA.md S-2). Local node, local stack: testnet gas " +
+            "remains UNVERIFIED (AS-1).",
           universe: {
             providers: PROVIDERS,
             markets: MARKETS,
@@ -146,7 +162,10 @@ describe("Phase 3 benchmark: the full 16 x 128 launch universe", () => {
             leaves: LEAVES,
             cells: CELLS,
           },
-          cellsPerChunk: 256,
+          // 192, not 256. 256 measured at 18,193,386 gas and Osaka refuses any transaction above
+          // 16,777,216 (EIP-7825) — the one stage width that did not fit, and the whole of delta S-2.
+          // Read from the constant so this width cannot drift from what the registry enforces.
+          cellsPerChunk: CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
           stages: measured,
           perUnit: {
             accumulateCell: perUnit(measured.accumulateLeafChunk?.total ?? 0, CELLS),
@@ -167,7 +186,13 @@ describe("Phase 3 benchmark: the full 16 x 128 launch universe", () => {
 
     // The planner must not UNDERSTATE any stage, or a chunk width derived from it could exceed the
     // ceiling on chain while every local test passed.
-    const plan = planCurveEpoch(PROVIDERS, MARKETS, LEAVES, 256, epoch.epochId);
+    const plan = planCurveEpoch(
+      PROVIDERS,
+      MARKETS,
+      LEAVES,
+      CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
+      epoch.epochId,
+    );
     const plannedPeak = plan.peakTransactionGas;
     const actualPeak = Math.max(...Object.values(epoch.gas).flat());
     assert.ok(

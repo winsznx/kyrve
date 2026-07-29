@@ -135,7 +135,7 @@ describe("the shape limits each refuse on their own", () => {
   it("refuses a chunk width above the measured per-transaction budget", () => {
     expect(() =>
       buildUniverse(draft({ cellsPerChunk: CURVE_MAX_CELLS_PER_TRANSACTION + 1 })),
-    ).toThrow(/outside 1\.\.311/);
+    ).toThrow(new RegExp(`outside 1\\.\\.${CURVE_MAX_CELLS_PER_TRANSACTION}`));
     expect(() =>
       buildUniverse(draft({ cellsPerChunk: CURVE_MAX_CELLS_PER_TRANSACTION })),
     ).not.toThrow();

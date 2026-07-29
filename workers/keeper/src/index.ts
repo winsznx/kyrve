@@ -148,13 +148,18 @@ export default {
             driving: false,
             reason: "Phase 1 deploys the substrate only; no confidential epoch exists to drive.",
             budget: {
-              transactionGasCeiling: 24_000_000,
-              maxCellsPerTransaction: 311,
-              recommendedChunkCells: 256,
+              // EIP-7825, Osaka: a single transaction may not exceed 2^24 gas, whatever the block
+              // limit is. Was 24,000,000, measured on a local node with no per-transaction cap.
+              transactionGasCeiling: 16_777_216,
+              // Was 311 permitted and 256 advised. 256 measured at 18,193,386 gas — over the cap,
+              // and the only stage width that was. Both are now 192, which measures 13,645,056.
+              maxCellsPerTransaction: 192,
+              recommendedChunkCells: 192,
               epochTimeoutMs: 15 * 60 * 1000,
               note:
-                "Measured against the real local Nox stack in Day 0. See " +
-                "docs/day0/OPERATION-BUDGET.md and Phase 1 delta P-1.",
+                "Measured against the real local Nox stack (Phase 3 delta R-3) and bounded by the " +
+                "Osaka per-transaction gas cap (Phase 4 delta S-2). See " +
+                "docs/phase4/PRD-DELTA.md and @kyrve/curve's CURVE_TRANSACTION_GAS_CEILING.",
             },
             idempotency: {
               nonceAllocation: "Durable Object, allocated BEFORE the submitting step",

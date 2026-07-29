@@ -1,5 +1,5 @@
 {
-  "$comment": "MEASURED against the real local Nox stack during the Phase 3 benchmark. These supersede the Day 0 figures for stages B and E — see docs/phase3/PRD-DELTA.md R-3. Local node, local stack: testnet gas remains UNVERIFIED (AS-1).",
+  "$comment": "MEASURED against the real local Nox stack. Supersedes the Day 0 figures for stages B and E (docs/phase3/PRD-DELTA.md R-3), and re-measured at 192 cells per chunk rather than 256 because Osaka caps a single transaction at 16,777,216 gas and 256 measured 18,193,386 (docs/phase4/PRD-DELTA.md S-2). Local node, local stack: testnet gas remains UNVERIFIED (AS-1).",
   "universe": {
     "providers": 16,
     "markets": 8,
@@ -7,11 +7,11 @@
     "leaves": 128,
     "cells": 2048
   },
-  "cellsPerChunk": 256,
+  "cellsPerChunk": 192,
   "stages": {
     "sealProvider": {
       "calls": 16,
-      "total": 22884352,
+      "total": 22884316,
       "max": 1446304
     },
     "sealRequest": {
@@ -30,9 +30,9 @@
       "max": 14984397
     },
     "accumulateLeafChunk": {
-      "calls": 8,
-      "total": 145547076,
-      "max": 18193386
+      "calls": 11,
+      "total": 147453367,
+      "max": 13915899
     },
     "finalizeLeafChunk": {
       "calls": 3,
@@ -51,8 +51,8 @@
     },
     "proveWinner": {
       "calls": 1,
-      "total": 112653,
-      "max": 112653
+      "total": 112665,
+      "max": 112665
     },
     "allocateChunk": {
       "calls": 1,
@@ -66,14 +66,14 @@
     }
   },
   "perUnit": {
-    "accumulateCell": 71068,
+    "accumulateCell": 71999,
     "cacheUnit": 468262,
     "finalizeLeaf": 294974,
     "reduceLeaf": 345739,
     "allocateProvider": 527440
   },
   "limits": {
-    "transactionGasCeiling": 24000000,
-    "peakTransactionGas": 18193386
+    "transactionGasCeiling": 16777216,
+    "peakTransactionGas": 14984397
   }
 }

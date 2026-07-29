@@ -22,10 +22,24 @@ export const CURVE_RATE_RANK_STRIDE = 512;
 /** Above every reachable rank (15*512 + 3*128 + 119 = 8,183), so a leaf with no fill never wins. */
 export const CURVE_RANK_CEILING = 8_192;
 
-// ── Measured transaction budget (Phase 3, delta R-3) ────────────────────────────────────────
-export const CURVE_TRANSACTION_GAS_CEILING = 24_000_000;
-export const CURVE_MAX_CELLS_PER_TRANSACTION = 311;
-export const CURVE_RECOMMENDED_CELLS_PER_TRANSACTION = 256;
+// ── Transaction budget (Phase 3 delta R-3, corrected by Phase 4 delta S-2) ──────────────────
+/**
+ * EIP-7825: an Osaka chain refuses any transaction specifying more than 2^24 gas, whatever the
+ * block limit is. Phase 3's 24,000,000 was a judgement measured on a node with no such cap; this is
+ * a protocol rule and has no override. Measured on both sides of the boundary by
+ * `confidential/test/09-osaka.ts`.
+ */
+export const CURVE_TRANSACTION_GAS_CEILING = 16_777_216;
+/**
+ * 192 x 71,068 = 13,645,056 — 18.7% under the Osaka cap.
+ *
+ * Was 311, with 256 advised, and 256 measured at 18,193,386: the only stage width over the cap. The
+ * largest chunk that would fit is about 236; 192 carries margin instead, because this is a local
+ * measurement and testnet gas remains UNVERIFIED (AS-1). Maximum and recommendation now coincide —
+ * a universe created at the maximum must be executable, and nothing else enforces that.
+ */
+export const CURVE_MAX_CELLS_PER_TRANSACTION = 192;
+export const CURVE_RECOMMENDED_CELLS_PER_TRANSACTION = 192;
 
 // ── Stage chunk widths ──────────────────────────────────────────────────────────────────────
 export const CURVE_CACHE_CHUNK_UNITS = 32;

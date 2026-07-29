@@ -52,6 +52,9 @@ importers:
       '@kyrve/nox':
         specifier: workspace:*
         version: link:../../packages/nox
+      '@kyrve/quote':
+        specifier: workspace:*
+        version: link:../../packages/quote
       react:
         specifier: 19.2.8
         version: 19.2.8

@@ -2,27 +2,29 @@
  * EIP-7825: no single transaction may exceed 2^24 gas on an Osaka chain.
  *
  * ════════════════════════════════════════════════════════════════════════════════════════════
- * WHY THIS CHECK EXISTS, AND WHY IT IS EXPECTED TO FAIL RIGHT NOW
+ * WHAT THIS GATE IS FOR
  * ════════════════════════════════════════════════════════════════════════════════════════════
  *
- * Phase 3 sized every stage width against a "transaction gas ceiling" of 24,000,000, measured on a
- * local Hardhat node that the Nox plugin had configured as an OP chain at Isthmus. Isthmus has no
- * per-transaction gas cap. Osaka does: 16,777,216 gas, whatever the block limit is — 60,000,000 on
- * that same node, which is exactly why the limit is invisible unless you look for it.
+ * Phase 3 sized every stage width against a "transaction gas ceiling" of 24,000,000 — a judgement,
+ * measured on a local Hardhat node the Nox plugin had configured as an OP chain at Isthmus, which
+ * enforces no per-transaction gas limit at all. Osaka does: 16,777,216 gas, whatever the block limit
+ * is, which on that same node is 60,000,000. That is precisely why the cap is invisible unless you
+ * look for it.
  *
- * Ethereum Sepolia is on Osaka. Kyrve's artifacts compile for Osaka. So the ceiling Phase 3 sized
- * against is not the ceiling that applies, and the recorded peak stage transaction of 20,300,000
- * gas cannot be submitted to the chain Kyrve targets. Phase 4 found this by configuring the local
- * node correctly — `confidential/test/09-osaka.ts` measures the cap on both sides of the boundary,
- * and the full-scale benchmark then failed with a bare out-of-gas at stage C.
+ * At 256 cells per chunk — Phase 3's recommendation — `accumulateLeafChunk` measured 18,193,386 gas.
+ * It was the ONLY stage width over the cap, and it made the 16 x 128 launch universe unexecutable on
+ * the chain Kyrve targets. Resolved in Phase 4: the bound is now 192, which measures 13,645,056, and
+ * `CurveUniverseRegistry` refuses anything above it. Delta S-2.
  *
- * The 4-cell Sepolia epoch Phase 3 really executed is far below the cap and is unaffected. What is
- * affected is the LAUNCH-SCALE claim: a 16 x 128 universe is not executable as configured.
+ * So this is a REGRESSION GATE now, not a standing failure. It reads the measurements the benchmark
+ * actually recorded and fails if any stage exceeds the cap, which means it fails if anyone widens a
+ * chunk past what the chain will accept. It also names any stage within 2,000,000 gas of the cap —
+ * a warning rather than a failure, because those fit today, on a local measurement, and testnet gas
+ * remains UNVERIFIED (AS-1).
  *
- * This script does not paper over that. It reads the measurements Phase 3 actually recorded and
- * fails while any of them exceeds the cap, naming each one and what it would have to become. That
- * is a true failure about a real limit, and a green gate that hid it would be worth less than
- * nothing. Recorded as delta S-2 in docs/phase4/PRD-DELTA.md.
+ * The negative fixture lives in two places, both asserting that 256 does NOT fit:
+ * `packages/curve/test/constants.test.ts` in arithmetic, and `confidential/test/08-chunk-width.ts`
+ * against the deployed registry. Neither can be satisfied by widening the bound back.
  */
 
 import { existsSync } from "node:fs";
@@ -31,6 +33,12 @@ import { readJson, repoPath } from "../lib/shell.js";
 
 /** EIP-7825. 2^24, measured on the local Osaka node, not read from a specification. */
 const TRANSACTION_GAS_CAP = 16_777_216;
+/**
+ * Below this much headroom the next measurement could put a stage over, which is worth saying before
+ * it happens rather than after. Mirrors `verify:contract-size`'s "tight" band, and for the same
+ * reason: a limit you are 10% under is a limit you will meet.
+ */
+const WARN_HEADROOM_GAS = 2_000_000;
 
 interface StageGas {
   readonly universe: {
@@ -86,16 +94,20 @@ function main(): void {
     );
   }
   console.log("  per-stage peak transaction:");
+  const tight: string[] = [];
   for (const [stage, measured] of Object.entries(evidence.stages)) {
-    const over = measured.max - TRANSACTION_GAS_CAP;
+    const headroom = TRANSACTION_GAS_CAP - measured.max;
+    const status = headroom < 0 ? "OVER " : headroom < WARN_HEADROOM_GAS ? "tight" : "ok   ";
     console.log(
-      `  ${over > 0 ? "OVER " : "ok   "} ${stage.padEnd(22)} ${String(measured.max).padStart(10)} gas` +
-        `  ${over > 0 ? `${over} OVER` : `${-over} to spare`}`,
+      `  ${status} ${stage.padEnd(22)} ${String(measured.max).padStart(10)} gas` +
+        `  ${headroom < 0 ? `${-headroom} OVER` : `${headroom} to spare`}`,
     );
-    if (over > 0) {
+    if (headroom < 0) {
       violations.push(
-        `stage ${stage} peaks at ${measured.max} gas per transaction, ${over} above the cap`,
+        `stage ${stage} peaks at ${measured.max} gas per transaction, ${-headroom} above the cap`,
       );
+    } else if (headroom < WARN_HEADROOM_GAS) {
+      tight.push(`${stage} (${headroom} to spare)`);
     }
   }
 
@@ -139,6 +151,20 @@ function main(): void {
   console.log(
     `\ngas-cap PASS — every measured stage transaction fits the ${TRANSACTION_GAS_CAP} gas cap`,
   );
+  console.log(
+    `  measured at ${evidence.cellsPerChunk} cells per chunk over ${universe.cells} cells; the ` +
+      "negative fixture that 256 does NOT fit lives in packages/curve/test/constants.test.ts and " +
+      "confidential/test/08-chunk-width.ts",
+  );
+  if (tight.length > 0) {
+    // A warning, not a failure. These stages fit today, on a local measurement, and testnet gas is
+    // UNVERIFIED (AS-1) — so naming them is the honest middle ground between silence and a red gate.
+    console.log(
+      `  TIGHT, within ${WARN_HEADROOM_GAS} gas of the cap: ${tight.join(", ")}.\n` +
+        "  These are the next widths that will need attention. Nothing is claimed about them beyond " +
+        "the measurement above.",
+    );
+  }
 }
 
 main();

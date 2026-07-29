@@ -49,14 +49,33 @@ uint16 constant CURVE_RANK_CEILING = 8_192;
 // per stage: storage, external-call and calldata overhead that a primitive benchmark never sees.
 // Raw data in `evidence/phase3/stage-gas.json`. The Day 0 conclusion is unchanged — the full
 // universe is executable — but it takes about 30 transactions rather than 18.
-uint256 constant CURVE_TRANSACTION_GAS_CEILING = 24_000_000;
-// 311 x 72,226 + 166,954 = 22.6M, so the Day 0 ceiling of 311 SURVIVES the remeasurement — but
-// only after stage C was restructured leaf-major. Before that the measured cell cost was 128,914
-// and 311 cells would have been a 40M transaction, above a whole block.
-uint256 constant CURVE_MAX_CELLS_PER_TRANSACTION = 311;
-// 256 x 72,226 + 166,954 = 18.7M, about 22% margin. Deliberately under the maximum: this is a
-// local-node measurement and testnet gas is UNVERIFIED (AS-1).
-uint256 constant CURVE_RECOMMENDED_CELLS_PER_TRANSACTION = 256;
+// ════════════════════════════════════════════════════════════════════════════════════════════
+// THE CEILING IS A PROTOCOL RULE NOW, NOT A LOCAL MEASUREMENT — Phase 4 delta S-2
+// ════════════════════════════════════════════════════════════════════════════════════════════
+//
+// Phase 3 set this to 24,000,000: a judgement about what a sensible transaction should cost,
+// measured on a local node the Nox plugin had configured as an OP chain at Isthmus, which enforces
+// no per-transaction gas limit at all.
+//
+// EIP-7825, introduced in Osaka, caps a single transaction at 2^24 = 16,777,216 gas regardless of
+// the block gas limit — 60,000,000 on that same node, which is exactly why the cap is invisible
+// unless you look for it. Ethereum Sepolia is on Osaka and Kyrve compiles for Osaka, so this is not
+// a preference any more and there is no override. Measured on both sides of the boundary by
+// `confidential/test/09-osaka.ts`: 16,777,216 is accepted, 16,777,217 is refused.
+uint256 constant CURVE_TRANSACTION_GAS_CEILING = 16_777_216;
+// 192 x 71,068 = 13,645,056, which is 18.7% under the Osaka cap.
+//
+// The old bound was 311 (22.6M at the old ceiling) with a recommendation of 256, measured at
+// 18,193,386 — 1,416,170 OVER the cap, and the only stage width that was. The measured cost is
+// dominated by the per-cell term, so the largest chunk that FITS is about 236; 192 is chosen
+// instead, for the same reason 256 sat under 311: this is a local-node measurement and testnet gas
+// is UNVERIFIED (AS-1), so the bound carries margin rather than sitting on the limit.
+//
+// The maximum and the recommendation now coincide. Under a 24M ceiling there was room for a
+// permitted maximum and a smaller advised width; under 16.7M the margin belongs in the maximum,
+// because a universe created at the maximum must be executable and nothing else enforces it.
+uint256 constant CURVE_MAX_CELLS_PER_TRANSACTION = 192;
+uint256 constant CURVE_RECOMMENDED_CELLS_PER_TRANSACTION = 192;
 
 // ── Stage chunk widths, all derived from the measured per-unit cost
 // ────────────────────────
