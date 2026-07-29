@@ -164,6 +164,14 @@ export async function grantHandleAccess(
   network: NoxNetwork,
   handle: Handle,
   recipient: Address,
+  /**
+   * An explicit nonce, for issuing many independent grants without waiting for each receipt.
+   *
+   * A mandate is 35 grants and their only ordering requirement is that they all land. On a public
+   * network, waiting for each in turn is twenty minutes of block time for no benefit. The caller
+   * still has to check every receipt — this makes the batch possible, not safe on its own.
+   */
+  options: { readonly nonce?: number } = {},
 ): Promise<Hex> {
   const account = walletClient.account;
   if (account === undefined) {
@@ -179,6 +187,7 @@ export async function grantHandleAccess(
     args: [handle, recipient],
     account,
     chain: walletClient.chain ?? null,
+    ...(options.nonce === undefined ? {} : { nonce: options.nonce }),
   });
 }
 

@@ -14,8 +14,8 @@ Grading matches every previous phase:
 - **CORRECTION** — states something that verification contradicts. Must change.
 - **RISK** — unresolved, with a required action.
 
-Every finding below is backed by executable output. **Eight of the twelve were found by running
-something rather than by reading it**, and four of those only surfaced on a real network or at full
+Every finding below is backed by executable output. **Ten of the fourteen were found by running
+something rather than by reading it**, and five of those only surfaced on a real network or at full
 scale — which is the pattern worth noticing more than any individual entry.
 
 ---
@@ -341,6 +341,48 @@ wall clock, and the Sepolia smoke test round-tripped nineteen proofs without goi
 
 ---
 
+## R-13 · §31 — `scripts/` is not typechecked by `tsc --build` · CORRECTION
+
+*Reproduce: `grep -c scripts tsconfig.json` → 0, then `pnpm exec tsc -p scripts/tsconfig.json --noEmit`.*
+
+The root `tsconfig.json` is a solution file referencing `packages/*` only. `scripts/` has its own
+`tsconfig.json` but is in no project reference, so `pnpm exec tsc --build` — which the Phase 3 gate
+reports as "tsc --build clean across all project references" — **never typechecked a single line of
+it**.
+
+That is the entire deployment, verification and gate tree.
+
+Found by accident: a genuinely broken script, with a dozen scope errors after a bad refactor,
+passed `tsc --build` and then failed at runtime under `tsx`, which strips types without checking
+them. Running the scripts project directly found the errors immediately — and found **none
+anywhere else**, so nothing had drifted into the gap. That is luck rather than design.
+
+**Applied as:** `pnpm typecheck:scripts`, wired into the Phase 3 gate in the same commit. The gate
+description now distinguishes the two, because "TypeScript build across every package" was a true
+statement that read as a stronger one.
+
+---
+
+## R-14 · v1.1 A-15 — an undefined handle reaches the gateway as `chain_id 0` · GAP
+
+*Measured on Sepolia: `{"error":"unknown_chain","message":"chain_id 0 not configured"}`.*
+
+A handle embeds its chain id in bytes 1–4. The undefined handle is `bytes32(0)`, so those bytes are
+zero — and the gateway rejects it as an **unconfigured chain** rather than as an empty handle.
+
+The message names neither the handle nor the real problem, and it arrives from a component that is
+otherwise working perfectly. In this case the cause was a stale read: `publishedOf` was fetched once
+before stage F and reused afterwards, so four of the five handles were already set by
+`publishWinner` and decrypted correctly, and only `aggregateFillAmount` was still undefined. **The
+bug read the right answer four times out of five**, which is the hardest kind to see.
+
+**Action:** treat `unknown_chain` from the handle gateway as "you passed an undefined or malformed
+handle" and say so, rather than surfacing the gateway's wording. Any code path that reads a handle
+set which is populated across several transactions must re-read after the last of them — noted in
+`PHASE-4-PREREQUISITES.md`, because `QuoteActivator` reads exactly such a set.
+
+---
+
 ## Residuals carried forward
 
 | Item | Status after Phase 3 |
@@ -351,4 +393,4 @@ wall clock, and the Sepolia smoke test round-tripped nineteen proofs without goi
 | Concurrent epochs (AS-5) | **STILL UNVERIFIED.** The controller makes epochs independent by construction, but nothing has run two at once. |
 | Morpho BUSL Additional Use Grant (AS-10) | **STILL EMPTY.** External, non-technical, unchanged. |
 | 24M gas ceiling on live Sepolia (AS-11) | **FURTHER DISCHARGED.** 11,585,791 gas of Phase 3 deployment landed across six transactions plus three bindings. The largest single curve transaction measured anywhere is 18,193,386 gas, locally. |
-| A real curve epoch on Sepolia | **NOT RUN — a funding gap, priced.** 24,830,000 gas ≈ 0.0236 ETH at the live gas price, against a 0.0041 ETH balance. |
+| A real curve epoch on Sepolia | **RUN AND VERIFIED.** Epoch `0xcf3e5c94…`, 2 providers, 1 market, 2 leaves. Every published value matched the plaintext reference model exactly. Measured cost **0.0299 ETH**, against a 0.0236 prediction — the local-gas estimate understated a public network by 27%. |

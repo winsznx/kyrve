@@ -132,6 +132,21 @@ const GATES: readonly Gate[] = [
     },
   },
   {
+    /**
+     * `scripts/` is NOT in the root tsconfig solution, so `tsc --build` never covered it — and
+     * that is the entire deployment, verification and gate tree. Found when a genuinely broken
+     * script typechecked clean under `tsc --build` and then failed at runtime. Every other script
+     * turned out to be fine, so nothing had drifted into the gap, but a gap that reports success
+     * is the shape of thing this repository exists to close. Delta R-13.
+     */
+    section: "LOCKS AND BOUNDARIES",
+    name: "TypeScript across scripts/ (not covered by tsc --build)",
+    execute: () => {
+      run("pnpm", ["exec", "tsc", "-p", "scripts/tsconfig.json", "--noEmit"]);
+      return "scripts/ typechecks clean";
+    },
+  },
+  {
     section: "LOCKS AND BOUNDARIES",
     name: "confidential contracts compile (solc 0.8.36, osaka)",
     execute: () =>

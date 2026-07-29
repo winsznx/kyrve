@@ -36,6 +36,12 @@ authorisation.
 3. Decode the plaintext with `DecryptedValue.toUint`, never `abi.decode`. The gateway returns the
    value at its **natural width**, so a published `euint16` is two bytes and `abi.decode` reverts
    with no reason string. Delta [R-5](PRD-DELTA.md).
+4. **Re-read the published handle set after the last stage that writes it.** `QuoteActivator` reads
+   exactly such a set, and it is populated across two transactions — `publishWinner` sets four
+   handles and `publishAggregate` sets the fifth. A stale read leaves the fifth as the undefined
+   handle, whose embedded chain id is 0, and the gateway then answers `unknown_chain: chain_id 0 not
+   configured` — a message that names neither the handle nor the mistake, on a path where the other
+   four decrypt perfectly. Delta [R-14](PRD-DELTA.md).
 
 ## P4-2 · A reservation is not a lock, and Phase 4 is where that has to change
 
@@ -76,6 +82,12 @@ to the settlement path, not to it. Delta [R-10](PRD-DELTA.md).
 more than 3,600 seconds ahead of wall clock every gateway proof looks expired.
 `allowBlocksWithSameTimestamp: true` keeps them aligned. Any new long-running suite inherits this.
 Delta [R-12](PRD-DELTA.md).
+
+**And a third, in the toolchain rather than the chain.** `scripts/` is in no project reference, so
+`tsc --build` never typechecked the deployment, verification and gate tree — `tsx` strips types
+without checking them, so a broken script runs anyway. `pnpm typecheck:scripts` now covers it and is
+in the gate. Every new `verify:*` or deploy script must be typechecked and gate-wired in the commit
+that adds it. Delta [R-13](PRD-DELTA.md).
 
 ---
 
@@ -148,6 +160,5 @@ Delta [R-12](PRD-DELTA.md).
   sealed request's bond. Phase 4 must close that with the request book revision or by making the
   epoch's outcome independent of it.
 - No Cloudflare resource of any kind. Nothing was created.
-- **No curve epoch on Sepolia.** A funding gap of 0.0196 ETH, priced against the live gas price by
-  `scripts/test/sepolia-epoch-budget.ts`. Every stage is proven locally against the real stack and
-  the deployed layer is verified read-only; the two have not been combined on a public network.
+- **No 16 × 128 epoch on Sepolia.** A four-cell epoch ran and verified there (`0xcf3e5c94…`), but
+  the full universe is 2,048 cells and roughly 120 times the transactions, and has only run locally.

@@ -1,0 +1,11 @@
+{
+  "$comment": "The measured cost of the Sepolia curve epoch, derived from wallet balances. The estimate in scripts/test/sepolia-epoch-budget.ts predicted 0.0236 ETH from local gas figures; the real cost was 27% higher, which is the honest gap between a local measurement and a public network.",
+  "chainId": 11155111,
+  "curatorGasEth": "0.012286506771678095",
+  "measuredAt": "2026-07-29T18:16:17.628Z",
+  "note": "The provider funding itself is not a cost — it moved sideways and the remainder is recoverable with `pnpm dust:sweep`.",
+  "predictedEth": "0.023624491258810000",
+  "providerGasEth": "0.017631097792919868",
+  "totalEth": "0.029917604564597963"
+}
+

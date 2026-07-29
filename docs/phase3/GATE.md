@@ -5,22 +5,20 @@ PHASE 3 — LOCKS AND BOUNDARIES                   PASS
 PHASE 3 — CURVE ENGINE                           PASS
 PHASE 3 — PRIVACY                                PASS
 PHASE 3 — QUALITY AND SECURITY                   PASS
-PHASE 3 — SEPOLIA                                CONDITIONAL
+PHASE 3 — SEPOLIA                                PASS
 
-Overall: CONDITIONAL PASS
+Overall: PASS
 Branch:       phase/03-curve-engine
 Baseline:     5039e9e (Phase 2 completed)
 Date:         2026-07-29
 ```
 
-`pnpm verify:phase3` reports **25 passed, 0 failed, 1 skipped**.
+`pnpm verify:phase3` reports **27 passed, 0 failed, 0 skipped**.
 
-The one skip is a real curve epoch executed on Sepolia, and it is a **funding gap, not a technical
-one**: 24,830,000 gas ≈ 0.0236 ETH at the live gas price, against a 0.0041 ETH balance. It is priced
-by `scripts/test/sepolia-epoch-budget.ts` rather than estimated, and it is reported as NOT RUN rather
-than folded into the pass count.
-
-Phase 2 was an unconditional PASS. This is not, and saying so is the point of having a gate.
+It did not start there. The gate stood at CONDITIONAL PASS with one SKIP — a real curve epoch on
+Sepolia — for as long as the deployer was unfunded, and that skip was reported with a priced
+shortfall rather than folded into the pass count. It is now run, and the section below records what
+it cost, including where the estimate was wrong.
 
 ---
 
@@ -223,11 +221,40 @@ contracts that must know it.
 Phase 2 is deliberately **not** redeployed. The engine is constructed against the five contracts
 already deployed and verified there.
 
-### What Sepolia does NOT prove
+### A real curve epoch ran on Sepolia
 
-**No curve epoch has run on Sepolia.** Every stage is proven against the real Nox stack locally, and
-the deployed layer is verified read-only — but the two have not been combined on a public network.
-That is a funding gap of 0.0196 ETH, priced against the live gas price, not a technical unknown.
+Epoch `0xcf3e5c94427e62ce1d362d071c5e29aeed801b51b424fbd2e01d63a76b4690e3`, against the hosted iExec
+stack: two providers, one borrower, one market, two rates. The smallest universe that still exercises
+every stage — a privacy floor of 2 needs two providers, and two leaves make the winner fold do a real
+comparison rather than only seeding.
+
+| | on Sepolia | reference model |
+|---|---|---|
+| selected market index | 0 | 0 |
+| selected rate index | 0 | 0 |
+| privacy floor passed | true | true |
+| quote ready | true | true |
+| **aggregate fill** | **299,999,999** | **299,999,999** |
+
+All five verified through `CurveResultVerifier` with real gateway proofs, under graph root
+`0xe7f7ca73…`.
+
+The aggregate is 299,999,999 and not 300,000,000, and that is the design working rather than a
+rounding annoyance: each pro-rata share is floored by `safeDiv`, so the reservations sum to one unit
+less than the winning leaf's fill. The published aggregate is defined as the sum of what was
+*reserved*, so "reservations sum to the public aggregate" holds exactly — and the reference model
+predicted the same 299,999,999 without being told.
+
+**Measured cost: 0.0299 ETH** across three wallets — 0.0123 curator, 0.0176 across the two providers,
+whose 37 ACL grants each are the bulk of it. `scripts/test/sepolia-epoch-budget.ts` predicted 0.0236
+from local gas figures, so **the local estimate understated a public network by 27%**. Recorded in
+`evidence/phase3/sepolia-epoch-cost.json`.
+
+### What Sepolia still does NOT prove
+
+The 16 x 128 universe has run locally, not on Sepolia — that is 2,048 cells against this epoch's 4,
+and roughly 120 times the transactions. Nor does any of this make the hosted KMS, ingestor and runner
+a Kyrve availability guarantee; they are an operational dependency, disclosed as one.
 
 ---
 
@@ -273,8 +300,8 @@ pnpm verify:etherscan:curve
 
 ## New PRD deltas
 
-Twelve, in [`PRD-DELTA.md`](PRD-DELTA.md). **Eight of the twelve were found by running something
-rather than by reading it**, and four only surfaced on a real network or at full scale. Four are
+Fourteen, in [`PRD-DELTA.md`](PRD-DELTA.md). **Ten of the fourteen were found by running something
+rather than by reading it**, and five only surfaced on a real network or at full scale. Four are
 worth reading even if the rest are not:
 
 - **R-10** — `NoxCurveEngine` was 464 bytes over EIP-170 and the entire suite ran green against it,
@@ -285,13 +312,17 @@ worth reading even if the rest are not:
 - **R-3** — every stage costs more than Day 0 measured, and stage B's UNIT was wrong as well as its
   cost. The conclusion survives; the schedule grew from 18 transactions to 22.
 - **R-6** — the obvious ACL-aliasing test passes with the defence removed.
+- **R-13** — `scripts/` is in no project reference, so `tsc --build` never typechecked the entire
+  deployment, verification and gate tree. Found when a badly broken script passed the build and then
+  failed at runtime.
 
 ---
 
 ## Residual risks
 
 Unchanged unless noted: storage under load (AS-4), concurrent epochs (AS-5), the Morpho licence grant
-(AS-10). AS-1 is **discharged for a single round trip** and open for epoch-scale throughput (R-7).
+(AS-10). AS-1 is **discharged**: a nineteen-handle round trip, and now a complete four-cell epoch
+end to end on a public network. Epoch-scale throughput at 16 × 128 remains local-only (R-7).
 Gas indistinguishability (T-1) was re-measured against the curve engine and showed no separation; the
 claim still must not be made.
 
