@@ -17,9 +17,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc --build"
+    "build": "tsc --build tsconfig.build.json"
   },
   "dependencies": {
+    "@iexec-nox/handle": "0.1.0-beta.13",
     "@kyrve/config": "workspace:*",
     "viem": "2.55.10"
   }

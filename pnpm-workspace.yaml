@@ -5,6 +5,7 @@ packages:
   - packages/*
   - workers/*
   - apps/*
+  - confidential
 
 onlyBuiltDependencies:
   - esbuild

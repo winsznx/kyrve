@@ -56,18 +56,61 @@ export function classifyFailure(status: number, body: string): NoxGatewayError {
   return new NoxGatewayError(`gateway ${status} (terminal): ${body}`, false);
 }
 
-/** Parses whatever shape the undocumented status endpoint returns into a known state. */
-export function parseHandleState(raw: unknown): HandleState {
+/**
+ * Parses whatever shape the undocumented status endpoint returns into a known state.
+ *
+ * THE SHAPE THE REAL GATEWAY ACTUALLY RETURNS, measured against nox-handle-gateway 0.6.0 in
+ * Phase 2 and recorded as delta Q-3:
+ *
+ *     { "payload": { "statuses": [ { "handle": "0x…", "resolved": true } ] } }
+ *
+ * The Day 0 implementation guessed `{state}` / `{status}` / `{ready}` from the endpoint's name and
+ * never met a live gateway, so every real response fell through to `unknown` and every wait would
+ * have run to timeout. The guessed shapes are kept because the endpoint is absent from both the SDK
+ * and the documentation and may change again; the measured shape is now first and is the one under
+ * test.
+ *
+ * @param handle when supplied, a `statuses` array is filtered to that handle. Without it the first
+ *        entry is used, which is correct for the single-handle polls this module performs.
+ */
+export function parseHandleState(raw: unknown, handle?: Handle): HandleState {
   if (typeof raw === "string") return normalise(raw);
-  if (raw !== null && typeof raw === "object") {
-    const record = raw as Record<string, unknown>;
-    for (const key of ["state", "status", "handleStatus"]) {
-      const value = record[key];
-      if (typeof value === "string") return normalise(value);
-    }
-    if (record["ready"] === true) return "ready";
-    if (record["ready"] === false) return "pending";
+  if (raw === null || typeof raw !== "object") return "unknown";
+
+  const record = raw as Record<string, unknown>;
+
+  const payload = record["payload"];
+  const container = (payload !== null && typeof payload === "object" ? payload : record) as Record<
+    string,
+    unknown
+  >;
+  const statuses = container["statuses"];
+  if (Array.isArray(statuses)) {
+    const entries = statuses.filter(
+      (entry): entry is Record<string, unknown> => entry !== null && typeof entry === "object",
+    );
+    const match =
+      handle === undefined
+        ? entries[0]
+        : entries.find(
+            (entry) =>
+              typeof entry["handle"] === "string" &&
+              (entry["handle"] as string).toLowerCase() === handle.toLowerCase(),
+          );
+    if (match === undefined) return "unknown";
+    if (match["resolved"] === true) return "ready";
+    if (match["resolved"] === false) return "pending";
+    const state = match["state"] ?? match["status"];
+    if (typeof state === "string") return normalise(state);
+    return "unknown";
   }
+
+  for (const key of ["state", "status", "handleStatus"]) {
+    const value = record[key];
+    if (typeof value === "string") return normalise(value);
+  }
+  if (record["ready"] === true) return "ready";
+  if (record["ready"] === false) return "pending";
   return "unknown";
 }
 
@@ -174,7 +217,7 @@ export async function waitForHandle(
       const error = classifyFailure(status, body);
       if (!error.retryable) throw error;
     } else {
-      const state = parseHandleState(safeParse(body));
+      const state = parseHandleState(safeParse(body), handle);
       if (state === "ready") return { handle, state };
       if (state === "failed") {
         return { handle, state, reason: "gateway reported a terminal computation failure" };

@@ -53,7 +53,7 @@
       "linter": {
         "rules": {
           "style": { "noNonNullAssertion": "off" },
-          "suspicious": { "noExplicitAny": "off" }
+          "suspicious": { "noExplicitAny": "off", "noConsole": "off" }
         }
       }
     },

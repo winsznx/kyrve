@@ -1,0 +1,167 @@
+# Local test stack for the Nox Hardhat plugin.
+#
+# This stack targets a Hardhat node running on the host machine.
+# Smart contracts are NOT deployed here — the plugin uses `hardhat_setCode`
+# to inject NoxCompute bytecode directly into the EDR-simulated network.
+#
+# env vars (NOX_COMPUTE_CONTRACT, NOX_CHAIN_ID, HOST_RPC_URL, ...) are
+# loaded from dev.env file.
+
+networks:
+  frontend:
+    name: frontend
+  backend:
+    name: backend
+
+services:
+  nox-kms:
+    image: iexechub/nox-kms:${NOX_KMS_VERSION}
+    environment:
+      - NOX_KMS_WALLET_KEY=${NOX_KMS_WALLET_KEY}
+      - NOX_KMS_CHAINS__${NOX_CHAIN_ID}__RPC_URL=${HOST_RPC_URL}
+      - NOX_KMS_CHAINS__${NOX_CHAIN_ID}__NOX_COMPUTE_CONTRACT_ADDRESS=${NOX_COMPUTE_CONTRACT}
+      - NOX_KMS_CHAINS__${NOX_CHAIN_ID}__ECC_KEY=${NOX_KMS_ECC_KEY}
+      - NOX_KMS_SERVER__HOST=0.0.0.0
+      - RUST_LOG=${NOX_KMS_RUST_LOG:-info}
+    networks:
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://0.0.0.0:9000/health || exit 1"]
+      interval: 1s
+      timeout: 5s
+      retries: 20
+
+  s3:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${NOX_S3_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${NOX_S3_SECRET_KEY}
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 15
+
+  s3-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    networks:
+      - backend
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set s3 http://s3:9000 $${NOX_S3_ACCESS_KEY} $${NOX_S3_SECRET_KEY} &&
+      mc mb --ignore-existing s3/$${NOX_S3_BUCKET}
+      "
+    environment:
+      - NOX_S3_ACCESS_KEY=${NOX_S3_ACCESS_KEY}
+      - NOX_S3_SECRET_KEY=${NOX_S3_SECRET_KEY}
+      - NOX_S3_BUCKET=${NOX_S3_BUCKET}
+    depends_on:
+      s3:
+        condition: service_healthy
+
+  nox-handle-gateway:
+    image: iexechub/nox-handle-gateway:${NOX_HANDLE_GATEWAY_VERSION}
+    environment:
+      - NOX_HANDLE_GATEWAY_DEFAULT_CHAIN_ID=${NOX_CHAIN_ID}
+      - NOX_HANDLE_GATEWAY_KMS__URL=http://nox-kms:9000
+      - NOX_HANDLE_GATEWAY_KMS__SIGNER_ADDRESS=${NOX_KMS_SIGNER_ADDRESS}
+      - NOX_HANDLE_GATEWAY_RUNNER_ADDRESS=${NOX_RUNNER_SIGNER_ADDRESS}
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__RPC_URL=${HOST_RPC_URL}
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__NOX_COMPUTE_CONTRACT_ADDRESS=${NOX_COMPUTE_CONTRACT}
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__WALLET_KEY=${NOX_GATEWAY_WALLET_KEY}
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__S3__ENDPOINT_URL=http://s3:9000
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__S3__ACCESS_KEY=${NOX_S3_ACCESS_KEY}
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__S3__SECRET_KEY=${NOX_S3_SECRET_KEY}
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__S3__BUCKET=${NOX_S3_BUCKET}
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__S3__OBJECT_LOCK_ENABLED=false
+      - NOX_HANDLE_GATEWAY_CHAINS__${NOX_CHAIN_ID}__S3__REGION=eu-west-3
+      - NOX_HANDLE_GATEWAY_SERVER__HOST=0.0.0.0
+      - NOX_HANDLE_GATEWAY_SERVER__PORT=3000
+      - RUST_LOG=${NOX_HANDLE_GATEWAY_RUST_LOG:-info}
+    ports:
+      - "3000"
+    networks:
+      - frontend
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      nox-kms:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+      s3-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://0.0.0.0:3000 || exit 1"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: nats:2.12-alpine
+    command: ["--jetstream", "--store_dir", "/data", "--http_port", "8222", "-m", "8222"]
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nox-ingestor:
+    image: iexechub/nox-ingestor:${NOX_INGESTOR_VERSION}
+    environment:
+      - NOX_INGESTOR_NATS__TLS__ENABLED=false
+      - NOX_INGESTOR_NATS__NUM_REPLICAS=1
+      - NOX_INGESTOR_CHAIN__CHAIN_ID=${NOX_CHAIN_ID}
+      - NOX_INGESTOR_CHAIN__RPC_ENDPOINT=${HOST_RPC_URL}
+      - NOX_INGESTOR_CHAIN__CONTRACT_ADDRESS=${NOX_COMPUTE_CONTRACT}
+      - NOX_INGESTOR_CHAIN__INITIAL_BLOCK=${NOX_COMPUTE_CONTRACT_BLOCK}
+      - NOX_INGESTOR_APP__STATE_PATH=/data/nox_ingestor_state_${NOX_CHAIN_ID}.json
+      - NOX_INGESTOR_NATS__URLS=nats://nats:4222
+      - RUST_LOG=${NOX_INGESTOR_RUST_LOG:-info}
+    networks:
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      nats:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nox-runner:
+    image: iexechub/nox-runner:${NOX_RUNNER_VERSION}
+    environment:
+      - NOX_RUNNER_NATS__TLS__ENABLED=false
+      - NOX_RUNNER_CHAINS__${NOX_CHAIN_ID}__RPC_URL=${HOST_RPC_URL}
+      - NOX_RUNNER_CHAINS__${NOX_CHAIN_ID}__NOX_COMPUTE_CONTRACT_ADDRESS=${NOX_COMPUTE_CONTRACT}
+      - NOX_RUNNER_HANDLE_GATEWAY_URL=http://nox-handle-gateway:3000
+      - NOX_RUNNER_NATS__URLS=nats://nats:4222
+      - RUST_LOG=${NOX_RUNNER_RUST_LOG:-info}
+      - NOX_RUNNER_WALLET_KEY=${NOX_RUNNER_WALLET_KEY}
+    networks:
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      nats:
+        condition: service_healthy
+      nox-handle-gateway:
+        condition: service_healthy
+    restart: unless-stopped

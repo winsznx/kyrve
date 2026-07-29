@@ -83,6 +83,14 @@ export interface NoxNetwork {
   readonly noxCompute: Address;
   /** Handle gateway base URL. The local stack publishes this on a Docker-assigned port. */
   readonly gatewayUrl: string;
+  /**
+   * Optional subgraph base URL.
+   *
+   * Kyrve never queries it: authorisation is read from the chain so an answer about who may decrypt
+   * a value never depends on an indexer being up, and a local stack has no subgraph at all. The
+   * field exists because `@iexec-nox/handle` validates its presence at construction.
+   */
+  readonly subgraphUrl?: string;
 }
 
 /**

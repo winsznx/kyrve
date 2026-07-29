@@ -33,6 +33,13 @@ const BOUNDARIES: readonly Boundary[] = [
       "packages/nox/",
       // Contracts legitimately import the MIT Solidity SDK; that is the other half of the boundary.
       "contracts/",
+      "confidential/contracts/",
+      // Test and build INFRASTRUCTURE for the confidential layer. `@iexec-nox/nox-hardhat-plugin`
+      // boots the real Nox Docker stack, which is the only way to test against real handles and
+      // real gateway proofs; it ships nowhere and appears in no bundle. Note what is NOT listed:
+      // `confidential/scripts/` is product code and goes through @kyrve/nox like everything else.
+      "confidential/hardhat.config.ts",
+      "confidential/test/",
       // Frozen Day 0 evidence, which must keep reproducing exactly as recorded.
       "spikes/",
     ],

@@ -1,0 +1,32 @@
+{
+  "name": "@kyrve/confidential",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "description": "Kyrve confidential contract layer. Compiled at solc 0.8.36 because @iexec-nox/nox-protocol-contracts requires ^0.8.35, and tested only against the real local Nox stack.",
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "stack:up": "tsx scripts/stack.ts up",
+    "stack:down": "tsx scripts/stack.ts down",
+    "dev": "tsx scripts/dev-node.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "5.0.7",
+    "hardhat": "3.11.1",
+    "tsx": "4.23.1"
+  },
+  "dependencies": {
+    "@iexec-nox/handle": "0.1.0-beta.13",
+    "@iexec-nox/nox-confidential-contracts": "0.2.2",
+    "@iexec-nox/nox-hardhat-plugin": "0.1.0",
+    "@iexec-nox/nox-protocol-contracts": "0.2.4",
+    "@kyrve/config": "workspace:*",
+    "@kyrve/nox": "workspace:*",
+    "@openzeppelin/contracts": "5.6.1",
+    "docker-compose": "1.2.0",
+    "encrypted-types": "0.0.4",
+    "viem": "2.55.10"
+  }
+}

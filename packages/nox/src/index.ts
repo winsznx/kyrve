@@ -23,6 +23,39 @@ export {
   type TransientRecipientPolicy,
 } from "./acl.js";
 export {
+  CONFIDENTIAL_STATE_COPY,
+  type ConfidentialState,
+  confidentialStateOf,
+  type HandleAcl,
+  readAcl,
+} from "./acl-chain.js";
+export {
+  COLLATERAL_FAMILY_SLOTS,
+  type DisclosurePreview,
+  type EncodedMandate,
+  type EncodedRequest,
+  encryptMandate,
+  encryptRequest,
+  KYRVE_SCHEMA_VERSION,
+  MANDATE_HANDLE_COUNT,
+  MARKET_SLOTS,
+  MATURITY_BUCKET_SLOTS,
+  type MandatePlaintext,
+  mandateDisclosure,
+  mandateFields,
+  REQUEST_HANDLE_COUNT,
+  type RequestPlaintext,
+  requestDisclosure,
+  requestFields,
+} from "./books.js";
+export {
+  createHandleClient,
+  type EncryptedInput,
+  type KyrveHandleClient,
+  NotAuthorisedToDecryptError,
+  NoxClientError,
+} from "./client.js";
+export {
   acceptDecryption,
   type DecryptionProof,
   DecryptionProofError,

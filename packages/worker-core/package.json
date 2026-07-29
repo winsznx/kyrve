@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc --build"
+    "build": "tsc --build tsconfig.build.json"
   },
   "dependencies": {
     "@kyrve/config": "workspace:*",
