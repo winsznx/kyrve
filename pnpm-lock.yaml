@@ -29,6 +29,12 @@ importers:
 
   packages/config: {}
 
+  packages/generated:
+    dependencies:
+      viem:
+        specifier: 2.55.10
+        version: 2.55.10(typescript@5.9.3)
+
   packages/midnight:
     dependencies:
       '@kyrve/config':
