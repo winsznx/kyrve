@@ -11,9 +11,9 @@ Baseline:     89131b3 (Day 0 completed)
 Date:         2026-07-29
 ```
 
-**The contract substrate is complete, on both chains.** The remaining Phase 1 work is operational
-tooling — the Cloudflare foundation, the Nox compatibility promotion, the gas side-channel
-investigation, CI and the security scans — none of which affects what is deployed.
+**The contract substrate is complete on both chains, the Cloudflare foundation is built and green
+locally, and the gas side-channel question is answered.** What remains is CI and the security scan
+set — neither of which affects what is deployed.
 
 The overall grade is CONDITIONAL PASS, not PASS, because those local deliverables are still absent.
 Cloudflare being deferred is an owner decision and is **not** counted against the grade.
@@ -35,15 +35,16 @@ Run `pnpm verify:phase1` for the live version of this table.
 | TypeScript build | **PASS** |
 | lint and format | **PASS** — biome 0, `forge fmt --check` clean |
 | unit and property tests | **PASS** — 213 |
+| Worker tests under workerd | **PASS** — 32 |
+| Nox runtime suite (real local stack) | **PASS** — 28 |
 | Foundry suites | **PASS** — 53 |
-| rate grids regenerate deterministically | **PASS** — byte-identical |
 | local Midnight deployment + 4 markets | **PASS** |
-| generated ABIs and bindings | **PASS** — 11 ABIs, no timestamp, `git diff` clean |
-| Nox runtime compatibility | **NOT PROMOTED** — Day 0 spike suite still the only source |
-| Cloudflare Worker foundation | **NOT BUILT** |
+| generated ABIs, bindings and deployment record | **PASS** — 11 ABIs + embedded deployments, byte-identical on regeneration |
+| Nox runtime compatibility | **PASS** — 24/24 against the real local stack, plus 4 new gas tests. Suite still lives in `spikes/nox`; promotion to a package is deferred (it needs its own Hardhat toolchain: solc 0.8.36 / cancun, not the Midnight profile). |
+| Cloudflare Worker foundation | **PASS** — 4 Workers, 32/32 tests under workerd, 4/4 dry-runs, bundles clean. Nothing deployed. |
 | CI | **NOT BUILT** |
 | security scans | **NOT RUN** |
-| gas side-channel (V-24 / T-1) | **NOT INVESTIGATED** |
+| gas side-channel (V-24 / T-1) | **PASS** — investigated; the Day 0 finding was a measurement artifact (delta P-5) |
 
 ## PHASE 1 — SEPOLIA SUBSTRATE · PASS
 
@@ -117,7 +118,9 @@ pnpm test:unit               213 passed, 0 failed
 pnpm exec tsc --build          0 errors
 pnpm exec biome check .        0 errors
 forge fmt --check              clean
-pnpm verify:phase1            16 passed, 0 failed, 3 skipped
+pnpm test:workers             32 passed, 0 failed   (workerd)
+cd spikes/nox && hardhat test 28 passed, 0 failed   (real local Nox stack, needs Docker)
+pnpm verify:phase1            18 passed, 0 failed, 2 skipped
 ```
 
 Reproduce, local only:
@@ -158,8 +161,23 @@ Alchemy provider and changed `eth_getLogs` behaviour.
 
 ## Gas side-channel result
 
-**NOT INVESTIGATED.** Day 0 V-24 / THREAT-MODEL T-1 stands: four distinct gas values, 2,974 spread
-(2.1%). Kyrve must continue to make no claim of gas indistinguishability.
+**The Day 0 finding was a measurement artifact.** Three of its five "scenarios" supplied identical
+inputs, so its four distinct gas values could not separate predicate effects from position effects.
+
+Controlled re-run against the real local Nox stack:
+
+| Measure | Result |
+|---|---:|
+| noise floor, six **identical** inputs | 2,974 gas — the Day 0 spread, with no predicate variation |
+| predicate gap, eligible vs rejected, interleaved | **0 gas** |
+| rejection reason separable | **no** |
+
+The 2,974 spread is the first-call cold-to-warm storage transition. Gas tracks position, not the
+predicate. T-1 is reclassified OPEN-FAIL → **NOT SUPPORTED BY EVIDENCE**.
+
+**Kyrve still must not claim gas indistinguishability.** This shows the Day 0 evidence never
+demonstrated a leak; it does not prove none exists. Small sample, toy contract, local stack only.
+Full write-up and limits: [`GAS-SIDE-CHANNEL.md`](GAS-SIDE-CHANNEL.md).
 
 ## Licence condition
 
@@ -186,14 +204,12 @@ deployment and a 221,956 gas `take` both executed on live Sepolia without hittin
 
 ## What Phase 1 still needs
 
-1. `workers/{api,indexer,keeper,status}` plus the lifecycle Workflow — health, version and
-   config-verification paths only; local tests and `wrangler deploy --dry-run`, which publishes
-   nothing and needs no account.
-2. Promotion of the Day 0 Nox spike suite into a permanent compatibility package, plus
-   `NOX-COMPATIBILITY.md` with recorded image digests.
-3. The V-24 / T-1 constant-gas investigation.
-4. CI workflows and the security scan set.
-5. The remaining `docs/phase1/` documents.
+1. CI workflows (core, Nox, Workers, deployment verification).
+2. The security scan set (Slither, dependency audit, licence scan, secret scan).
+3. The remaining `docs/phase1/` documents.
+4. Promotion of the Nox suite from `spikes/nox` into a package of its own. Deferred deliberately:
+   it needs a separate Hardhat toolchain (solc 0.8.36, cancun) that must not mix with the Midnight
+   profile, and the suite is green where it stands.
 
 ## Phase 2 prerequisites
 
