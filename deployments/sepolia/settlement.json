@@ -1,0 +1,72 @@
+{
+  "addresses": {
+    "KyrvePublicResultVerifier": "0x6b78231811309a308c0bb12f35787f9b590ad553",
+    "KyrveQuoteExpiryController": "0xebff49b6fbe4db4320220927bd0d2c52c7310393",
+    "KyrveQuoteRegistry": "0x07348f7542af233db32d36d3afec1e9737fe6b50",
+    "KyrveSeriesFactory": "0xe3759533040bc041eb011511bc24116064eb31df",
+    "KyrveSettlementRatifier": "0xc12a62211d0e5e7d64b5d2064dec12eb8f477ac2",
+    "QuoteActivator": "0xbec8b5cb3b4b71daad486eb1d1419523bb49ae78"
+  },
+  "bindings": [
+    "KyrveQuoteRegistry.activator() -> 0xbec8b5cb3b4b71daad486eb1d1419523bb49ae78",
+    "KyrveQuoteRegistry.expiryController() -> 0xebff49b6fbe4db4320220927bd0d2c52c7310393",
+    "QuoteActivator.factory() -> 0xe3759533040bc041eb011511bc24116064eb31df"
+  ],
+  "chainId": 11155111,
+  "compiler": {
+    "bytecodeHash": "none",
+    "evmVersion": "osaka",
+    "matchesSubstrate": true,
+    "matchesSubstrateReason": "Phase 4 imports Midnight interfaces and libraries directly and must stay byte-comparable with the pinned release, so it uses the substrate settings rather than the confidential layer's 0.8.36. It reaches the confidential layer through ICurveLayer, checked by verify:curve-abi.",
+    "optimizer": true,
+    "optimizerRuns": 466,
+    "solc": "0.8.34",
+    "viaIR": true
+  },
+  "curator": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "curve": {
+    "CurveGraphRegistry": "0x0a87cf6a030a35030725bf795747d86669092496",
+    "CurveResultVerifier": "0xabc9e62c789204915b5cb0d4c29d8f4338784415",
+    "CurveUniverseRegistry": "0x963afe31279dc011f0f20e7b721d60e998cbb346",
+    "NoxCurveEngine": "0xe59e8321e6f47e42d9ef8164b871694ecf85b651",
+    "QuoteEpochController": "0xcaa099051aa0e8c3666ac9bbafd0afe60829e782",
+    "ReservationLedger": "0x4f98c7ac252dff6d193c5f204d6fcbeef59c7b45"
+  },
+  "deployedAt": "2026-07-29T21:44:36.000Z",
+  "deployer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "deploymentBlock": "11378196",
+  "deploymentId": "0x3cb6089353ff748827d16ccdec7506aeba2f624093e6a0546a67683aa5a679df",
+  "environment": "sepolia",
+  "ethSpent": "0.007869647917700387",
+  "gasUsed": "7343172",
+  "keeper": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "loanToken": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
+  "midnight": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+  "operator": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "runtimeHashes": {
+    "KyrvePublicResultVerifier": "0x7b0846cc64df098fadcc1cbcc574b712967cb00309565f87f4b6f966c1e43ace",
+    "KyrveQuoteExpiryController": "0xc95ef8efd3e1a106e785bb2f6825eb5349f6e0adb083e7b1f23a3186bda25432",
+    "KyrveQuoteRegistry": "0xd0f5a577df35c319816a0a367bc295c2021b6f8d5b33c8d53fbf09de85f3c735",
+    "KyrveSeriesFactory": "0x446a01ff8967b32af1f07da97bdb1903af1d1292e21bf3bbd9ddf27ff4fa9a2b",
+    "KyrveSettlementRatifier": "0x27f6f9b7b5394a59f7eceb0700c17e89f8aef7a69da9b231bee78acf4187f121",
+    "QuoteActivator": "0xba6cf85af534af5672627ba13b08d38a0489859b7600e16b42d6733d1dc4eee7"
+  },
+  "wiringVerified": [
+    "KyrveQuoteRegistry.MIDNIGHT() -> 0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+    "KyrveSettlementRatifier.REGISTRY() -> 0x07348f7542af233db32d36d3afec1e9737fe6b50",
+    "KyrveSettlementRatifier.MIDNIGHT() -> 0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7",
+    "KyrvePublicResultVerifier.CURVE_VERIFIER() -> 0xabc9e62c789204915b5cb0d4c29d8f4338784415",
+    "KyrvePublicResultVerifier.GRAPH() -> 0x0a87cf6a030a35030725bf795747d86669092496",
+    "KyrvePublicResultVerifier.ENGINE() -> 0xe59e8321e6f47e42d9ef8164b871694ecf85b651",
+    "KyrvePublicResultVerifier.EPOCHS() -> 0xcaa099051aa0e8c3666ac9bbafd0afe60829e782",
+    "QuoteActivator.REGISTRY() -> 0x07348f7542af233db32d36d3afec1e9737fe6b50",
+    "QuoteActivator.VERIFIER() -> 0x6b78231811309a308c0bb12f35787f9b590ad553",
+    "QuoteActivator.UNIVERSES() -> 0x963afe31279dc011f0f20e7b721d60e998cbb346",
+    "QuoteActivator.RATIFIER() -> 0xc12a62211d0e5e7d64b5d2064dec12eb8f477ac2",
+    "KyrveQuoteExpiryController.REGISTRY() -> 0x07348f7542af233db32d36d3afec1e9737fe6b50",
+    "KyrveSeriesFactory.REGISTRY() -> 0x07348f7542af233db32d36d3afec1e9737fe6b50",
+    "KyrveSeriesFactory.ACTIVATOR() -> 0xbec8b5cb3b4b71daad486eb1d1419523bb49ae78",
+    "KyrveSeriesFactory.EXPIRY_CONTROLLER() -> 0xebff49b6fbe4db4320220927bd0d2c52c7310393"
+  ]
+}
+

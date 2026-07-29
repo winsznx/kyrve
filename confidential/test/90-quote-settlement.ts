@@ -620,6 +620,16 @@ describe("Phase 4: one confidential quote settles once, through unmodified Midni
       activateGas: Number(quote.activationGas),
       takeGas: Number(settlementGas),
       fundingGas: Number(quote.fundingGas),
+      /**
+       * The whole settlement layer's deployment and binding cost, from receipts.
+       *
+       * Here rather than in `deployments/local/settlement.json` because learning it that way needs a
+       * standing local node with the Phase 2 and Phase 3 layers already deployed. The harness
+       * deploys the same artifacts with the same constructor arguments, so this is the same
+       * measurement from a cheaper place — and the Sepolia funding budget refuses to total anything
+       * it has not measured.
+       */
+      deploymentGas: Number(s.deploymentGas),
       exactUnits: quote.exactUnits.toString(),
       expectedBuyerAssets: quote.expectedBuyerAssets.toString(),
       note:

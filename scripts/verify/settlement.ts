@@ -59,9 +59,39 @@ interface Deployment {
   readonly bindings: readonly string[];
 }
 
+interface ImmutableReference {
+  readonly start: number;
+  readonly length: number;
+}
+
 interface Artifact {
   readonly abi: readonly unknown[];
-  readonly deployedBytecode: { readonly object: Hex };
+  readonly deployedBytecode: {
+    readonly object: Hex;
+    readonly immutableReferences?: Readonly<Record<string, readonly ImmutableReference[]>>;
+  };
+}
+
+/**
+ * Replaces every immutable slot with `00` bytes, in both the artifact and the on-chain code.
+ *
+ * Offsets are in BYTES from the start of the runtime code, so each maps to two hex characters after
+ * the `0x` prefix.
+ */
+function maskImmutables(
+  bytecode: Hex,
+  references: Readonly<Record<string, readonly ImmutableReference[]>> | undefined,
+): string {
+  const body = bytecode.slice(2).toLowerCase().split("");
+  for (const slots of Object.values(references ?? {})) {
+    for (const slot of slots) {
+      for (let index = 0; index < slot.length * 2; index += 1) {
+        const position = slot.start * 2 + index;
+        if (position < body.length) body[position] = "0";
+      }
+    }
+  }
+  return body.join("");
 }
 
 function artifact(name: string): Artifact {
@@ -173,11 +203,29 @@ async function main(): Promise<void> {
           "repository no longer describes what is deployed",
       );
     }
-    const local = artifact(name).deployedBytecode.object;
-    if (local.toLowerCase() !== code.toLowerCase()) {
+    /**
+     * The comparison, with IMMUTABLE SLOTS MASKED OUT.
+     *
+     * Foundry's `deployedBytecode` carries zeroed placeholders wherever an immutable value will be
+     * written at construction; the code on chain has the real addresses and hashes in those bytes.
+     * A byte-for-byte comparison therefore fails for every contract that has an immutable — which is
+     * all six of these — and a first version of this check duly reported the freshly deployed
+     * `KyrvePublicResultVerifier` as "not produced by this repository".
+     *
+     * `immutableReferences` gives the exact offsets and lengths, so both sides are masked and the
+     * remaining code — every instruction, every constant, every string — is compared exactly. The
+     * immutables themselves are not skipped: the wiring checks below read each one back through its
+     * own getter, which is a stronger statement than a byte match anyway.
+     */
+    const localArtifact = artifact(name);
+    const local = localArtifact.deployedBytecode.object;
+    const masked = maskImmutables(local, localArtifact.deployedBytecode.immutableReferences);
+    const maskedOnChain = maskImmutables(code, localArtifact.deployedBytecode.immutableReferences);
+    if (masked !== maskedOnChain) {
       throw new Error(
-        `${name} deployed code differs from the local artifact. The source in this repository did ` +
-          "not produce the code on chain; rebuild, or the deployment is from another revision.",
+        `${name} deployed code differs from the local artifact outside its immutable slots. The ` +
+          "source in this repository did not produce the code on chain; rebuild, or the deployment " +
+          "is from another revision.",
       );
     }
 

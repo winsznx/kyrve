@@ -74,6 +74,7 @@ export async function deployFoundry(
   name: string,
   args: readonly unknown[],
   walletIndex = 0,
+  onGas?: (gas: bigint) => void,
 ): Promise<any> {
   const { abi, bytecode } = foundryArtifact(name);
   const wallet = h.wallets[walletIndex];
@@ -81,6 +82,7 @@ export async function deployFoundry(
   const hash = await wallet.deployContract({ abi, bytecode, args, account: wallet.account });
   const receipt = await mine(h, hash);
   assert.ok(receipt.contractAddress, `${name} deployment produced no address`);
+  onGas?.(receipt.gasUsed as bigint);
 
   return getContract({
     address: receipt.contractAddress as `0x${string}`,
@@ -90,6 +92,16 @@ export async function deployFoundry(
 }
 
 export interface SettlementHarness {
+  /**
+   * Gas the whole settlement layer cost to deploy and bind, measured from receipts.
+   *
+   * Recorded because the Sepolia funding budget must price a MEASURED sequence and refuses to
+   * produce a total while any component is a guess. Deploying the layer once locally to learn the
+   * number would need a standing node with the Phase 2 and Phase 3 layers already on it; the harness
+   * deploys exactly the same artifacts with exactly the same constructor arguments, so the figure is
+   * the same measurement from a cheaper place.
+   */
+  readonly deploymentGas: bigint;
   /** The Foundry-built substrate: real Midnight, real markets, real tokens. */
   readonly fixture: any;
   readonly midnight: any;
@@ -119,6 +131,7 @@ export async function deploySettlement(
   h: CurveHarness,
   options: { keeperIndex?: number; operatorIndex?: number } = {},
 ): Promise<SettlementHarness> {
+  let deploymentGas = 0n;
   const keeper = h.wallets[options.keeperIndex ?? 9];
   const operatorWallet = h.wallets[options.operatorIndex ?? 8];
   const operator = operatorWallet.account.address as `0x${string}`;
@@ -144,41 +157,71 @@ export async function deploySettlement(
     client: { public: h.publicClient, wallet: h.wallets[0] },
   });
 
-  const registry = await deployFoundry(h, "KyrveQuoteRegistry", [midnightAddress]);
-  const ratifier = await deployFoundry(h, "KyrveSettlementRatifier", [
-    midnightAddress,
-    registry.address,
-  ]);
-  const resultVerifier = await deployFoundry(h, "KyrvePublicResultVerifier", [
-    h.verifier.address,
-    h.graph.address,
-    h.engine.address,
-    h.epochs.address,
-  ]);
-  const activator = await deployFoundry(h, "QuoteActivator", [
-    registry.address,
-    resultVerifier.address,
-    h.universes.address,
-    ratifier.address,
-    keeper.account.address,
-  ]);
-  const expiryController = await deployFoundry(h, "KyrveQuoteExpiryController", [
-    registry.address,
-    operator,
-  ]);
+  const addGas = (gas: bigint): void => {
+    deploymentGas += gas;
+  };
 
-  await mine(h, await registry.write.bindActivator([activator.address]));
-  await mine(h, await registry.write.bindExpiryController([expiryController.address]));
+  const registry = await deployFoundry(h, "KyrveQuoteRegistry", [midnightAddress], 0, addGas);
+  const ratifier = await deployFoundry(
+    h,
+    "KyrveSettlementRatifier",
+    [midnightAddress, registry.address],
+    0,
+    addGas,
+  );
+  const resultVerifier = await deployFoundry(
+    h,
+    "KyrvePublicResultVerifier",
+    [h.verifier.address, h.graph.address, h.engine.address, h.epochs.address],
+    0,
+    addGas,
+  );
+  const activator = await deployFoundry(
+    h,
+    "QuoteActivator",
+    [
+      registry.address,
+      resultVerifier.address,
+      h.universes.address,
+      ratifier.address,
+      keeper.account.address,
+    ],
+    0,
+    addGas,
+  );
+  const expiryController = await deployFoundry(
+    h,
+    "KyrveQuoteExpiryController",
+    [registry.address, operator],
+    0,
+    addGas,
+  );
 
-  const factory = await deployFoundry(h, "KyrveSeriesFactory", [
-    registry.address,
-    activator.address,
-    expiryController.address,
-    h.wallets[0].account.address,
-  ]);
-  await mine(h, await activator.write.bindFactory([factory.address]));
+  const bindActivator = await mine(h, await registry.write.bindActivator([activator.address]));
+  const bindExpiry = await mine(
+    h,
+    await registry.write.bindExpiryController([expiryController.address]),
+  );
+
+  const factory = await deployFoundry(
+    h,
+    "KyrveSeriesFactory",
+    [registry.address, activator.address, expiryController.address, h.wallets[0].account.address],
+    0,
+    addGas,
+  );
+  const bindFactory = await mine(h, await activator.write.bindFactory([factory.address]));
+
+  // The six contracts' own deployment receipts, accumulated as they land, plus the three one-shot
+  // bindings. The fixture, Midnight and the tokens are deliberately excluded: they are the test
+  // substrate, and on Sepolia they are already deployed and are not being paid for again.
+  deploymentGas +=
+    (bindActivator.gasUsed as bigint) +
+    (bindExpiry.gasUsed as bigint) +
+    (bindFactory.gasUsed as bigint);
 
   return {
+    deploymentGas,
     fixture,
     midnight,
     usdc,

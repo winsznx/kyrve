@@ -35,6 +35,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename } from "node:path";
 
 import {
   type Address,
@@ -472,8 +473,16 @@ export async function deploySettlement(environment: Environment): Promise<Settle
   return deployment;
 }
 
-// Only run when invoked directly; `deploySettlement` is imported by the local flow driver.
-if (process.argv[1]?.endsWith("settlement.ts")) {
+/**
+ * Only run when invoked directly; `deploySettlement` and `SETTLEMENT_COMPILER` are imported by other
+ * scripts.
+ *
+ * The basename is compared EXACTLY. A first version used `endsWith("settlement.ts")`, which also
+ * matches `etherscan-settlement.ts` — so importing the compiler constant from the verification
+ * script silently ran a deployment as a side effect, failed on a missing local manifest, and turned
+ * a successful Etherscan run into exit code 1.
+ */
+if (basename(process.argv[1] ?? "") === "settlement.ts") {
   const target: Environment = process.argv[2] === "sepolia" ? "sepolia" : "local";
   deploySettlement(target).catch((error: unknown) => {
     console.error(

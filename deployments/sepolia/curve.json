@@ -1,11 +1,11 @@
 {
   "addresses": {
-    "CurveGraphRegistry": "0xfa5cc26374df9a9f809a102641326e8d45406522",
-    "CurveResultVerifier": "0x0c99904dc91a601f216fe7ef20f93ebeb32d18e1",
-    "CurveUniverseRegistry": "0x6ab68b7a449e229bbabb498ac5346bd1bbb4d49b",
-    "NoxCurveEngine": "0x4106348f3e3d33752c46a331c539d7dfc95d76d1",
-    "QuoteEpochController": "0xdcdca66eec89e6550a9c1cbee71532ffafe84b14",
-    "ReservationLedger": "0x7bfa541831d1db8ca70f44f9989396abc397b650"
+    "CurveGraphRegistry": "0x0a87cf6a030a35030725bf795747d86669092496",
+    "CurveResultVerifier": "0xabc9e62c789204915b5cb0d4c29d8f4338784415",
+    "CurveUniverseRegistry": "0x963afe31279dc011f0f20e7b721d60e998cbb346",
+    "NoxCurveEngine": "0xe59e8321e6f47e42d9ef8164b871694ecf85b651",
+    "QuoteEpochController": "0xcaa099051aa0e8c3666ac9bbafd0afe60829e782",
+    "ReservationLedger": "0x4f98c7ac252dff6d193c5f204d6fcbeef59c7b45"
   },
   "chainId": 11155111,
   "compiler": {
@@ -18,17 +18,17 @@
     "solc": "0.8.36",
     "viaIR": true
   },
-  "deployedAt": "2026-07-29T15:50:36.000Z",
+  "deployedAt": "2026-07-29T21:41:36.000Z",
   "deployer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
-  "deploymentBlock": "11376471",
+  "deploymentBlock": "11378182",
   "engineBoundInto": [
     "QuoteEpochController",
     "CurveGraphRegistry",
     "ReservationLedger"
   ],
   "environment": "sepolia",
-  "ethSpent": "0.012063616628488417",
-  "gasUsed": "11585791",
+  "ethSpent": "0.012092075734357418",
+  "gasUsed": "11580178",
   "noxCompute": "0x24Ef36Ec5b626D7DCD09a98F3083c2758F0F77bF",
   "phase2": {
     "ConfidentialRequestBook": "0x96aa8b16ec3e91c5a3d8ce526f196a4934cb3b39",
@@ -39,25 +39,25 @@
     "TestUnderlyingERC20": "0xd3f224ae2d32c386da0697aa920c9a9eb32df896"
   },
   "runtimeHashes": {
-    "CurveGraphRegistry": "0xa9f26034009f72eebd2bcccb4c3f8412a5534a62434cf947428a124fb8b20b46",
-    "CurveResultVerifier": "0x19b1fc8e6411fc811a3e1beb99e252d7da736706de89f97bbf43597bba37d347",
-    "CurveUniverseRegistry": "0x20ffb4bd54fdbe8b177f3e0d9165d31f90eb09fc5d4cc8509b1a21585aab2297",
-    "NoxCurveEngine": "0xc4a32d6f0b0de4e8b59b06144b857d17bd2b5ad7c4051581e0d308d9fb754e6d",
-    "QuoteEpochController": "0xf8e5768d42102c8060808fa60d134dc61cf204d6fdb59ffed3a843f993b8cf51",
+    "CurveGraphRegistry": "0xf705c254a2b0c6a5eb27df066887a97e7da75c629be8bacb21afbd33f3ee87a6",
+    "CurveResultVerifier": "0x1052ea6adf12b5bf65881430b199bb8e5a4b667bb120e77f66d34b2ca8db023f",
+    "CurveUniverseRegistry": "0x67f018f31c64387e29f0948061bdfc1e1f85aec15d5eb4df9e80931628c1caba",
+    "NoxCurveEngine": "0x762e24da2ab6c475ec43027d568c3795fa6ca8c178a713ced3a0bddd955665bb",
+    "QuoteEpochController": "0x161dd287db944bfd0938e444806b3e9d59ecbd1f24e3b271a21a2cb7f7b3fb28",
     "ReservationLedger": "0x8ef48d4a644e7a520e4fae5aa02dfd76b7c661fc01193957b75e3ce572219eb1"
   },
   "wiringVerified": [
-    "QuoteEpochController.universes() -> 0x6ab68b7a449e229bbabb498ac5346bd1bbb4d49b",
-    "CurveGraphRegistry.controller() -> 0xdcdca66eec89e6550a9c1cbee71532ffafe84b14",
-    "NoxCurveEngine.universes() -> 0x6ab68b7a449e229bbabb498ac5346bd1bbb4d49b",
-    "NoxCurveEngine.controller() -> 0xdcdca66eec89e6550a9c1cbee71532ffafe84b14",
-    "NoxCurveEngine.graph() -> 0xfa5cc26374df9a9f809a102641326e8d45406522",
-    "NoxCurveEngine.ledger() -> 0x7bfa541831d1db8ca70f44f9989396abc397b650",
+    "QuoteEpochController.universes() -> 0x963afe31279dc011f0f20e7b721d60e998cbb346",
+    "CurveGraphRegistry.controller() -> 0xcaa099051aa0e8c3666ac9bbafd0afe60829e782",
+    "NoxCurveEngine.universes() -> 0x963afe31279dc011f0f20e7b721d60e998cbb346",
+    "NoxCurveEngine.controller() -> 0xcaa099051aa0e8c3666ac9bbafd0afe60829e782",
+    "NoxCurveEngine.graph() -> 0x0a87cf6a030a35030725bf795747d86669092496",
+    "NoxCurveEngine.ledger() -> 0x4f98c7ac252dff6d193c5f204d6fcbeef59c7b45",
     "NoxCurveEngine.mandateBook() -> 0xbfe15b60ce998e0f19de3eb1d953aa09dd50bbf9",
     "NoxCurveEngine.requestBook() -> 0x96aa8b16ec3e91c5a3d8ce526f196a4934cb3b39",
     "NoxCurveEngine.vault() -> 0x07e7247726270f7d409580fe2a872ea333257e45",
-    "CurveResultVerifier.graph() -> 0xfa5cc26374df9a9f809a102641326e8d45406522",
-    "CurveResultVerifier.engine() -> 0x4106348f3e3d33752c46a331c539d7dfc95d76d1"
+    "CurveResultVerifier.graph() -> 0x0a87cf6a030a35030725bf795747d86669092496",
+    "CurveResultVerifier.engine() -> 0xe59e8321e6f47e42d9ef8164b871694ecf85b651"
   ]
 }
 

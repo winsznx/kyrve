@@ -97,6 +97,7 @@ function components(): { readonly measured: GasComponent[]; readonly missing: st
   const missing: string[] = [];
 
   const localSettlement = repoPath("deployments/local/settlement.json");
+  const settlementGasPath = repoPath("evidence/phase4/settlement-gas.json");
   if (existsSync(localSettlement)) {
     const record = readJson<{ gasUsed: string }>(localSettlement);
     measured.push({
@@ -104,9 +105,29 @@ function components(): { readonly measured: GasComponent[]; readonly missing: st
       gas: Number(record.gasUsed),
       source: "deployments/local/settlement.json (measured on a local deploy)",
     });
+  } else if (existsSync(settlementGasPath)) {
+    // The confidential suite deploys the same six artifacts with the same constructor arguments and
+    // records the receipts. A dedicated local deployment would measure the same thing and needs a
+    // standing node with Phase 2 and Phase 3 already on it.
+    const record = readJson<{ deploymentGas?: number }>(settlementGasPath);
+    if (record.deploymentGas === undefined || record.deploymentGas <= 0) {
+      missing.push(
+        "settlement layer deployment gas — evidence/phase4/settlement-gas.json exists but records " +
+          "none; re-run `pnpm --filter @kyrve/confidential test`",
+      );
+    } else {
+      measured.push({
+        name: "settlement layer deployment and bindings",
+        gas: record.deploymentGas,
+        source:
+          "evidence/phase4/settlement-gas.json (six deployment receipts plus three bindings, " +
+          "measured against a real chain by the confidential suite)",
+      });
+    }
   } else {
     missing.push(
-      "settlement layer deployment gas — run `pnpm deploy:settlement local` to measure it",
+      "settlement layer deployment gas — run `pnpm deploy:settlement local`, or the confidential " +
+        "suite, which records it",
     );
   }
 
