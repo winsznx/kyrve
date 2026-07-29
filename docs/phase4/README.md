@@ -49,7 +49,7 @@ universe chunk width is 192 rather than 256.
 ## Reading order
 
 1. `docs/phase4/GATE.md` — what is proven, what is not, and what a reader should not conclude.
-2. `docs/phase4/PRD-DELTA.md` — the seven Phase 4 corrections, S-1 through S-7.
+2. `docs/phase4/PRD-DELTA.md` — the nine Phase 4 corrections, S-1 through S-9.
 3. `docs/phase4/SECURITY.md` — every attack, the Slither triage, the gas measurement.
 4. `docs/phase3/PHASE-4-PREREQUISITES.md` — what Phase 3 said had to be true first, and which of it
    this phase discharged.
