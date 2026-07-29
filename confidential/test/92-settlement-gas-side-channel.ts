@@ -167,6 +167,7 @@ describe("Phase 4: the gas side channel on the settlement path", () => {
     borrowerIndex: number,
     inUniverseId: `0x${string}` = universeId,
     inUniverse: typeof universe = universe,
+    lifetime = 3_600n,
   ): Promise<{
     quote: ActivatedQuote;
     borrower: any;
@@ -186,7 +187,7 @@ describe("Phase 4: the gas side channel on the settlement path", () => {
     );
     await runEpoch(h, epoch);
     const result = await collectPublicResult(h, epoch.epochId);
-    const quote = await activateQuote(h, s, epoch, inUniverse, result, markets);
+    const quote = await activateQuote(h, s, epoch, inUniverse, result, markets, { lifetime });
 
     const borrower = h.wallets[borrowerIndex];
     await supplyCollateral(h, s, quote.market, borrower, quote.exactUnits);
@@ -364,6 +365,8 @@ describe("Phase 4: the gas side channel on the settlement path", () => {
     const plan: readonly {
       readonly outcome: Outcome;
       readonly borrowerIndex: number;
+      /** Shorter than the default hour only where reaching expiry means moving the chain clock. */
+      readonly lifetime?: bigint;
       readonly run: (quote: ActivatedQuote, borrower: any) => Promise<void>;
     }[] = [
       {
@@ -416,26 +419,6 @@ describe("Phase 4: the gas side channel on the settlement path", () => {
             "forward",
             quote,
             attacker,
-            quote.exactUnits,
-            quote.offer,
-          );
-        },
-      },
-      {
-        outcome: "expired-quote",
-        borrowerIndex: 10,
-        run: async (quote, borrower) => {
-          const execution = await s.registry.read.executionOf([quote.quoteId]);
-          await h.publicClient.request({
-            method: "evm_setNextBlockTimestamp",
-            params: [`0x${(BigInt(execution.expiry) + 1n).toString(16)}`],
-          } as never);
-          await h.publicClient.request({ method: "evm_mine", params: [] } as never);
-          await measureTake(
-            "expired-quote",
-            "forward",
-            quote,
-            borrower,
             quote.exactUnits,
             quote.offer,
           );
@@ -502,10 +485,47 @@ describe("Phase 4: the gas side channel on the settlement path", () => {
             group: keccak256("0xdeadbeef"),
           }),
       },
+      {
+        outcome: "expired-quote",
+        borrowerIndex: 10,
+        // A FIVE-MINUTE quote, not an hour, and LAST in the forward plan.
+        //
+        // Reaching expiry means moving the chain past it, and `evm_setNextBlockTimestamp` is
+        // cumulative and permanent for the rest of the node's life. At the default one-hour lifetime
+        // this jumped the chain 3,601 seconds ahead of wall clock — and the handle gateway stamps
+        // `createdAt` from ITS real clock, so every input proof minted afterwards looked expired and
+        // the whole reverse pass died on `Proof expired`. That is delta R-12 resurfacing inside a
+        // Phase 4 test.
+        //
+        // 300 seconds is `QuoteActivator.MIN_QUOTE_LIFETIME`, so the jump is the smallest the
+        // contracts permit, and putting the case last means nothing downstream inherits even that.
+        lifetime: 300n,
+        run: async (quote, borrower) => {
+          const execution = await s.registry.read.executionOf([quote.quoteId]);
+          await h.publicClient.request({
+            method: "evm_setNextBlockTimestamp",
+            params: [`0x${(BigInt(execution.expiry) + 1n).toString(16)}`],
+          } as never);
+          await h.publicClient.request({ method: "evm_mine", params: [] } as never);
+          await measureTake(
+            "expired-quote",
+            "forward",
+            quote,
+            borrower,
+            quote.exactUnits,
+            quote.offer,
+          );
+        },
+      },
     ];
 
     for (const step of plan) {
-      const { quote, borrower } = await freshCase(step.borrowerIndex);
+      const { quote, borrower } = await freshCase(
+        step.borrowerIndex,
+        universeId,
+        universe,
+        step.lifetime ?? 3_600n,
+      );
       await step.run(quote, borrower);
     }
 

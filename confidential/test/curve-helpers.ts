@@ -288,7 +288,13 @@ export async function setupProvider(
 
     // ERC-7984 has no per-amount allowance, so the operator window is all-or-nothing. The honest
     // pattern is grant, deposit, `until = 0` — and the window is capped at seven days by the asset.
-    const until = BigInt(Math.floor(Date.now() / 1000) + 3_600);
+    // FROM THE CHAIN'S CLOCK, not the wall clock. `KyrveWrappedAsset` compares `until` against
+    // `block.timestamp`, and on this node the two diverge: any test that advances time to reach an
+    // expiry moves the chain permanently ahead (delta R-12). A window computed from `Date.now()`
+    // therefore lands in the chain's past and `setOperator` reverts
+    // `OperatorWindowInThePast` — which is exactly what happened once a Phase 4 suite warped the
+    // clock upstream of this call.
+    const until = (await h.publicClient.getBlock()).timestamp + 3_600n;
     await mine(
       h,
       await h.asset.write.setOperator([h.vault.address, until], { account: wallet.account }),

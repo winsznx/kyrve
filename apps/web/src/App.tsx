@@ -125,6 +125,8 @@ function Terminal({
   deployment: Deployment;
   session: Session;
 }): React.ReactElement {
+  const settlement = settlementOf(deployment);
+
   return (
     <main className="page">
       <header className="masthead">
@@ -142,9 +144,7 @@ function Terminal({
       <WrapBand deployment={deployment} session={session} />
       <MandateBand deployment={deployment} session={session} />
       <RequestBand deployment={deployment} session={session} />
-      {settlementOf(deployment) !== undefined ? (
-        <QuoteBand settlement={settlementOf(deployment)!} session={session} />
-      ) : null}
+      {settlement !== undefined ? <QuoteBand settlement={settlement} session={session} /> : null}
 
       <section className="band">
         <div className="card">

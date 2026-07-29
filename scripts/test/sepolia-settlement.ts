@@ -90,12 +90,6 @@ function registryEarlyAddress(settlement: SettlementDeployment): Address {
   return address;
 }
 
-function activatorAddress(settlement: SettlementDeployment): Address {
-  const address = settlement.addresses["QuoteActivator"];
-  if (address === undefined) throw new Error("the manifest records no activator");
-  return address;
-}
-
 function artifact(name: string): { abi: readonly unknown[] } {
   return artifactIn(name, name);
 }

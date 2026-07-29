@@ -10,7 +10,7 @@
       "succeeded": true,
       "revertSelector": null,
       "revertName": null,
-      "activationGas": 709115
+      "activationGas": 709079
     },
     {
       "outcome": "partial-fill",
@@ -21,7 +21,7 @@
       "succeeded": false,
       "revertSelector": "0x1f4e7466",
       "revertName": "WrongUnits",
-      "activationGas": 682513
+      "activationGas": 682525
     },
     {
       "outcome": "oversized-fill",
@@ -32,7 +32,7 @@
       "succeeded": false,
       "revertSelector": "0xe7a700db",
       "revertName": "ConsumedUnits",
-      "activationGas": 665437
+      "activationGas": 665413
     },
     {
       "outcome": "wrong-taker",
@@ -43,18 +43,7 @@
       "succeeded": false,
       "revertSelector": "0x13f2a791",
       "revertName": "UnauthorisedTaker",
-      "activationGas": 665413
-    },
-    {
-      "outcome": "expired-quote",
-      "pass": "forward",
-      "settlementGas": null,
-      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
-      "calldataBytes": 992,
-      "succeeded": false,
-      "revertSelector": "0x9cb13087",
-      "revertName": "OfferExpired",
-      "activationGas": 665437
+      "activationGas": 665377
     },
     {
       "outcome": "cancelled-quote",
@@ -65,7 +54,7 @@
       "succeeded": false,
       "revertSelector": "0xe2f03efd",
       "revertName": "QuoteNotExecutable",
-      "activationGas": 665425
+      "activationGas": 665413
     },
     {
       "outcome": "replay",
@@ -76,7 +65,7 @@
       "succeeded": false,
       "revertSelector": "0xe2f03efd",
       "revertName": "QuoteNotExecutable",
-      "activationGas": 665413
+      "activationGas": 665425
     },
     {
       "outcome": "wrong-offer-field",
@@ -87,7 +76,7 @@
       "succeeded": false,
       "revertSelector": "0x6b912538",
       "revertName": "AlteredOffer",
-      "activationGas": 665437
+      "activationGas": 665401
     },
     {
       "outcome": "invalid-proof-binding",
@@ -98,7 +87,18 @@
       "succeeded": false,
       "revertSelector": "0xe2f03efd",
       "revertName": "QuoteNotExecutable",
-      "activationGas": 665413
+      "activationGas": 665437
+    },
+    {
+      "outcome": "expired-quote",
+      "pass": "forward",
+      "settlementGas": null,
+      "settlementGasUnavailableReason": "the local EDR node refused the transaction at submission rather than mining a reverting one, so no receipt and no gas figure exist for this outcome on this node",
+      "calldataBytes": 992,
+      "succeeded": false,
+      "revertSelector": "0x9cb13087",
+      "revertName": "OfferExpired",
+      "activationGas": 665389
     },
     {
       "outcome": "partial-fill",
@@ -109,7 +109,7 @@
       "succeeded": false,
       "revertSelector": "0x1f4e7466",
       "revertName": "WrongUnits",
-      "activationGas": 665413
+      "activationGas": 665437
     },
     {
       "outcome": "valid-exact-fill",
