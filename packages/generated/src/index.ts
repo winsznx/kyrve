@@ -1,7 +1,7 @@
 /**
  * GENERATED FILE — do not edit by hand. Run `pnpm generate`.
  *
- * 11 contract ABIs, generated from Midnight 2026-07-23
+ * 18 contract ABIs, generated from Midnight 2026-07-23
  * (dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0) and Kyrve's own contracts.
  *
  * Deliberately NOT generated yet:
@@ -17,8 +17,15 @@ export { KyrveDeploymentVerifierAbi } from "./KyrveDeploymentVerifier.js";
 export { KyrveExactFillVaultAbi } from "./KyrveExactFillVault.js";
 export { KyrveOsakaProbeAbi } from "./KyrveOsakaProbe.js";
 export { KyrveProtocolRegistryAbi } from "./KyrveProtocolRegistry.js";
+export { KyrvePublicResultVerifierAbi } from "./KyrvePublicResultVerifier.js";
+export { KyrveQuoteExpiryControllerAbi } from "./KyrveQuoteExpiryController.js";
 export { KyrveQuoteRatifierAbi } from "./KyrveQuoteRatifier.js";
+export { KyrveQuoteRegistryAbi } from "./KyrveQuoteRegistry.js";
+export { KyrveSeriesFactoryAbi } from "./KyrveSeriesFactory.js";
+export { KyrveSeriesVaultAbi } from "./KyrveSeriesVault.js";
+export { KyrveSettlementRatifierAbi } from "./KyrveSettlementRatifier.js";
 export { MidnightAbi } from "./Midnight.js";
+export { QuoteActivatorAbi } from "./QuoteActivator.js";
 export { TestERC20Abi } from "./TestERC20.js";
 export {
   DEPLOYMENT_ENVIRONMENTS,

@@ -8,6 +8,7 @@
     { "path": "./packages/midnight/tsconfig.build.json" },
     { "path": "./packages/curve/tsconfig.build.json" },
     { "path": "./packages/nox/tsconfig.build.json" },
+    { "path": "./packages/quote/tsconfig.build.json" },
     { "path": "./packages/worker-core/tsconfig.build.json" }
   ]
 }

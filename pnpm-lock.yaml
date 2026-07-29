@@ -25,6 +25,9 @@ importers:
       '@kyrve/nox':
         specifier: workspace:*
         version: link:packages/nox
+      '@kyrve/quote':
+        specifier: workspace:*
+        version: link:packages/quote
       '@types/node':
         specifier: 26.1.2
         version: 26.1.2
@@ -158,6 +161,21 @@ importers:
       '@kyrve/config':
         specifier: workspace:*
         version: link:../config
+      viem:
+        specifier: 2.55.10
+        version: 2.55.10(typescript@5.9.3)(zod@3.25.76)
+
+  packages/quote:
+    dependencies:
+      '@kyrve/config':
+        specifier: workspace:*
+        version: link:../config
+      '@kyrve/midnight':
+        specifier: workspace:*
+        version: link:../midnight
+      '@kyrve/quote-math':
+        specifier: workspace:*
+        version: link:../quote-math
       viem:
         specifier: 2.55.10
         version: 2.55.10(typescript@5.9.3)(zod@3.25.76)

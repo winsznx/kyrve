@@ -25,6 +25,7 @@ remappings = [
 fs_permissions = [
     { access = "read-write", path = "./packages/quote-math/test/fixtures" },
     { access = "read-write", path = "./packages/midnight/test/fixtures" },
+    { access = "read-write", path = "./packages/quote/test/fixtures" },
     { access = "read-write", path = "./packages/generated/abi" },
     { access = "read-write", path = "./deployments" },
     { access = "read", path = "./vendor/midnight" },

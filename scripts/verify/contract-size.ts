@@ -67,9 +67,50 @@ function collect(root: string, into: Measured[]): void {
   }
 }
 
+/**
+ * The Foundry-built contracts Kyrve deploys.
+ *
+ * An explicit list rather than a glob over `out/`, which also holds forge-std, the vendored
+ * Midnight core, test doubles and script contracts — measuring those would bury the signal, and
+ * `KyrveSeriesFactory` embeds a whole `KyrveSeriesVault` in its creation code, so this side of the
+ * repository has a real size budget too.
+ */
+const FOUNDRY_DEPLOYABLE: readonly string[] = [
+  "KyrveDeploymentVerifier",
+  "KyrveOsakaProbe",
+  "KyrveProtocolRegistry",
+  "KyrvePublicResultVerifier",
+  "KyrveQuoteExpiryController",
+  "KyrveQuoteRegistry",
+  "KyrveSeriesFactory",
+  "KyrveSeriesVault",
+  "KyrveSettlementRatifier",
+  "QuoteActivator",
+];
+
+function collectFoundry(into: Measured[]): void {
+  for (const name of FOUNDRY_DEPLOYABLE) {
+    const path = join(repoPath("out"), `${name}.sol`, `${name}.json`);
+    if (!existsSync(path)) {
+      throw new Error(
+        `no Foundry artifact for ${name} at ${path}. Run \`forge build\` first — a missing ` +
+          "artifact must fail rather than shrink the measured set.",
+      );
+    }
+    const artifact = JSON.parse(readFileSync(path, "utf8")) as {
+      deployedBytecode?: { object?: string };
+    };
+    const object = artifact.deployedBytecode?.object ?? "";
+    if (object.length <= 2) continue;
+    const runtimeBytes = (object.length - 2) / 2;
+    into.push({ name, runtimeBytes, headroom: MAX_RUNTIME_BYTES - runtimeBytes });
+  }
+}
+
 function main(): void {
   const measured: Measured[] = [];
   collect(repoPath("confidential/artifacts/contracts"), measured);
+  collectFoundry(measured);
 
   if (measured.length === 0) {
     throw new Error(

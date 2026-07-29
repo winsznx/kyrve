@@ -79,6 +79,41 @@ const TARGETS: readonly Target[] = [
     note: "Authenticates the exact activated offer and the approved taker.",
   },
   {
+    name: "KyrveQuoteRegistry",
+    source: "contracts/kyrve/KyrveQuoteRegistry.sol",
+    note: "The one quote lifecycle both enforcement points read.",
+  },
+  {
+    name: "KyrveSettlementRatifier",
+    source: "contracts/kyrve/KyrveSettlementRatifier.sol",
+    note: "Authenticates the exact activated offer, its bound terms and the approved taker.",
+  },
+  {
+    name: "KyrveSeriesVault",
+    source: "contracts/kyrve/KyrveSeriesVault.sol",
+    note: "The Midnight maker and the exact-fill enforcement point.",
+  },
+  {
+    name: "KyrveSeriesFactory",
+    source: "contracts/kyrve/KyrveSeriesFactory.sol",
+    note: "One series, one vault, one deterministic address.",
+  },
+  {
+    name: "KyrveQuoteExpiryController",
+    source: "contracts/kyrve/KyrveQuoteExpiryController.sol",
+    note: "Who may end a live quote and when. Cancellation is permissioned; expiry is not.",
+  },
+  {
+    name: "KyrvePublicResultVerifier",
+    source: "contracts/kyrve/KyrvePublicResultVerifier.sol",
+    note: "Binds a replayable gateway proof to one sealed epoch, and enforces handle freshness (R-14).",
+  },
+  {
+    name: "QuoteActivator",
+    source: "contracts/kyrve/QuoteActivator.sol",
+    note: "The public/private boundary crossing. One verified curve result becomes one Midnight offer.",
+  },
+  {
     name: "TestERC20",
     source: "contracts/integration/TestERC20.sol",
     note: "Test token with an unrestricted mint. Local and labelled testnet replica only.",

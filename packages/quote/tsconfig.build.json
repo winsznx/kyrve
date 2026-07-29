@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "./src", "outDir": "./dist", "types": [] },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../midnight/tsconfig.build.json" },
+    { "path": "../quote-math/tsconfig.build.json" }
+  ]
+}

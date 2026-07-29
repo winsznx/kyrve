@@ -1,0 +1,28 @@
+{
+  "name": "@kyrve/quote",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Quote activation planning: the public sizing rule, the quote-id fold, the offer builder and the published-handle freshness check the settlement layer enforces on chain.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json"
+  },
+  "dependencies": {
+    "@kyrve/config": "workspace:*",
+    "@kyrve/midnight": "workspace:*",
+    "@kyrve/quote-math": "workspace:*",
+    "viem": "2.55.10"
+  }
+}

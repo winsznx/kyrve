@@ -41,15 +41,50 @@
       "contentHash": "sha256:e6459b413f5591fe55b93ad8ad1fe77992dd4b4fb0c6686101aa8c648df5260e",
       "source": "contracts/registry/KyrveProtocolRegistry.sol"
     },
+    "KyrvePublicResultVerifier": {
+      "abiEntries": 20,
+      "contentHash": "sha256:2a7ed494037768b381d90302d1de4d77215fe941810480ea69767a647f19931f",
+      "source": "contracts/kyrve/KyrvePublicResultVerifier.sol"
+    },
+    "KyrveQuoteExpiryController": {
+      "abiEntries": 11,
+      "contentHash": "sha256:2d5ffff22a45b5838be162a93d9d3815ee95207de62af79c156af357582e9283",
+      "source": "contracts/kyrve/KyrveQuoteExpiryController.sol"
+    },
     "KyrveQuoteRatifier": {
       "abiEntries": 9,
       "contentHash": "sha256:81f33d8dc7eeb41588637ff596df199e73a0869e067f0eb44c7cc5378794c71f",
       "source": "contracts/integration/KyrveQuoteRatifier.sol"
     },
+    "KyrveQuoteRegistry": {
+      "abiEntries": 34,
+      "contentHash": "sha256:27ec9bc78f1a1eec57c1e6293c82d70260d5a26637f3df0622373e7d14fe4477",
+      "source": "contracts/kyrve/KyrveQuoteRegistry.sol"
+    },
+    "KyrveSeriesFactory": {
+      "abiEntries": 21,
+      "contentHash": "sha256:881dd5e96b59c608fdf1d05622c0bd1a3ffdc90eaf253e6d4aa9bcb79d6d716d",
+      "source": "contracts/kyrve/KyrveSeriesFactory.sol"
+    },
+    "KyrveSeriesVault": {
+      "abiEntries": 40,
+      "contentHash": "sha256:4679f6b70afa7ed077d29ec3d845279ffb2b82addc670d1eeab2f3561f8ef00b",
+      "source": "contracts/kyrve/KyrveSeriesVault.sol"
+    },
+    "KyrveSettlementRatifier": {
+      "abiEntries": 14,
+      "contentHash": "sha256:f9eaf103f9acf8d9b686b16170f9540f3f9fe81494623e28ce32bfda22890079",
+      "source": "contracts/kyrve/KyrveSettlementRatifier.sol"
+    },
     "Midnight": {
       "abiEntries": 143,
       "contentHash": "sha256:edc75e77b7b7302dd65d34f87c06959404d504d24c6e864c7660a062325472f6",
       "source": "vendor/midnight/src/Midnight.sol"
+    },
+    "QuoteActivator": {
+      "abiEntries": 36,
+      "contentHash": "sha256:db93ffc78758a45326f8c579c192dbbc3d58e6d6e54c237c51b19c11b4c62ed6",
+      "source": "contracts/kyrve/QuoteActivator.sol"
     },
     "TestERC20": {
       "abiEntries": 15,

@@ -20,6 +20,7 @@ import { repoPath, run } from "../lib/shell.js";
 
 /** Contracts Kyrve deploys. Everything else is out of scope and said to be. */
 const IN_SCOPE = [
+  "contracts/kyrve/",
   "contracts/registry/",
   "contracts/integration/KyrveExactFillVault.sol",
   "contracts/integration/KyrveQuoteRatifier.sol",
@@ -31,6 +32,7 @@ const IN_SCOPE = [
 /** Anything under these is deliberately out of scope. */
 const OUT_OF_SCOPE = [
   "vendor/",
+  "contracts/kyrve/test/",
   "contracts/test/",
   "contracts/integration/test/",
   "contracts/script/",
