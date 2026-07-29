@@ -26,6 +26,8 @@ importers:
 
   packages/config: {}
 
+  packages/quote-math: {}
+
 packages:
 
   '@biomejs/biome@2.5.6':
