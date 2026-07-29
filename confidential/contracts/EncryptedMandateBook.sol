@@ -278,8 +278,7 @@ contract EncryptedMandateBook is KyrveConfidentialBase {
 
     function isUsable(bytes32 mandateId, uint32 epoch) external view returns (bool) {
         Mandate storage mandate = _mandates[mandateId];
-        return mandate.provider != address(0) && mandate.state == MandateState.Active
-            && epoch == mandate.activeEpoch;
+        return mandate.provider != address(0) && mandate.state == MandateState.Active && epoch == mandate.activeEpoch;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -295,18 +294,14 @@ contract EncryptedMandateBook is KyrveConfidentialBase {
      * @dev Handles are opaque. Returning them publicly discloses nothing: without an ACL grant the
      *      gateway refuses to decrypt, which the suite proves with a second wallet.
      */
-    function handlesOf(bytes32 mandateId, uint32 epoch)
-        external
-        view
-        returns (MandateEpochHandles memory)
-    {
+    function handlesOf(bytes32 mandateId, uint32 epoch) external view returns (MandateEpochHandles memory) {
         return _handles[mandateId][epoch];
     }
 
     /// @notice The canonical order proofs must be supplied in. Documented so a client cannot guess.
     function mandateHandleOrder() external pure returns (string memory) {
         return "totalBudget, marketCaps[0..7], minRateIndexes[0..7], enabledFlags[0..7], "
-        "collateralFamilyCaps[0..3], maturityBucketCaps[0..3], maxDurationIndex, allocationWeight";
+            "collateralFamilyCaps[0..3], maturityBucketCaps[0..3], maxDurationIndex, allocationWeight";
     }
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -327,12 +322,10 @@ contract EncryptedMandateBook is KyrveConfidentialBase {
      *      the provider — and only the provider — can decrypt them. No viewer is ever added and
      *      nothing is ever published.
      */
-    function _seal(
-        bytes32 mandateId,
-        uint32 epoch,
-        EncryptedMandateInput calldata input,
-        bytes[] calldata proofs
-    ) private returns (bytes32 commitment) {
+    function _seal(bytes32 mandateId, uint32 epoch, EncryptedMandateInput calldata input, bytes[] calldata proofs)
+        private
+        returns (bytes32 commitment)
+    {
         if (proofs.length != MANDATE_HANDLE_COUNT) {
             revert WrongProofCount(MANDATE_HANDLE_COUNT, proofs.length);
         }
@@ -432,11 +425,7 @@ contract EncryptedMandateBook is KyrveConfidentialBase {
         // Binds the handle set to this mandate, this epoch, this schema, this chain and this
         // deployment. A handle set from another epoch produces a different commitment, so a stale
         // set can never be presented as a current one.
-        commitment = keccak256(
-            abi.encode(
-                block.chainid, address(this), mandateId, epoch, KYRVE_SCHEMA_VERSION, raw
-            )
-        );
+        commitment = keccak256(abi.encode(block.chainid, address(this), mandateId, epoch, KYRVE_SCHEMA_VERSION, raw));
         epochCommitment[mandateId][epoch] = commitment;
     }
 }

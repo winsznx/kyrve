@@ -4,8 +4,9 @@ pragma solidity 0.8.36;
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {IERC7984} from "@iexec-nox/nox-confidential-contracts/contracts/interfaces/IERC7984.sol";
 import {ERC7984Base} from "@iexec-nox/nox-confidential-contracts/contracts/token/ERC7984Base.sol";
-import {ERC20ToERC7984Wrapper} from
-    "@iexec-nox/nox-confidential-contracts/contracts/token/extensions/ERC20ToERC7984Wrapper.sol";
+import {
+    ERC20ToERC7984Wrapper
+} from "@iexec-nox/nox-confidential-contracts/contracts/token/extensions/ERC20ToERC7984Wrapper.sol";
 import {euint256} from "@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol";
 
 import {KyrveEmergencyController} from "./KyrveEmergencyController.sol";

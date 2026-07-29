@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.36;
 
-import {
-    Nox,
-    ebool,
-    euint256,
-    externalEuint256
-} from "@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol";
+import {Nox, ebool, euint256, externalEuint256} from "@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol";
 
 import {KyrveConfidentialBase} from "./KyrveConfidentialBase.sol";
 import {KyrveEmergencyController} from "./KyrveEmergencyController.sol";
@@ -162,9 +157,7 @@ contract KyrveConfidentialAssetVault is KyrveConfidentialBase {
      *      `transfer` primitive returns an encrypted zero rather than reverting, so this function
      *      credits zero and emits the same event. No public reason is produced.
      */
-    function deposit(externalEuint256 encryptedAmount, bytes calldata inputProof, uint256 nonce)
-        external
-    {
+    function deposit(externalEuint256 encryptedAmount, bytes calldata inputProof, uint256 nonce) external {
         emergencyController.requireNotPaused(KyrveEmergencyController.Activity.VaultDeposit);
         _assertDirectCaller();
         _consumeNonce(nonce);
@@ -216,9 +209,7 @@ contract KyrveConfidentialAssetVault is KyrveConfidentialBase {
      * pay zero. `confidentialCoverage()` exposes the right-hand side so Phase 3's solvency verifier
      * can check it on chain rather than by argument.
      */
-    function withdraw(externalEuint256 encryptedAmount, bytes calldata inputProof, uint256 nonce)
-        external
-    {
+    function withdraw(externalEuint256 encryptedAmount, bytes calldata inputProof, uint256 nonce) external {
         _assertDirectCaller();
         _consumeNonce(nonce);
 
@@ -345,11 +336,7 @@ contract KyrveConfidentialAssetVault is KyrveConfidentialBase {
     }
 
     /// @notice The encrypted size a reservation actually locked. Zero if the provider was short.
-    function confidentialReservationAmount(bytes32 reservationId)
-        external
-        view
-        returns (euint256)
-    {
+    function confidentialReservationAmount(bytes32 reservationId) external view returns (euint256) {
         return _reservationAmount[reservationId];
     }
 }

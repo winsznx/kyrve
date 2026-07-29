@@ -275,8 +275,7 @@ contract ConfidentialRequestBook is KyrveConfidentialBase {
     }
 
     function requestHandleOrder() external pure returns (string memory) {
-        return
-        "desiredAssets, minimumAssets, maxRateIndexes[0..7], enabledFlags[0..7], preferredMaturityIndex";
+        return "desiredAssets, minimumAssets, maxRateIndexes[0..7], enabledFlags[0..7], preferredMaturityIndex";
     }
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -364,8 +363,6 @@ contract ConfidentialRequestBook is KyrveConfidentialBase {
             }
         }
 
-        commitment = keccak256(
-            abi.encode(block.chainid, address(this), requestId, KYRVE_SCHEMA_VERSION, raw)
-        );
+        commitment = keccak256(abi.encode(block.chainid, address(this), requestId, KYRVE_SCHEMA_VERSION, raw));
     }
 }

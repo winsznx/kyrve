@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.36;
 
-import {
-    Nox,
-    euint256,
-    externalEuint256
-} from "@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol";
+import {Nox, euint256, externalEuint256} from "@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol";
 
 /**
  * @dev Pins delta Q-5: a Nox handle is a pure function of its operation, not a fresh reference.
@@ -27,12 +23,7 @@ contract HandleDeterminismProbe {
     euint256 public second;
     euint256 public reversed;
 
-    function addTwice(
-        externalEuint256 a,
-        bytes calldata proofA,
-        externalEuint256 b,
-        bytes calldata proofB
-    ) external {
+    function addTwice(externalEuint256 a, bytes calldata proofA, externalEuint256 b, bytes calldata proofB) external {
         euint256 ea = Nox.fromExternal(a, proofA);
         euint256 eb = Nox.fromExternal(b, proofB);
 
