@@ -11,69 +11,69 @@
   "stages": {
     "sealProvider": {
       "calls": 16,
-      "total": 22884328,
-      "max": 1446304
+      "total": 22884172,
+      "max": 1446292
     },
     "sealRequest": {
       "calls": 1,
-      "total": 669511,
-      "max": 669511
+      "total": 669499,
+      "max": 669499
     },
     "prepareEpoch": {
       "calls": 1,
-      "total": 3089081,
-      "max": 3089081
+      "total": 3089069,
+      "max": 3089069
     },
     "cacheProviderChunk": {
       "calls": 4,
-      "total": 59937576,
-      "max": 14984397
+      "total": 59937528,
+      "max": 14984385
     },
     "accumulateLeafChunk": {
       "calls": 8,
-      "total": 145547076,
-      "max": 18193386
+      "total": 145546980,
+      "max": 18193374
     },
     "finalizeLeafChunk": {
       "calls": 3,
-      "total": 37756638,
-      "max": 14139942
+      "total": 37756602,
+      "max": 14139930
     },
     "reduceWinnerChunk": {
       "calls": 4,
-      "total": 44254532,
-      "max": 11069738
+      "total": 44254484,
+      "max": 11069726
     },
     "publishWinner": {
       "calls": 1,
-      "total": 827774,
-      "max": 827774
+      "total": 827762,
+      "max": 827762
     },
     "proveWinner": {
       "calls": 1,
-      "total": 112665,
-      "max": 112665
+      "total": 112641,
+      "max": 112641
     },
     "allocateChunk": {
       "calls": 1,
-      "total": 8439036,
-      "max": 8439036
+      "total": 8439024,
+      "max": 8439024
     },
     "publishAggregate": {
       "calls": 1,
-      "total": 341304,
-      "max": 341304
+      "total": 341292,
+      "max": 341292
     }
   },
   "perUnit": {
     "accumulateCell": 71068,
     "cacheUnit": 468262,
-    "finalizeLeaf": 294974,
-    "reduceLeaf": 345739,
-    "allocateProvider": 527440
+    "finalizeLeaf": 294973,
+    "reduceLeaf": 345738,
+    "allocateProvider": 527439
   },
   "limits": {
     "transactionGasCeiling": 24000000,
-    "peakTransactionGas": 18193386
+    "peakTransactionGas": 18193374
   }
 }
