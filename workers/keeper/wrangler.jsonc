@@ -1,0 +1,70 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "kyrve-keeper",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kyrve-projection",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+
+  // NOTE the key is `name`, not `binding` — the docs prose gets this wrong; the schema is
+  // authoritative. This is the one thing Workflows cannot do: serialise nonce allocation.
+  "durable_objects": {
+    "bindings": [{ "name": "NONCE_ALLOCATOR", "class_name": "NonceAllocator" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["NonceAllocator"] }],
+
+  "workflows": [
+    {
+      "binding": "QUOTE_FLOW",
+      "name": "kyrve-quote-flow",
+      "class_name": "QuoteLifecycleWorkflow",
+      "limits": { "steps": 10000 }
+    }
+  ],
+
+  "limits": { "subrequests": 10000 },
+
+  "vars": {
+    "KYRVE_ENVIRONMENT": "local",
+    "KYRVE_VERSION": "0.1.0-phase1"
+  },
+
+  "env": {
+    "sepolia": {
+      "vars": {
+        "KYRVE_ENVIRONMENT": "sepolia",
+        "KYRVE_VERSION": "0.1.0-phase1"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "kyrve-projection-sepolia",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "NONCE_ALLOCATOR", "class_name": "NonceAllocator" }]
+      },
+      "workflows": [
+        {
+          "binding": "QUOTE_FLOW",
+          "name": "kyrve-quote-flow-sepolia",
+          "class_name": "QuoteLifecycleWorkflow",
+          "limits": { "steps": 10000 }
+        }
+      ],
+      "limits": { "subrequests": 10000 }
+    }
+  }
+}

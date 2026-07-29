@@ -1,0 +1,29 @@
+{
+  "name": "@kyrve/worker-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "The shared status contract every Kyrve Worker implements: health, version and configuration verification.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@kyrve/config": "workspace:*",
+    "@kyrve/generated": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260729.1"
+  }
+}

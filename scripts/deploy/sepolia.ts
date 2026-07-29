@@ -20,7 +20,7 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { createPublicClient, formatEther, type Hex, http, keccak256 } from "viem";
+import { createPublicClient, formatEther, http, keccak256 } from "viem";
 import { sepolia } from "viem/chains";
 
 import { buildAllRateGrids } from "../generate/rate-grids.js";

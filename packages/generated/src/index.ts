@@ -20,3 +20,9 @@ export { KyrveProtocolRegistryAbi } from "./KyrveProtocolRegistry.js";
 export { KyrveQuoteRatifierAbi } from "./KyrveQuoteRatifier.js";
 export { MidnightAbi } from "./Midnight.js";
 export { TestERC20Abi } from "./TestERC20.js";
+export {
+  DEPLOYMENT_ENVIRONMENTS,
+  DEPLOYMENTS,
+  embeddedDeployment,
+  type EmbeddedDeployment,
+} from "./deployments.js";

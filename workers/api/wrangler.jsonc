@@ -1,0 +1,54 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "kyrve-api",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": { "enabled": true, "head_sampling_rate": 1, "traces": { "enabled": true } },
+
+  // Bounded queryable projection ONLY: cursors, block-partition index, quote status.
+  // D1 is not the event store — 10 GB hard cap, single-threaded per database.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kyrve-projection",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+
+  // Block-range partitioned event history and content-addressed proof bundles.
+  // R2 permits 1 write/sec per key, so a mutable "latest" key is never used.
+  "r2_buckets": [{ "binding": "EVENTS", "bucket_name": "kyrve-events" }],
+
+  // 10,000 on Workers Paid. The Free plan's 50 cannot cover one block of indexing.
+  "limits": { "subrequests": 10000 },
+
+  "vars": {
+    "KYRVE_ENVIRONMENT": "local",
+    "KYRVE_VERSION": "0.1.0-phase1"
+  },
+
+  // KYRVE_RPC_URL is deliberately absent from vars. Provider API keys live in the URL path, so it
+  // is a secret: `wrangler secret put KYRVE_RPC_URL`.
+
+  "env": {
+    "sepolia": {
+      "vars": {
+        "KYRVE_ENVIRONMENT": "sepolia",
+        "KYRVE_VERSION": "0.1.0-phase1"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "kyrve-projection-sepolia",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "r2_buckets": [{ "binding": "EVENTS", "bucket_name": "kyrve-events-sepolia" }],
+      "limits": { "subrequests": 10000 }
+    }
+  }
+}

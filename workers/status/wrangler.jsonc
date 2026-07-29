@@ -1,0 +1,26 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "kyrve-status",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // No bindings, deliberately. This Worker must be able to answer "which build, against which
+  // deployment" when every dependency is unavailable, which is when that answer matters most.
+
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+
+  "vars": {
+    "KYRVE_ENVIRONMENT": "local",
+    "KYRVE_VERSION": "0.1.0-phase1"
+  },
+
+  "env": {
+    "sepolia": {
+      "vars": {
+        "KYRVE_ENVIRONMENT": "sepolia",
+        "KYRVE_VERSION": "0.1.0-phase1"
+      }
+    }
+  }
+}

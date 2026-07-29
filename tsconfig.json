@@ -6,6 +6,7 @@
     { "path": "./packages/quote-math/tsconfig.build.json" },
     { "path": "./packages/generated/tsconfig.build.json" },
     { "path": "./packages/midnight/tsconfig.build.json" },
-    { "path": "./packages/nox/tsconfig.build.json" }
+    { "path": "./packages/nox/tsconfig.build.json" },
+    { "path": "./packages/worker-core/tsconfig.build.json" }
   ]
 }

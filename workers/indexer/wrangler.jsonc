@@ -1,0 +1,82 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "kyrve-indexer",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-07-28",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kyrve-projection",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+
+  "r2_buckets": [{ "binding": "EVENTS", "bucket_name": "kyrve-events" }],
+
+  "queues": {
+    "producers": [{ "binding": "INDEX_JOBS", "queue": "kyrve-index-jobs" }],
+    "consumers": [
+      {
+        "queue": "kyrve-index-jobs",
+        "max_batch_size": 100,
+        "max_batch_timeout": 30,
+        "max_retries": 5,
+        "max_concurrency": 5,
+        "dead_letter_queue": "kyrve-index-dlq"
+      }
+    ]
+  },
+
+  // Minimum interval is 1 minute and Cloudflare publishes NO delivery guarantee, so `scheduled`
+  // always reconciles forward from the stored cursor rather than assuming it fired.
+  "triggers": { "crons": ["* * * * *"] },
+
+  "limits": { "subrequests": 10000 },
+
+  "vars": {
+    "KYRVE_ENVIRONMENT": "local",
+    "KYRVE_VERSION": "0.1.0-phase1",
+    // Provider-dependent, not chain-dependent: drpc serves 200, 1rpc caps at 50, publicnode
+    // refuses eth_getLogs as an archive request entirely.
+    "KYRVE_LOG_RANGE": "200"
+  },
+
+  "env": {
+    "sepolia": {
+      "vars": {
+        "KYRVE_ENVIRONMENT": "sepolia",
+        "KYRVE_VERSION": "0.1.0-phase1",
+        "KYRVE_LOG_RANGE": "200"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "kyrve-projection-sepolia",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "../../migrations"
+        }
+      ],
+      "r2_buckets": [{ "binding": "EVENTS", "bucket_name": "kyrve-events-sepolia" }],
+      "queues": {
+        "producers": [{ "binding": "INDEX_JOBS", "queue": "kyrve-index-jobs-sepolia" }],
+        "consumers": [
+          {
+            "queue": "kyrve-index-jobs-sepolia",
+            "max_batch_size": 100,
+            "max_batch_timeout": 30,
+            "max_retries": 5,
+            "max_concurrency": 5,
+            "dead_letter_queue": "kyrve-index-dlq-sepolia"
+          }
+        ]
+      },
+      "triggers": { "crons": ["* * * * *"] },
+      "limits": { "subrequests": 10000 }
+    }
+  }
+}

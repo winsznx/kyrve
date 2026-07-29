@@ -196,7 +196,7 @@ ${DEFERRED.map((d) => ` *   - ${d.name}: ${d.reason}`).join("\n")}
  */
 
 `;
-  writeFileSync(`${srcDir}/index.ts`, indexHeader + index.sort().join("\n") + "\n");
+  writeFileSync(`${srcDir}/index.ts`, `${indexHeader + index.sort().join("\n")}\n`);
 
   writeFileSync(
     repoPath("packages/generated/abi-manifest.json"),

@@ -15,7 +15,7 @@
     "deploy:local": "tsx scripts/deploy/local.ts",
     "deploy:sepolia": "tsx scripts/deploy/sepolia.ts",
     "format": "biome check --write . && forge fmt",
-    "generate": "tsx scripts/generate/abis.ts",
+    "generate": "tsx scripts/generate/abis.ts && tsx scripts/generate/deployments.ts",
     "grids:build": "tsx scripts/generate/rate-grids.ts",
     "lint": "pnpm lint:ts && pnpm lint:sol && pnpm lint:imports",
     "lint:imports": "tsx scripts/verify/import-boundary.ts",

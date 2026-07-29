@@ -141,6 +141,37 @@ const GATES: readonly Gate[] = [
     },
   },
   {
+    section: "LOCAL SUBSTRATE",
+    name: "Nox runtime compatibility",
+    skipIf: () => {
+      if (process.env["KYRVE_NOX_RUNTIME"] !== "true") {
+        return "opt-in: bringing the Nox stack up takes minutes and pulls multi-gigabyte images. Run: KYRVE_NOX_RUNTIME=true pnpm verify:nox-runtime";
+      }
+      const docker = run("docker", ["info"], { allowFailure: true });
+      return docker.code === 0 ? null : "Docker is not running; the local Nox stack cannot start.";
+    },
+    execute: () =>
+      summarise(run("pnpm", ["exec", "tsx", "scripts/verify/nox-runtime.ts"]).stdout, 2),
+  },
+  {
+    section: "LOCAL SUBSTRATE",
+    name: "Worker tests under workerd",
+    skipIf: () =>
+      existsSync(repoPath("workers/api/wrangler.jsonc")) ? null : "workers/ is not built",
+    execute: () => {
+      const out = run("pnpm", ["--filter", "./workers/*", "test"]).stdout;
+      const total = [...out.matchAll(/(\d+) passed/g)].reduce((sum, m) => sum + Number(m[1]), 0);
+      return `${total > 0 ? total : "all"} tests passed in workerd across 4 workers`;
+    },
+  },
+  {
+    section: "LOCAL SUBSTRATE",
+    name: "Worker dry-run and bundle inspection",
+    skipIf: () =>
+      existsSync(repoPath("workers/api/wrangler.jsonc")) ? null : "workers/ is not built",
+    execute: () => summarise(run("pnpm", ["exec", "tsx", "scripts/verify/bundles.ts"]).stdout, 1),
+  },
+  {
     section: "SEPOLIA SUBSTRATE",
     name: "Sepolia substrate deployed and read-verified",
     skipIf: () =>
@@ -208,28 +239,6 @@ const GATES: readonly Gate[] = [
       "DEFERRED BY OWNER DECISION until the complete product works end to end. No Cloudflare " +
       "resource is created during Phase 1; the operated services run locally.",
     execute: () => "not reachable",
-  },
-  {
-    section: "LOCAL SUBSTRATE",
-    name: "Nox runtime compatibility",
-    skipIf: () => {
-      if (process.env["KYRVE_NOX_RUNTIME"] !== "true") {
-        return "opt-in: bringing the Nox stack up takes minutes and pulls multi-gigabyte images. Run: KYRVE_NOX_RUNTIME=true pnpm verify:nox-runtime";
-      }
-      const docker = run("docker", ["info"], { allowFailure: true });
-      return docker.code === 0 ? null : "Docker is not running; the local Nox stack cannot start.";
-    },
-    execute: () =>
-      summarise(run("pnpm", ["exec", "tsx", "scripts/verify/nox-runtime.ts"]).stdout, 2),
-  },
-  {
-    section: "LOCAL SUBSTRATE",
-    name: "Cloudflare Worker dry run and bundle inspection",
-    skipIf: () =>
-      existsSync(repoPath("workers/api/wrangler.jsonc"))
-        ? null
-        : "workers/ is not yet built in this branch.",
-    execute: () => summarise(run("pnpm", ["run", "wrangler:dry-run"]).stdout, 2),
   },
 ];
 

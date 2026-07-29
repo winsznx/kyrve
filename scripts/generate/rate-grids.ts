@@ -15,7 +15,6 @@ import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
-  annualisedRateWad,
   assertGridViable,
   borrowerProceeds,
   buildRateIndexes,
@@ -23,7 +22,6 @@ import {
   makerFunding,
   selectGridTicks,
   settlementFee,
-  tickToPrice,
   WAD,
 } from "../../packages/quote-math/src/index.js";
 import { repoPath, stableStringify } from "../lib/shell.js";
@@ -240,6 +238,6 @@ function main(): void {
   console.log("wrote deployments/rate-grids.json and docs/phase1/RATE-GRIDS.md");
 }
 
-if (process.argv[1] !== undefined && process.argv[1].endsWith("rate-grids.ts")) {
+if (process.argv[1]?.endsWith("rate-grids.ts")) {
   main();
 }
