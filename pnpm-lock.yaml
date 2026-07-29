@@ -29,6 +29,24 @@ importers:
 
   packages/config: {}
 
+  packages/midnight:
+    dependencies:
+      '@kyrve/config':
+        specifier: workspace:*
+        version: link:../config
+      viem:
+        specifier: 2.55.10
+        version: 2.55.10(typescript@5.9.3)
+
+  packages/nox:
+    dependencies:
+      '@kyrve/config':
+        specifier: workspace:*
+        version: link:../config
+      viem:
+        specifier: 2.55.10
+        version: 2.55.10(typescript@5.9.3)
+
   packages/quote-math: {}
 
 packages:

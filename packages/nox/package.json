@@ -1,0 +1,26 @@
+{
+  "name": "@kyrve/nox",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "The single isolation layer around every iExec Nox dependency. No other Kyrve package may talk to Nox directly.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@kyrve/config": "workspace:*",
+    "viem": "2.55.10"
+  }
+}
