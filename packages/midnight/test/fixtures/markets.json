@@ -15,7 +15,12 @@
     "0x3c91bab4ea11bda78639a5e5f6dd8d140efd948baedd11d30272eab3278e08ff",
     "0xbc1b9e645201141c2b5db8de652f4403339f92776d2b5a31626e3d6aa1e3a2c4"
   ],
-  "marketKeys": ["usdc-30d-weth", "usdc-90d-weth", "usdc-30d-wsteth", "usdc-90d-multi"],
+  "marketKeys": [
+    "usdc-30d-weth",
+    "usdc-90d-weth",
+    "usdc-30d-wsteth",
+    "usdc-90d-multi"
+  ],
   "midnight": "0xd9003177dC465aAA89e20678675dca7FA5f5CAD5",
   "offerHash": "0x4172f17979fdf97813309aa72af2a3955273f5f3d54b030fd4bef61faa0a92ae"
 }
