@@ -69,6 +69,30 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  networks: {
+    hardhat: {
+      type: "edr-simulated",
+      chainType: "l1",
+      /**
+       * WITHOUT THIS, A LONG SUITE FAILS WITH "Proof expired" AND THE REASON LOOKS LIKE A BUG.
+       *
+       * A Hardhat node advances `block.timestamp` by at least a second per mined block, and this
+       * suite mines thousands: the 16 x 128 benchmark alone is roughly 700 transactions, because
+       * `INoxCompute` has no batch entry point and each provider needs 36 separate ACL grants. The
+       * chain's clock therefore outruns wall clock, and once it is more than 3,600 seconds ahead
+       * every gateway proof looks expired to `validateInputProof` — which compares `createdAt`,
+       * stamped from the GATEWAY's real clock, against `block.timestamp`.
+       *
+       * The failure surfaced only in the later test files, only when the whole suite ran, and only
+       * after the benchmark was added. It is an artefact of on-demand block mining, not a product
+       * defect: on any real chain block time tracks wall clock. Recorded as delta R-12.
+       *
+       * Allowing several blocks to share a timestamp keeps the chain clock aligned with the
+       * gateway's, which is the condition the proof expiry was designed around.
+       */
+      allowBlocksWithSameTimestamp: true,
+    },
+  },
   paths: {
     sources: "./contracts",
     tests: { nodejs: "./test" },
