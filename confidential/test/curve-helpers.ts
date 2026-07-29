@@ -38,10 +38,12 @@ import {
   type KyrveHandleClient,
   readAcl,
 } from "@kyrve/nox";
+import { keccak256, toHex } from "viem";
 
 import {
   clientFor,
   deployHarness,
+  flattenError,
   type Harness,
   LOCAL_NOX_NETWORK,
   mine,
@@ -302,14 +304,21 @@ export async function setupProvider(
   for (const handle of mandateHandleList(handles)) {
     await mine(h, await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), handle, h.engine.address));
   }
-  await mine(
-    h,
-    await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), balanceHandle, h.engine.address),
-  );
-  await mine(
-    h,
-    await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), balanceHandle, h.ledger.address),
-  );
+  // A provider who never deposited has the UNDEFINED handle here, which resolves to the type's
+  // public zero — and a public handle has no ACL, so `INoxCompute.allow` refuses it outright with
+  // `PublicHandleACLForbidden`. Skipping the grants leaves that provider in exactly the state case
+  // 15b needs: a real submission that `sealProviderSnapshot` must refuse by name rather than
+  // silently compute over.
+  if (balance > 0n) {
+    await mine(
+      h,
+      await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), balanceHandle, h.engine.address),
+    );
+    await mine(
+      h,
+      await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), balanceHandle, h.ledger.address),
+    );
+  }
 
   return {
     walletIndex: setup.walletIndex,
@@ -602,3 +611,49 @@ export async function acl(h: CurveHarness, handle: Handle, account: `0x${string}
 }
 
 export { makeGrid, makeMandate, makeMarket, makeRequest, UNIT };
+
+/**
+ * Asserts a call reverts with a NAMED custom error, matched by its 4-byte selector.
+ *
+ * WHY NOT MATCH THE NAME AS TEXT. viem can only name a custom error when it finds it on the ABI it
+ * was handed, and several of these reverts originate in a contract other than the one being called
+ * — `NotAllowed` comes from NoxCompute, and an automatic gas estimation surfaces the revert as a
+ * raw `ProviderError` before viem ever consults an ABI. The error then appears only as its
+ * selector, and a test asserting on the human-readable name would silently match nothing and be
+ * weakened to "it reverted somehow" — which is the exact failure `.claude/rules/testing.md` warns
+ * about.
+ *
+ * The selector is computed from the contract's own ABI, so a renamed or re-signatured error fails
+ * this helper rather than quietly stopping being checked.
+ */
+export async function assertRevertsWithError(
+  action: () => Promise<unknown>,
+  contract: { abi: readonly unknown[] },
+  errorName: string,
+  what: string,
+): Promise<void> {
+  const entry = (
+    contract.abi as { type: string; name?: string; inputs?: { type: string }[] }[]
+  ).find((item) => item.type === "error" && item.name === errorName);
+  assert.ok(
+    entry !== undefined,
+    `${what}: the ABI declares no error called ${errorName}. Either it was renamed or the test is ` +
+      "checking for something that no longer exists.",
+  );
+  const signature = `${errorName}(${(entry.inputs ?? []).map((input) => input.type).join(",")})`;
+  const selector = keccak256(toHex(signature)).slice(0, 10);
+
+  let raised: unknown;
+  try {
+    await action();
+  } catch (error) {
+    raised = error;
+  }
+  assert.ok(raised !== undefined, `${what}: expected a revert, but the call succeeded`);
+
+  const text = flattenError(raised);
+  assert.ok(
+    text.includes(selector) || text.includes(errorName),
+    `${what}: reverted, but not with ${signature} (${selector}).\nActual: ${text.slice(0, 900)}`,
+  );
+}
