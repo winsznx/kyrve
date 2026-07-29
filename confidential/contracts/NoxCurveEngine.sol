@@ -866,9 +866,17 @@ contract NoxCurveEngine is KyrveCurveBase {
         return _runtime[epochId].dustResidue;
     }
 
-    function snapshotOf(bytes32 epochId, uint256 slot) external view returns (ProviderSnapshot memory) {
-        return _snapshots[epochId][slot];
-    }
+    /**
+     * @dev THERE IS DELIBERATELY NO `snapshotOf` OR `leafTableOf` HERE, and both were removed
+     *      rather than never written.
+     *
+     *      Each returned a large struct or dynamic array purely to re-expose data another contract
+     *      already publishes: a provider's sealed handles are the SAME handles
+     *      `EncryptedMandateBook.handlesOf` returns, and the packed leaf table is derivable from
+     *      `CurveUniverseRegistry.leafAt` and `publicLeafRank`. Their ABI encoders cost around 900
+     *      bytes of runtime code between them, and this contract sits close enough to the EIP-170
+     *      limit that a duplicate accessor is a real cost rather than a convenience. Delta R-10.
+     */
 
     function cachedOf(bytes32 epochId, uint256 slot, uint256 marketIndex) external view returns (Cached memory) {
         return _cached[epochId][slot][marketIndex];
@@ -877,10 +885,6 @@ contract NoxCurveEngine is KyrveCurveBase {
     function winnerOf(bytes32 epochId) external view returns (bool proven, uint8 marketIndex, uint8 rateIndex) {
         Runtime storage runtime = _runtime[epochId];
         return (runtime.winnerProven, runtime.winnerMarketIndex, runtime.winnerRateIndex);
-    }
-
-    function leafTableOf(bytes32 epochId) external view returns (uint32[] memory) {
-        return _leafTable[epochId];
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════
