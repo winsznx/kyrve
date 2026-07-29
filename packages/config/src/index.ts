@@ -7,6 +7,8 @@ export {
   BRAND_WORDMARK,
   type BrandColour,
   HEADER_MARK_PENDING_OWNER_DECISION,
+  INTERIM_DARK_HEADER_MARK,
+  LOGO_MASTERS,
   type ManifestIcon,
   type SiteMetadata,
   siteMetadata,

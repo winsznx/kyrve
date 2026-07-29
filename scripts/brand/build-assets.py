@@ -28,10 +28,15 @@ import hashlib
 import io
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
 from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build import SYMBOL_PADDING, bleed_edges, trim  # noqa: E402
+from imaging import premultiplied_resize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "public" / "brand"
@@ -43,10 +48,6 @@ SOURCES = {
     "cta": ROOT / "kyrve-cta-source.png",
 }
 
-# Clear space around the trimmed symbol, as a fraction of its longest edge. 12% keeps the mark
-# from touching a favicon's edge at 16px, where one pixel of bleed is 6% of the icon.
-SYMBOL_PADDING = 0.12
-
 FAVICON_SIZES = [16, 32, 48, 180, 192, 512]
 ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
 
@@ -55,71 +56,6 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _resize_channel(channel: np.ndarray, size: tuple[int, int]) -> np.ndarray:
-    """Resample a single float channel, keeping full precision through the filter."""
-    return np.asarray(
-        Image.fromarray(channel.astype(np.float32), "F").resize(size, Image.LANCZOS), dtype=float
-    )
-
-
-def premultiplied_resize(im: Image.Image, size: tuple[int, int]) -> Image.Image:
-    """
-    Resize RGBA correctly: weight RGB by alpha, resample, divide back out — entirely in float.
-
-    The float part is not fussiness. An earlier version did the same maths but round-tripped
-    through uint8 between the premultiply and the resize; un-premultiplying then divided that
-    quantization by a small alpha and amplified it, blowing channels out to 255 and leaving edge
-    pixels like [56, 240, 255]. Measured against ground truth it was 12x WORSE than doing nothing,
-    which is how it was caught. In float it is correct and beats naive resampling everywhere it
-    matters, most visibly against white.
-    """
-    a = np.asarray(im.convert("RGBA"), dtype=float) / 255.0
-    alpha = a[..., 3]
-    premultiplied = [_resize_channel(a[..., i] * alpha, size) for i in range(3)]
-    alpha_resized = _resize_channel(alpha, size)
-    safe = np.clip(alpha_resized, 1e-6, None)
-    rgb = np.stack([c / safe for c in premultiplied], axis=-1)
-    out = np.dstack([np.clip(rgb, 0, 1) * 255, np.clip(alpha_resized, 0, 1) * 255])
-    return Image.fromarray(out.round().astype(np.uint8), "RGBA")
-
-
-def bleed_edges(im: Image.Image, passes: int = 8) -> Image.Image:
-    """
-    Push opaque colour outward into transparent pixels.
-
-    Removes the stray grey sitting in the alpha=0 region so that any downstream tool which
-    resamples without premultiplying still cannot pull a halo into the edges.
-    """
-    a = np.asarray(im.convert("RGBA")).astype(np.float64)
-    rgb, alpha = a[..., :3].copy(), a[..., 3].copy()
-    known = alpha > 0
-    for _ in range(passes):
-        if known.all():
-            break
-        acc = np.zeros_like(rgb)
-        cnt = np.zeros(known.shape, dtype=np.float64)
-        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            s_rgb = np.roll(rgb, (dy, dx), axis=(0, 1))
-            s_known = np.roll(known, (dy, dx), axis=(0, 1))
-            acc += s_rgb * s_known[..., None]
-            cnt += s_known
-        fill = (~known) & (cnt > 0)
-        rgb[fill] = (acc[fill] / cnt[fill][..., None])
-        known = known | fill
-    out = np.dstack([rgb, alpha]).round().clip(0, 255).astype(np.uint8)
-    return Image.fromarray(out, "RGBA")
-
-
-def trim(im: Image.Image, padding_ratio: float) -> Image.Image:
-    """Trim to the visible bounding box, then re-pad by a fixed ratio of the longest edge."""
-    a = np.asarray(im.convert("RGBA"))
-    ys, xs = np.nonzero(a[..., 3] > 8)
-    box = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
-    cropped = im.crop(box)
-    pad = int(round(max(cropped.size) * padding_ratio))
-    canvas = Image.new("RGBA", (cropped.width + 2 * pad, cropped.height + 2 * pad), (0, 0, 0, 0))
-    canvas.paste(cropped, (pad, pad))
-    return canvas
 
 
 def write_ico(frames: list[Image.Image], path: Path) -> None:
@@ -274,6 +210,23 @@ def main() -> None:
     symbol = trim(bleed_edges(Image.open(SOURCES["symbol"]).convert("RGBA")), SYMBOL_PADDING)
     save_png(symbol, OUT / "logo" / "kyrve-symbol.png")
     save_webp(OUT / "logo" / "kyrve-symbol.png", OUT / "logo" / "kyrve-symbol.webp", lossless=True, quality=100)
+
+    # ---------------------------------------------------------------- reversed master
+    # Built only when the commissioned reversed master exists. It is a SEPARATE approved asset for
+    # dark surfaces, never a recolour of the positive one, and it is deliberately not required:
+    # `verify-assets.py` reports PENDING rather than passing when it is absent.
+    reversed_source = ROOT / "kyrve-symbol-reversed-source.png"
+    if reversed_source.exists():
+        reversed_symbol = trim(
+            bleed_edges(Image.open(reversed_source).convert("RGBA")), SYMBOL_PADDING
+        )
+        save_png(reversed_symbol, OUT / "logo" / "kyrve-symbol-reversed.png")
+        save_webp(
+            OUT / "logo" / "kyrve-symbol-reversed.png",
+            OUT / "logo" / "kyrve-symbol-reversed.webp",
+            lossless=True,
+            quality=100,
+        )
 
     # ---------------------------------------------------------------- favicons
     # Square canvas centred on the trimmed symbol, so every size crops identically.

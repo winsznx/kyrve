@@ -18,6 +18,21 @@ Result: **PASS** — 0 findings
 | Alpha edges match a no-alpha reference on dark **and** light | This is the halo test, described below |
 | Every `brand.json` hash matches the bytes on disk | A lock nobody re-checks is a changelog |
 | Every `brand.json` contrast ratio recomputes | The same |
+| Reversed master acceptance, when its source is present | See below |
+
+## The reversed master gate
+
+Kyrve runs a two-master positive/reversed logo system. The reversed master is commissioned and
+not yet delivered, so this gate reports **PENDING** rather than passing — a gate that passes
+because its input is missing proves nothing. When the source lands it is checked for silhouette
+IoU against the approved symbol (proportion-preserving, so a squashed redraw cannot slip
+through), transparent corners, absence of glow, use of only the two approved colour roles, and
+contrast at all seven required sizes on both Onyx and Graphite.
+
+It has been exercised against five fixtures — one correct, plus one each carrying a plate, a
+glow, altered proportions, and no recolour. Each fails on its own criterion; the correct one
+passes. Four earlier versions of the contrast measurement were wrong in ways that reported a
+pass on an empty pixel set; see `docs/brand/REVERSED-MASTER-BRIEF.md`.
 
 ## The halo test
 
@@ -63,4 +78,5 @@ favicon @192px over white: shipped deviates 0.259 mean / 25 max from reference (
 brand.json: 4 sources + 18 derivatives hash-matched on disk
 brand.json: every contrastOnCanvas ratio recomputed and matched
 approved mark: 100.0% of opaque pixels clear 4.5:1 on white, 0.0% on Onyx (median 1.30:1) — light-background asset, see KYRVE-BRAND-LOCK.md
+reversed master: PENDING — kyrve-symbol-reversed-source.png not present. Dark headers use the kyrve wordmark set as text in Ivory. See docs/brand/REVERSED-MASTER-BRIEF.md
 ```

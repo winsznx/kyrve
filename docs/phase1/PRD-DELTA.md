@@ -194,18 +194,42 @@ states and their treatment; the Redacted Curve, Quote Card, Confidential Value, 
 Status Line and Error Surface components; tabular numerals; and the honesty rules from
 `.claude/rules/frontend.md` that were previously only in the rules directory.
 
-**Also recorded here — an open decision, not a correction.** The approved brand mark is authored
+**Resolved by owner decision (see below).** The approved brand mark is authored
 for light backgrounds. Measured across all 45,374 opaque pixels of the symbol master, 100% clear
 4.5:1 against white and **0.0%** clear it against the Onyx canvas, at a median of **1.30:1**. The
 dark presentation exists only baked into the approved OG and CTA rasters, on a near-black `#01091a`
 field rather than on Onyx. So there is no approved asset for the case the application needs most —
 the symbol in the header, on the canvas.
 
-This is **not** resolved by recolouring the mark, which the brand lock forbids and which
-`scripts/brand/verify-assets.py` now fails on. Three options are set out in
-`docs/brand/KYRVE-BRAND-LOCK.md`; the decision is the owner's, and
-`HEADER_MARK_PENDING_OWNER_DECISION` in `@kyrve/config` carries it into code so a later phase
-cannot quietly build past it.
+**Owner decision: adopt a two-master positive/reversed system.** The navy positive master stays
+exactly as it is for light surfaces. A separate reversed master — the same geometry with the
+structural body in Ivory `#ededf3` and the quote leaf in Cobalt `#5266eb`, transparent background,
+no plate, glow, shadow, outline, geometry change or new decoration — is commissioned for Onyx and
+Graphite. It is **not yet delivered**. The commissioning specification is in
+`docs/brand/REVERSED-MASTER-BRIEF.md`.
+
+Until it lands: dark headers use the lowercase `kyrve` wordmark set as text in Ivory; the navy
+symbol is not rendered on Onyx; no background plate is added; the positive master is not recoloured;
+the contrast gate is not weakened. `HEADER_MARK_PENDING_OWNER_DECISION` stays `true` and is flipped
+only after acceptance passes.
+
+`scripts/brand/verify-assets.py` reports the reversed master as **PENDING** rather than passing
+while its source is absent, and enforces all seven acceptance criteria the moment it appears. The
+gate is proven falsifiable: exercised against five fixtures — one correct, plus one each with a
+plate, a glow, altered proportions and no recolour — each fails on its own criterion.
+
+**Two constraints flagged back to the owner, both arithmetic:**
+
+1. "At least 4.5:1 for critical structural pixels" cannot include the cobalt leaf. Cobalt `#5266eb`
+   is **3.78:1** on Onyx and **3.50:1** on Graphite and cannot reach 4.5:1 without changing the
+   approved accent colour, which the lock forbids. Implemented as the Ivory body at 4.5:1 and the
+   leaf at the 3:1 non-text UI threshold, matching the owner's own split between "structural symbol
+   body" and "selected quote leaf".
+2. The approved lockup is **stacked** — symbol above a drawn `kyrve` wordmark — and that drawn
+   wordmark is navy, so it cannot serve on Onyx either. Setting `kyrve` as text in Ivory is
+   therefore a narrow, time-boxed exception to the lock's rule against reconstructing the wordmark
+   in a substitute typeface. A reversed **full lockup** has not been commissioned; if one is wanted
+   it should be ordered in the same pass.
 
 **Required change:** none to the protocol. `design.md` is now the Kyrve style reference and remains
 the visual source of truth. Frontend implementation is still a later phase — the brand assets and

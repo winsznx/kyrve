@@ -123,11 +123,15 @@ sizes, permitted lockups, monochrome, forbidden modifications — are in
 The wordmark is lowercase **`kyrve`** in product branding. Sentence-case `Kyrve` in prose, legal
 text and documentation.
 
-> **Open decision, do not resolve by recolouring.** The approved mark is authored for light
-> backgrounds: 100% of its opaque pixels clear 4.5:1 against white, and 0.0% clear it against Onyx,
-> at a median of 1.30:1. There is no approved asset for the symbol on the product canvas. Until an
-> owner decision is recorded in the brand lock, the header must not silently recolour the mark to
-> make it show up. The options are set out in the lock document.
+**Two masters.** The approved navy artwork is the **positive** master, for light surfaces, social
+cards, the CTA panel and every favicon. A **reversed** master — same geometry, Ivory `#ededf3` body,
+Cobalt `#5266eb` leaf, transparent background — is commissioned for Onyx and Graphite and is **not
+yet delivered**.
+
+> **Interim, until it lands.** A dark header renders the lowercase `kyrve` wordmark **set as text**
+> in Ivory. Not the navy symbol on Onyx (1.30:1 — invisible), not a background plate to force
+> contrast, not a recolour of the positive master. The positive master is never modified to serve a
+> dark surface; that is what the reversed master is for.
 
 ## Confidential state
 
@@ -238,8 +242,9 @@ not a photograph and not a stock landscape. Content max-width ~640px centered.
 ### Transparent Top Navigation Bar
 **Role:** Primary navigation
 
-Full-width, fixed or sticky, transparent over the hero. Brand mark on the left, subject to the open
-decision recorded in the brand lock. Nav links centered — `Markets`, `Mandates`, `Requests`,
+Full-width, fixed or sticky, transparent over the hero. Brand mark on the left — the lowercase
+`kyrve` wordmark in Ivory while the reversed master is outstanding, the reversed symbol once it is
+delivered and accepted. Nav links centered — `Markets`, `Mandates`, `Requests`,
 `Positions`, `Docs`. `Sign in` text link and the single Cobalt action on the right. Uses
 backdrop-blur(8px or 20px) on scroll to create frosted-glass separation.
 

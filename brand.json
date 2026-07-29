@@ -62,15 +62,27 @@
     },
     "permittedLockups": [
       "symbol alone",
-      "symbol with the kyrve wordmark set horizontally to its right",
+      "stacked lockup: symbol above the kyrve wordmark, centred, gap 11% of symbol height (this is the approved full-lockup master)",
       "wordmark alone, where the symbol already appears elsewhere on the same surface"
     ],
     "backgrounds": {
-      "approvedMasterIsAuthoredFor": "light",
-      "$comment": "SEE THE OPEN DECISION IN docs/brand/KYRVE-BRAND-LOCK.md. Measured on the approved master: 100% of opaque mark pixels clear 4.5:1 against white; 0.0% clear 4.5:1 against Onyx #171721, median 1.20:1. The dark presentation exists only baked into the approved OG and CTA rasters, on a near-black #01091a field rather than on Onyx.",
-      "light": "approved, unmodified",
+      "decision": "two-master positive/reversed system, adopted by owner",
+      "light": "positive master, approved and unmodified",
       "darkNearBlack": "approved only as it appears inside the OG and CTA rasters",
-      "darkOnyxCanvas": "NOT approved \u2014 the master is not legible there and must not be recoloured to make it so"
+      "darkOnyxCanvas": "requires the reversed master. NOT YET DELIVERED.",
+      "positiveMasterIsAuthoredFor": "light",
+      "$comment": "Measured on the positive master: 100% of opaque pixels clear 4.5:1 against white; 0.0% clear it against Onyx #171721, median 1.30:1. The positive master must never be recoloured, plated, or rendered on Onyx.",
+      "interim": {
+        "darkHeaderMark": "the lowercase kyrve wordmark set as TEXT in Ivory #ededf3, not an image",
+        "endsWhen": "the reversed master is delivered and passes acceptance",
+        "forbiddenDuringInterim": [
+          "rendering the navy positive symbol on Onyx",
+          "adding a background plate behind the positive mark",
+          "recolouring the positive master",
+          "weakening the contrast gate"
+        ],
+        "$comment": "NARROW TIME-BOXED EXCEPTION, FLAGGED TO OWNER. `forbidden` below bars reconstructing the wordmark in a substitute typeface, and the drawn wordmark in the approved lockup is navy \u2014 so it cannot be used on Onyx either. Setting 'kyrve' as text in Ivory is the only reading of the owner's interim instruction that does not recolour an approved asset. It is an interim substitution, not a permitted lockup, and it ends when the reversed master lands."
+      }
     },
     "monochrome": {
       "rule": "one-colour reproduction uses the mark's silhouette in a single ink, never a flattened greyscale of the gradient",
@@ -78,16 +90,56 @@
       "onDark": "#ededf3"
     },
     "forbidden": [
-      "recolouring the mark, including to make it legible on Onyx",
-      "regenerating, redrawing or auto-tracing the mark",
+      "recolouring the positive master, including to make it legible on Onyx",
+      "rendering the positive master on the Onyx canvas",
+      "placing a background plate behind the mark to force contrast",
+      "regenerating, redrawing or auto-tracing either master",
+      "changing geometry or proportions when producing the reversed master",
       "rotating, skewing, mirroring or non-uniformly scaling",
-      "applying shadow, glow, outline, stroke or bevel",
+      "applying shadow, glow, outline or bevel to either master",
       "placing the mark on a photographic or patterned background",
-      "reconstructing the wordmark in a substitute typeface",
+      "reconstructing the wordmark in a substitute typeface, except under the interim dark-header exception recorded in logo.backgrounds.interim",
       "cropping the symbol, or altering the trim padding",
       "using the symbol as a repeating pattern or watermark",
       "upscaling any export beyond its approved source resolution"
-    ]
+    ],
+    "masters": {
+      "$comment": "Two-master positive/reversed system, adopted by owner decision. The positive master is never modified to serve a dark surface; a reversed master is a separate approved asset, not a recolour.",
+      "positive": {
+        "delivered": true,
+        "authoredFor": "light surfaces",
+        "sources": ["kyrve-logo-source.png", "kyrve-favicon-source.png"],
+        "structuralBody": "#132748 (lockup) / #142c58 (symbol) \u2014 deep navy, as approved",
+        "usage": "light surfaces, social cards, the CTA panel, and every favicon size"
+      },
+      "reversed": {
+        "delivered": false,
+        "authoredFor": "Onyx #171721 and Graphite #1e1e2a",
+        "expectedSources": ["kyrve-logo-reversed-source.png", "kyrve-symbol-reversed-source.png"],
+        "$comment": "NOT YET COMMISSIONED. Until it is delivered and validated, dark application headers use the lowercase kyrve wordmark set as text in Ivory. See docs/brand/REVERSED-MASTER-BRIEF.md.",
+        "requiredColourRoles": {
+          "structuralSymbolBody": "#ededf3",
+          "selectedQuoteLeaf": "#5266eb",
+          "background": "transparent"
+        },
+        "forbiddenInReversedMaster": [
+          "background plate",
+          "glow",
+          "shadow",
+          "outline",
+          "geometry changes",
+          "proportion changes",
+          "new decorative elements"
+        ],
+        "acceptance": {
+          "sizesPx": [16, 24, 32, 48, 64, 128, 192],
+          "surfaces": ["#171721", "#1e1e2a"],
+          "structuralMinimumContrast": 4.5,
+          "accentMinimumContrast": 3.0,
+          "$comment": "REQUIREMENT-5 INTERPRETATION, FLAGGED TO OWNER. Cobalt #5266eb measures 3.78:1 on Onyx and 3.50:1 on Graphite \u2014 it CANNOT reach 4.5:1 without changing the approved accent colour, which is forbidden. 'Critical structural pixels' is therefore read as the Ivory symbol body, matching the owner's own split between 'structural symbol body' and 'selected quote leaf'. The leaf is held to the 3:1 WCAG threshold for non-text UI components, which it clears on both surfaces."
+        }
+      }
+    }
   },
   "favicon": {
     "simplification": {

@@ -23,6 +23,9 @@ references, not disposable inspiration, and nothing ships that is not derived fr
 | Social card | `kyrve-og-source.png` | 1731x909 RGB |
 | Call to action | `kyrve-cta-source.png` | 1672x941 RGB |
 
+A fifth master — the **reversed symbol**, `kyrve-symbol-reversed-source.png` — is commissioned and
+not yet delivered. See the two-master system below.
+
 SHA-256 for each is pinned in `brand.json` and re-checked on every verification run. The sources are
 kept even though production exports have passed, because a derivative cannot be re-derived from a
 derivative without compounding loss.
@@ -79,11 +82,12 @@ distinct element. 96px is where the descender in `kyrve` survives hinting.
 ## Permitted lockups
 
 1. Symbol alone.
-2. Symbol with the `kyrve` wordmark set horizontally to its right.
+2. **Stacked lockup** — symbol above the `kyrve` wordmark, centred, separated by a gap of 11% of the
+   symbol height. This is the approved full-lockup master: symbol 373x237, wordmark 490x165.
 3. Wordmark alone, where the symbol already appears elsewhere on the same surface.
 
-Nothing else. In particular there is no stacked lockup, no tagline lockup and no lockup with a
-partner mark; if one is needed it has to be authored, not assembled.
+Nothing else. There is no horizontal lockup, no tagline lockup and no lockup with a partner mark; if
+one is needed it has to be authored, not assembled.
 
 ## Favicon simplification
 
@@ -98,40 +102,71 @@ the approved master, and it is verified rather than assumed — see the halo tes
 Required render sizes: 16, 24, 32, 48, 64, 128, 192, 512. The `.ico` carries 16, 24, 32, 48, 64, 128
 and 256 as embedded PNG frames.
 
-## Dark and light usage
+## Dark and light usage — the two-master system
 
-### Open decision: the approved master is a light-background asset
+**Owner decision, adopted.** Kyrve runs a two-master **positive / reversed** logo system.
 
-This needs an owner decision and must not be resolved by anyone recolouring the mark.
+| Master | Authored for | Status |
+| --- | --- | --- |
+| **Positive** — navy | Light surfaces, social cards, the CTA panel, every favicon size | Approved, shipped, unchanged |
+| **Reversed** — Ivory body, Cobalt leaf | Onyx `#171721` and Graphite `#1e1e2a` | **Commissioned, not yet delivered** |
 
-Measured on the approved symbol master, across all 45,374 opaque pixels:
+The reversed master is a **separate approved asset**, not a silent mutation of the positive one.
+It must preserve the exact approved symbol geometry and proportions, changing only the colour
+roles: structural symbol body Ivory `#ededf3`, selected quote leaf Cobalt `#5266eb`, transparent
+background. No plate, no glow, no shadow, no outline, no geometry change, no new decorative
+elements.
+
+The full specification and the acceptance criteria are in
+[`REVERSED-MASTER-BRIEF.md`](REVERSED-MASTER-BRIEF.md).
+
+### Why the positive master cannot serve dark surfaces
+
+Measured across all 45,374 opaque pixels of the positive symbol master:
 
 | Background | Pixels clearing 4.5:1 | Median contrast |
 | --- | ---: | ---: |
 | White | **100.0%** | 13.71:1 |
 | Onyx `#171721` | **0.0%** | **1.30:1** |
 
-The mark's body is deep navy, around `#142c58`. Against Onyx that is 1.30:1 — for practical purposes
-invisible. The full lockup is worse, at 1.20:1 median with 0.1% of pixels clearing even 3:1.
+The body is deep navy, around `#142c58`. Against Onyx that is for practical purposes invisible, and
+the full lockup is worse at 1.20:1 median. The dark presentation that exists today is baked into the
+OG and CTA rasters on a near-black field (`#01091a`, `#00060f`) — a different surface from the
+product canvas.
 
-The dark presentation of the brand does exist, but only *baked into* the approved OG and CTA
-rasters, and there it sits on a near-black field (`#01091a` and `#00060f` respectively) rather than
-on Onyx. That is a different background from the product canvas.
+### Interim, until the reversed master is delivered
 
-So there is no approved asset for the case the application actually needs most: the symbol placed on
-the Onyx canvas, in the header. Three ways out, none of which I will take unilaterally:
+- Dark application headers use the lowercase **`kyrve` wordmark set as TEXT in Ivory `#ededf3`**.
+- The navy positive symbol is **not** rendered on Onyx.
+- **No background plate** is added to force contrast.
+- The positive master is **not** recoloured.
+- The contrast gate is **not** weakened — `scripts/brand/verify-assets.py` still fails if the
+  positive mark ever starts clearing 4.5:1 on Onyx, and reports the reversed master as **PENDING**
+  rather than passing while its source file is absent.
+- `HEADER_MARK_PENDING_OWNER_DECISION` in `@kyrve/config` stays `true` and is flipped only after
+  the acceptance checks pass.
 
-1. **Commission a dark-canvas master** from the original design source, keeping the same geometry
-   with values lifted for the Onyx field. Cleanest, and the only option that yields a true approved
-   asset.
-2. **Place the header mark on a near-black plate** matching the OG field, accepting a visible
-   rectangle in the header.
-3. **Use the wordmark alone in the header**, in Ivory, and reserve the symbol for light surfaces,
-   social cards and the favicon.
+> **Narrow, time-boxed exception.** "Forbidden modifications" below bars reconstructing the wordmark
+> in a substitute typeface, and the drawn wordmark inside the approved lockup is navy — so it cannot
+> serve on Onyx either. Setting `kyrve` as text in Ivory is the only reading of the interim
+> instruction that does not recolour an approved asset. It is an interim substitution, **not** a
+> permitted lockup, and it ends when the reversed master is accepted.
 
-Until that decision is made, the application header wiring in this repository points at the approved
-symbol without recolouring it, and `scripts/brand/verify-assets.py` fails if the mark ever starts
-clearing 4.5:1 on Onyx — because the only way that happens is a recolour, which is forbidden.
+### On the 4.5:1 requirement
+
+The acceptance requirement is "at least 4.5:1 for critical structural pixels on both surfaces".
+Read to include the cobalt leaf, that is not satisfiable:
+
+| Colour | On Onyx | On Graphite |
+| --- | ---: | ---: |
+| Ivory `#ededf3` | 15.25:1 | 14.13:1 |
+| Cobalt `#5266eb` | **3.78:1** | **3.50:1** |
+
+Cobalt cannot reach 4.5:1 against either dark surface without changing the approved accent colour,
+which this document forbids. "Critical structural pixels" is therefore implemented as the **Ivory
+symbol body** — matching the owner's own split between "structural symbol body" and "selected quote
+leaf" — and the leaf is held to **3:1**, the WCAG threshold for non-text UI components, which it
+clears on both surfaces.
 
 ### Monochrome
 

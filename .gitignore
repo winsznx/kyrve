@@ -29,3 +29,6 @@ slither-report.json
 # Brand build intermediates. brand.json is the committed lock; these are per-run scratch.
 scripts/brand/build-report.json
 scripts/brand/verify-report.json
+
+# Python bytecode from the brand scripts.
+__pycache__/

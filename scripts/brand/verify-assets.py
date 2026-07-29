@@ -21,7 +21,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build import SYMBOL_PADDING, bleed_edges, trim  # noqa: E402
+from imaging import premultiplied_resize  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "public" / "brand"
@@ -212,10 +216,189 @@ def check_brand_lock() -> None:
         f"{100 * (on_onyx >= 4.5).mean():.1f}% on Onyx (median {np.median(on_onyx):.2f}:1) "
         "— light-background asset, see KYRVE-BRAND-LOCK.md"
     )
-    if lock["logo"]["backgrounds"]["approvedMasterIsAuthoredFor"] != "light":
-        fail("brand.json claims the master is not light-authored; measurement says otherwise")
+    if lock["logo"]["backgrounds"]["positiveMasterIsAuthoredFor"] != "light":
+        fail("brand.json claims the positive master is not light-authored; measurement disagrees")
     if (on_onyx >= 4.5).mean() > 0.0:
-        fail("the mark now clears 4.5:1 on Onyx — was it recoloured? The lock forbids that.")
+        fail("the positive mark now clears 4.5:1 on Onyx — was it recoloured? The lock forbids that.")
+
+    check_reversed_master(lock)
+
+
+REVERSED_SOURCE = "kyrve-symbol-reversed-source.png"
+
+
+def check_reversed_master(lock: dict) -> None:
+    """
+    Acceptance gate for the commissioned reversed master.
+
+    The owner adopted a two-master positive/reversed system: the navy positive master is never
+    touched, and a separately approved reversed master carries the same geometry in Ivory with a
+    Cobalt leaf. That master does not exist yet, so this reports PENDING rather than passing —
+    a gate that quietly passes because its input is missing is the failure mode this whole file
+    exists to avoid.
+
+    When the master lands, every requirement the owner set is checked mechanically, including the
+    one that is easiest to violate by accident: that the geometry is genuinely unchanged.
+    """
+    spec = lock["logo"]["masters"]["reversed"]
+    source = ROOT / REVERSED_SOURCE
+
+    if not source.exists():
+        if spec["delivered"]:
+            fail(f"brand.json says the reversed master is delivered, but {REVERSED_SOURCE} is absent")
+        notes.append(
+            f"reversed master: PENDING — {REVERSED_SOURCE} not present. Dark headers use the "
+            "kyrve wordmark set as text in Ivory. See docs/brand/REVERSED-MASTER-BRIEF.md"
+        )
+        return
+
+    # Evaluate what will actually SHIP, not the raw delivery: the builder bleeds edge colour
+    # outward and trims before export, and skipping that here measured a near-transparent fringe
+    # that the shipped file does not have.
+    rev = trim(bleed_edges(Image.open(source).convert("RGBA")), SYMBOL_PADDING)
+    # Square the canvas before any square downscale, exactly as the favicon build does. Resizing the
+    # 541x405 trimmed master straight to NxN squashes it, and the distortion collapsed the body's
+    # peak coverage to 26/255 at 16px — which read as "the mark cannot meet 4.5:1" when the real
+    # cause was the test framing. Same class of mistake as the halo reference.
+    side = max(rev.size)
+    squared = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    squared.paste(rev, ((side - rev.width) // 2, (side - rev.height) // 2))
+    a = np.asarray(rev)
+    alpha = a[..., 3]
+    opaque = alpha > 250
+
+    # --- geometry must be the approved silhouette, not a redraw
+    positive = Image.open(OUT / "logo" / "kyrve-symbol.png").convert("RGBA")
+    iou = silhouette_iou(positive, rev)
+    if iou < 0.98:
+        fail(f"reversed master geometry differs from the approved symbol: IoU {iou:.4f} < 0.98")
+    notes.append(f"reversed master: silhouette IoU vs approved symbol {iou:.4f}")
+
+    # --- transparent background, no plate
+    corners = [alpha[0, 0], alpha[0, -1], alpha[-1, 0], alpha[-1, -1]]
+    if any(int(c) != 0 for c in corners):
+        fail(f"reversed master has a background plate: corner alpha {[int(c) for c in corners]}")
+
+    # --- no glow: semi-transparent pixels must hug the silhouette, not spread from it
+    band = np.asarray(
+        Image.fromarray((opaque * 255).astype(np.uint8), "L").filter(ImageFilter.MaxFilter(5))
+    ) > 0
+    stray = ((alpha > 0) & ~opaque & ~band).mean()
+    if stray > 0.001:
+        fail(f"reversed master carries glow or a soft outline: {100 * stray:.2f}% stray alpha")
+
+    # --- only the two approved colour roles appear
+    roles = spec["requiredColourRoles"]
+    ivory = np.array([int(roles["structuralSymbolBody"][i : i + 2], 16) for i in (1, 3, 5)])
+    cobalt = np.array([int(roles["selectedQuoteLeaf"][i : i + 2], 16) for i in (1, 3, 5)])
+    rgb = a[..., :3].astype(float)[opaque]
+    d_ivory = np.linalg.norm(rgb - ivory, axis=-1)
+    d_cobalt = np.linalg.norm(rgb - cobalt, axis=-1)
+    is_accent = d_cobalt < d_ivory
+    off_palette = (np.minimum(d_ivory, d_cobalt) > 96).mean()
+    if off_palette > 0.02:
+        fail(f"reversed master uses colours outside the two approved roles: {100 * off_palette:.1f}%")
+    notes.append(
+        f"reversed master: {100 * (~is_accent).mean():.1f}% structural (Ivory), "
+        f"{100 * is_accent.mean():.1f}% accent (Cobalt), {100 * off_palette:.2f}% off-palette"
+    )
+
+    # --- contrast at every required size, on both dark surfaces
+    surfaces = [(hex_rgb(h), h) for h in spec["acceptance"]["surfaces"]]
+    structural_min = float(spec["acceptance"]["structuralMinimumContrast"])
+    accent_min = float(spec["acceptance"]["accentMinimumContrast"])
+
+    for size in spec["acceptance"]["sizesPx"]:
+        small = premultiplied_resize(squared, (size, size))
+        sa = np.asarray(small).astype(float)
+        salpha = sa[..., 3]
+        if salpha.max() < 8:
+            fail(f"reversed master at {size}px has no visible pixel left to measure")
+            continue
+
+        # "Critical pixels" are the ones carrying each element at this size, not its antialiased
+        # fringe — and the threshold is computed WITHIN each class, not globally.
+        #
+        # Two earlier definitions were wrong. `alpha > 250` does not survive contact with reality:
+        # at 16px these curves are sub-pixel and nothing reaches full opacity, so it measured an
+        # empty set and reported a pass. A global `alpha >= 0.9 * max` is no better, because the
+        # solid leaf is the densest thing in the frame, so every critical pixel classified as accent
+        # and the structural set vacated again. Per-class asks the right question: of the pixels
+        # that make up the body, do the strongest ones read?
+        srgb = sa[..., :3]
+        present = salpha > 8
+        accent = (np.linalg.norm(srgb - cobalt, axis=-1) < np.linalg.norm(srgb - ivory, axis=-1)) & present
+        structural_all = present & ~accent
+
+        def critical_of(mask: np.ndarray) -> np.ndarray:
+            if not mask.any():
+                return mask
+            return mask & (salpha >= 0.9 * salpha[mask].max())
+
+        for bg, label in surfaces:
+            # Contrast is measured on the COMPOSITED pixel. A half-covered Ivory pixel over Onyx is
+            # not Ivory, and grading it as though it were would pass artwork nobody can read.
+            coverage = (salpha / 255.0)[..., None]
+            composited = srgb * coverage + np.array(bg, dtype=float) * (1 - coverage)
+            ratios = contrast(relative_luminance(composited), relative_luminance(np.array(bg, dtype=float)))
+
+            structural = critical_of(structural_all)
+            if not structural.any():
+                fail(f"reversed master @{size}px on {label}: no structural pixel to measure")
+                continue
+            worst_structural = float(ratios[structural].min())
+            accent_pixels = critical_of(accent)
+            worst_accent = float(ratios[accent_pixels].min()) if accent_pixels.any() else float("inf")
+
+            if worst_structural < structural_min:
+                fail(
+                    f"reversed master @{size}px on {label}: structural pixel at "
+                    f"{worst_structural:.2f}:1, below the required {structural_min}:1"
+                )
+            if worst_accent < accent_min:
+                fail(
+                    f"reversed master @{size}px on {label}: accent pixel at "
+                    f"{worst_accent:.2f}:1, below the required {accent_min}:1"
+                )
+            notes.append(
+                f"reversed master @{size}px on {label}: structural {worst_structural:.2f}:1, "
+                f"accent {'n/a' if worst_accent == float('inf') else f'{worst_accent:.2f}:1'}"
+            )
+
+
+def hex_rgb(value: str) -> tuple[int, int, int]:
+    return (int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16))
+
+
+def silhouette_iou(a: Image.Image, b: Image.Image) -> float:
+    """
+    Intersection over union of two alpha silhouettes, each trimmed and scaled to a common frame.
+
+    This is the check that a reversed master is a recolour of the approved geometry rather than a
+    redraw. Trimming first means it compares shape and proportion, not canvas placement — a master
+    delivered on a different canvas size is fine, a master with a redrawn curve is not.
+    """
+    masks = []
+    for im in (a, b):
+        alpha = np.asarray(im.convert("RGBA"))[..., 3] > 8
+        ys, xs = np.nonzero(alpha)
+        cropped = Image.fromarray(
+            (alpha[ys.min() : ys.max() + 1, xs.min() : xs.max() + 1] * 255).astype(np.uint8), "L"
+        )
+        # Scale the LONGEST edge to 512 and pad — never resize to a square. Forcing both silhouettes
+        # into 512x512 normalises aspect ratio away, and proportion is exactly what this check is
+        # supposed to protect: a fixture squashed 15% vertically passed at IoU 0.99 before this fix.
+        scale = 512 / max(cropped.size)
+        fitted = cropped.resize(
+            (max(1, round(cropped.width * scale)), max(1, round(cropped.height * scale))),
+            Image.BILINEAR,
+        )
+        canvas = Image.new("L", (512, 512), 0)
+        canvas.paste(fitted, ((512 - fitted.width) // 2, (512 - fitted.height) // 2))
+        masks.append(np.asarray(canvas) > 127)
+    intersection = (masks[0] & masks[1]).sum()
+    union = (masks[0] | masks[1]).sum()
+    return float(intersection / union) if union else 0.0
 
 
 def write_validation() -> None:
@@ -244,6 +427,21 @@ def write_validation() -> None:
         "| Alpha edges match a no-alpha reference on dark **and** light | This is the halo test, described below |",
         "| Every `brand.json` hash matches the bytes on disk | A lock nobody re-checks is a changelog |",
         "| Every `brand.json` contrast ratio recomputes | The same |",
+        "| Reversed master acceptance, when its source is present | See below |",
+        "",
+        "## The reversed master gate",
+        "",
+        "Kyrve runs a two-master positive/reversed logo system. The reversed master is commissioned and",
+        "not yet delivered, so this gate reports **PENDING** rather than passing — a gate that passes",
+        "because its input is missing proves nothing. When the source lands it is checked for silhouette",
+        "IoU against the approved symbol (proportion-preserving, so a squashed redraw cannot slip",
+        "through), transparent corners, absence of glow, use of only the two approved colour roles, and",
+        "contrast at all seven required sizes on both Onyx and Graphite.",
+        "",
+        "It has been exercised against five fixtures — one correct, plus one each carrying a plate, a",
+        "glow, altered proportions, and no recolour. Each fails on its own criterion; the correct one",
+        "passes. Four earlier versions of the contrast measurement were wrong in ways that reported a",
+        "pass on an empty pixel set; see `docs/brand/REVERSED-MASTER-BRIEF.md`.",
         "",
         "## The halo test",
         "",
