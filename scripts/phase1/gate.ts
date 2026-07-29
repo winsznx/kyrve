@@ -161,6 +161,20 @@ const GATES: readonly Gate[] = [
     execute: () => summarise(run("pnpm", ["exec", "tsx", "scripts/verify/bundles.ts"]).stdout, 1),
   },
   {
+    section: "LOCAL SUBSTRATE",
+    name: "security scans (secrets, licence, slither, deps)",
+    execute: () => {
+      run("pnpm", ["exec", "tsx", "scripts/verify/secrets.ts"]);
+      run("pnpm", ["exec", "tsx", "scripts/verify/licence.ts"]);
+      const slither = run("pnpm", ["exec", "tsx", "scripts/verify/slither.ts"], {
+        allowFailure: true,
+      });
+      if (slither.code !== 0) throw new Error("slither reported High/Medium in deployed contracts");
+      run("pnpm", ["audit", "--audit-level", "moderate"]);
+      return "secrets clean, licence clean, 0 High/Medium slither, 0 dependency advisories";
+    },
+  },
+  {
     section: "SEPOLIA SUBSTRATE",
     name: "Sepolia substrate deployed and read-verified",
     skipIf: () =>
@@ -220,6 +234,19 @@ const GATES: readonly Gate[] = [
       }
       return `${record.passed}/${record.total} steps passed against real Sepolia`;
     },
+  },
+  {
+    section: "SEPOLIA SUBSTRATE",
+    name: "deployed bytecode matches the current build",
+    skipIf: () =>
+      existsSync(repoPath("deployments/sepolia/manifest.json"))
+        ? null
+        : "no Sepolia deployment recorded",
+    execute: () =>
+      summarise(
+        run("pnpm", ["exec", "tsx", "scripts/verify/deployed-bytecode.ts", "sepolia"]).stdout,
+        1,
+      ),
   },
   {
     section: "CLOUDFLARE APPLICATION",

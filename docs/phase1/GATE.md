@@ -11,12 +11,13 @@ Baseline:     89131b3 (Day 0 completed)
 Date:         2026-07-29
 ```
 
-**The contract substrate is complete on both chains, the Cloudflare foundation is built and green
-locally, and the gas side-channel question is answered.** What remains is CI and the security scan
-set — neither of which affects what is deployed.
+**Every Phase 1 deliverable is built and green.** `pnpm verify:phase1` reports 20 passed, 0 failed,
+2 skipped.
 
-The overall grade is CONDITIONAL PASS, not PASS, because those local deliverables are still absent.
-Cloudflare being deferred is an owner decision and is **not** counted against the grade.
+The grade is CONDITIONAL PASS rather than PASS for two reasons, both environmental rather than
+outstanding work: the Nox runtime suite is opt-in because it pulls multi-gigabyte Docker images
+(it passes — 28/28 — and the command is below), and Cloudflare application deployment is deferred
+by owner decision until the complete product works end to end. Neither is counted as a defect.
 
 Run `pnpm verify:phase1` for the live version of this table.
 
@@ -42,8 +43,8 @@ Run `pnpm verify:phase1` for the live version of this table.
 | generated ABIs, bindings and deployment record | **PASS** — 11 ABIs + embedded deployments, byte-identical on regeneration |
 | Nox runtime compatibility | **PASS** — 24/24 against the real local stack, plus 4 new gas tests. Suite still lives in `spikes/nox`; promotion to a package is deferred (it needs its own Hardhat toolchain: solc 0.8.36 / cancun, not the Midnight profile). |
 | Cloudflare Worker foundation | **PASS** — 4 Workers, 32/32 tests under workerd, 4/4 dry-runs, bundles clean. Nothing deployed. |
-| CI | **NOT BUILT** |
-| security scans | **NOT RUN** |
+| CI | **PASS** — 4 workflows: core, security, workers, Nox, deployment verification |
+| security scans | **PASS** — slither 0 High/Medium in deployed code, secrets clean, licence clean, 0 advisories |
 | gas side-channel (V-24 / T-1) | **PASS** — investigated; the Day 0 finding was a measurement artifact (delta P-5) |
 
 ## PHASE 1 — SEPOLIA SUBSTRATE · PASS
@@ -120,7 +121,7 @@ pnpm exec biome check .        0 errors
 forge fmt --check              clean
 pnpm test:workers             32 passed, 0 failed   (workerd)
 cd spikes/nox && hardhat test 28 passed, 0 failed   (real local Nox stack, needs Docker)
-pnpm verify:phase1            18 passed, 0 failed, 2 skipped
+pnpm verify:phase1            20 passed, 0 failed, 2 skipped
 ```
 
 Reproduce, local only:
@@ -204,12 +205,12 @@ deployment and a 221,956 gas `take` both executed on live Sepolia without hittin
 
 ## What Phase 1 still needs
 
-1. CI workflows (core, Nox, Workers, deployment verification).
-2. The security scan set (Slither, dependency audit, licence scan, secret scan).
-3. The remaining `docs/phase1/` documents.
-4. Promotion of the Nox suite from `spikes/nox` into a package of its own. Deferred deliberately:
-   it needs a separate Hardhat toolchain (solc 0.8.36, cancun) that must not mix with the Midnight
-   profile, and the suite is green where it stands.
+
+Nothing blocking. One deliberate deferral remains:
+
+- Promotion of the Nox suite from `spikes/nox` into a package of its own. It needs a separate
+  Hardhat toolchain (solc 0.8.36, cancun) that must not mix with the Midnight osaka profile, and
+  the suite is green where it stands, so moving it would be churn rather than progress.
 
 ## Phase 2 prerequisites
 
