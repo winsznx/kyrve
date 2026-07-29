@@ -272,6 +272,55 @@ The window is now 4,200 seconds; the property under test is unchanged.
 
 ---
 
+## S-8 · Credit and debt are cumulative positions, not per-quote amounts
+
+**Severity: a wrong assertion, not a wrong contract. Fixed in the check.**
+
+The Sepolia settlement script asserted `debt(marketId, borrower) == exactUnits` after the take, and
+failed with `debt is 303000599, expected 300000599` on a settlement that was entirely correct.
+
+Midnight's `credit` and `debt` are POSITIONS in a shared market, not records of one fill. The borrower
+address is the deployer, and it already held 3,000,000 units of debt in that market from Phase 1's
+Sepolia integration run. The local harness never saw this because its market is fresh every time —
+which is exactly the class of thing only a public network shows you.
+
+The figure that describes one settlement is the DELTA across its block. Measured that way:
+
+| | before | after | created |
+|---|---|---|---|
+| vault credit | 0 | 300,000,599 | **300,000,599** |
+| borrower debt | 3,000,000 | 303,000,599 | **300,000,599** |
+
+`evidence/phase4/sepolia-settlement.json` records the before, the after and the delta, and says why
+the absolute is not the right number. The local suite had already been corrected the same way for
+credit, for the same reason: one vault is the maker for every quote of its series.
+
+---
+
+## S-9 · The activated offer exists in exactly one log, and must be recorded when it lands
+
+**Severity: operational. Fixed.**
+
+Delta S-5 established that the offer cannot be read from a simulation. S-9 is its consequence on a
+public network: it cannot be recovered afterwards either, unless the transaction that emitted it is
+known.
+
+Recovering it by scanning for `OfferPublished` failed — `eth_getLogs` over an open block range is
+capped at ten blocks on Alchemy's free tier, and the error names a range rather than the cause. Worse,
+this surfaced on a RESUME, after a real activation had already been paid for, when the alternative to
+recovery was paying for another epoch.
+
+So `scripts/test/sepolia-settlement.ts` writes `evidence/phase4/sepolia-activation.json` the moment
+activation lands, before anything else can fail, carrying the epoch id, the quote id and the
+activation transaction hash. Every later step reads one receipt.
+
+The same record carries the pre-settlement partial-fill refusal and the rollback observation, because
+neither can be reproduced against a consumed quote: a consumed quote is refused by
+`QuoteNotExecutable` at the ratifier, not by `WrongUnits` at the vault, so re-attempting would record
+the wrong refusal for the wrong reason. The script refuses to record an observation it did not make.
+
+---
+
 ## Carried forward, still binding
 
 Everything in `docs/phase3/PHASE-4-PREREQUISITES.md` remains in force. Two are discharged by this
