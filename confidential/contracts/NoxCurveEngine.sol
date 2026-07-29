@@ -15,6 +15,7 @@ import {
     CURVE_REDUCE_CHUNK_LEAVES
 } from "./CurveConstants.sol";
 import {CurveGraphRegistry} from "./CurveGraphRegistry.sol";
+import {DecryptedValue} from "./DecryptedValue.sol";
 import {CurveUniverseRegistry} from "./CurveUniverseRegistry.sol";
 import {EncryptedMandateBook} from "./EncryptedMandateBook.sol";
 import {KyrveConfidentialAssetVault} from "./KyrveConfidentialAssetVault.sol";
@@ -351,7 +352,14 @@ contract NoxCurveEngine is KyrveCurveBase {
         uint256 leaves = universes.leafCount(epoch.universeId);
         if (leaves > CURVE_MAX_LEAVES) revert UniverseTooLarge(leaves, CURVE_MAX_LEAVES);
 
-        _runtime[epochId].epochCondition = _buildEpochCondition(epochId, request.desiredAssets);
+        // `allowThis` is not optional here and its absence is silent until stage E2. The epoch
+        // condition is an `ebool` created in THIS transaction and consumed as a `select` operand in
+        // every later one; `_executeOperation` grants only TRANSIENT access to its outputs, so
+        // without a persistent grant the condition becomes unusable the moment this transaction
+        // ends and `publishWinner` reverts `NotAllowed` eight transactions later.
+        ebool epochCondition = _buildEpochCondition(epochId, request.desiredAssets);
+        Nox.allowThis(epochCondition);
+        _runtime[epochId].epochCondition = epochCondition;
         _buildLeafTable(epochId, epoch.universeId, leaves);
         _buildMaturityTerms(epochId, epoch.universeId, request.preferredMaturityIndex);
 
@@ -771,6 +779,10 @@ contract NoxCurveEngine is KyrveCurveBase {
         for (uint256 slot = 0; slot < epoch.providerCount; ++slot) {
             address provider = _snapshots[epochId][slot].provider;
             if (ledger.stateOf(epochId, provider) == ReservationLedger.ReservationState.Reserved) {
+                // Release isolates the restored balance under the epoch condition too, so the
+                // ledger needs it here for the same reason it needs it in `_allocateOne`.
+                _assertReviewedTransientRecipient(address(ledger));
+                Nox.allowTransient(cond, address(ledger));
                 ledger.release(epochId, provider, cond);
             }
         }
@@ -1130,10 +1142,14 @@ contract NoxCurveEngine is KyrveCurveBase {
         _allocation[epochId][slot] = isolated;
         _grantOwnerOnly(isolated, snapshot.provider);
 
-        // The ledger performs the safe subtraction against the provider's sealed snapshot, so it
-        // needs the operand for exactly this transaction and no longer.
-        _assertReviewedTransientRecipient(address(ledger));
-        Nox.allowTransient(isolated, address(ledger));
+        // The ledger performs the safe subtraction against the provider's sealed snapshot and
+        // isolates its own two outputs under the SAME epoch condition, so it needs both operands
+        // for exactly this transaction and no longer.
+        //
+        // The condition is easy to forget because the engine holds a persistent grant on it and
+        // therefore never notices: the failure appears only inside the ledger, as a bare
+        // `NotAllowed` from NoxCompute naming a contract the engine did not think it was calling.
+        _lendToLedger(isolated, runtime.epochCondition);
         euint256 reserved = ledger.reserve(epochId, snapshot.provider, isolated, runtime.epochCondition);
 
         // The aggregate is the sum of what was RESERVED, never of what was asked for.
@@ -1142,6 +1158,14 @@ contract NoxCurveEngine is KyrveCurveBase {
         Nox.allowThis(runtime.aggregate);
 
         return keccak256(abi.encode(commitment, slot, euint256.unwrap(isolated), euint256.unwrap(reserved)));
+    }
+
+    /// @dev Hands the ledger the two operands it needs for exactly one transaction: the allocation
+    ///      it is reserving, and the epoch condition it isolates its outputs under.
+    function _lendToLedger(euint256 allocation, ebool epochCondition) private {
+        _assertReviewedTransientRecipient(address(ledger));
+        Nox.allowTransient(allocation, address(ledger));
+        Nox.allowTransient(epochCondition, address(ledger));
     }
 
     /// @dev `min` does not exist in Nox. Compare, then select. 25,661 gas.
@@ -1178,9 +1202,16 @@ contract NoxCurveEngine is KyrveCurveBase {
         bytes calldata proof,
         uint256 claimed
     ) private view {
-        graph.requireBoundResult(epochId, role, handle);
+        // The REGISTERED form, not the sealed one. This runs between stage E2 and stage F, and the
+        // graph is not sealed until the aggregate is published after stage F — requiring a seal
+        // here would make the epoch unfinishable. Registration is what binds the handle to this
+        // epoch and this role; sealing additionally means the computation is complete, which is
+        // what `CurveResultVerifier` requires of an outside reader.
+        graph.requireRegisteredResult(epochId, role, handle);
         bytes memory decoded = INoxCompute(Nox.noxComputeContract()).validateDecryptionProof(handle, proof);
-        uint256 value = abi.decode(decoded, (uint256));
+        // NOT `abi.decode`. The gateway returns the plaintext at its natural width — two bytes for
+        // a `euint16` — and `abi.decode` reverts on anything under 32 with no reason. Delta R-5.
+        uint256 value = DecryptedValue.toUint(decoded);
         if (value != claimed) revert DecryptedValueMismatch(handle, claimed, value);
     }
 }

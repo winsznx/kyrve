@@ -283,11 +283,32 @@ contract CurveGraphRegistry {
         return _resultHandle[epochId][role];
     }
 
-    /// @notice Reverts unless the graph is sealed and `handle` is exactly this role's handle.
-    function requireBoundResult(bytes32 epochId, ResultRole role, bytes32 handle) external view {
-        if (!_graphs[epochId].sealedGraph) revert GraphNotSealed(epochId);
+    /**
+     * @notice Reverts unless `handle` is exactly the handle registered for this role.
+     *
+     * @dev THE MID-EPOCH FORM, and the distinction from {requireBoundResult} is not cosmetic.
+     *      Stage F has to index the winning leaf publicly, so it needs the selected market and rate
+     *      proven BEFORE the epoch finishes — but the graph is not sealed until the aggregate is
+     *      published, which is after stage F. Demanding a seal here would make the epoch
+     *      unfinishable.
+     *
+     *      Registration is the binding that matters: the handle was committed to, in order, before
+     *      it was published. Sealing means something different — that the whole computation is
+     *      complete — and that is what an outside consumer of a finished quote must require.
+     */
+    function requireRegisteredResult(bytes32 epochId, ResultRole role, bytes32 handle) public view {
         bytes32 expected = expectedResultHandle(epochId, role);
         if (expected != handle) revert UnboundHandle(epochId, role, expected, handle);
+    }
+
+    /**
+     * @notice Reverts unless the graph is SEALED and `handle` is exactly this role's handle.
+     * @dev The form an outside verifier uses. A partially computed epoch must never verify: an
+     *      aggregate published before every chunk ran would be a quote over part of the universe.
+     */
+    function requireBoundResult(bytes32 epochId, ResultRole role, bytes32 handle) external view {
+        if (!_graphs[epochId].sealedGraph) revert GraphNotSealed(epochId);
+        requireRegisteredResult(epochId, role, handle);
     }
 
     error UnboundHandle(bytes32 epochId, ResultRole role, bytes32 expected, bytes32 supplied);

@@ -5,6 +5,7 @@ import {Nox} from "@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol";
 import {INoxCompute} from "@iexec-nox/nox-protocol-contracts/contracts/interfaces/INoxCompute.sol";
 
 import {CurveGraphRegistry} from "./CurveGraphRegistry.sol";
+import {DecryptedValue} from "./DecryptedValue.sol";
 import {NoxCurveEngine} from "./NoxCurveEngine.sol";
 import {QuoteEpochController} from "./QuoteEpochController.sol";
 
@@ -54,7 +55,6 @@ contract CurveResultVerifier {
 
     error ZeroAddress();
     error GraphNotSealed(bytes32 epochId);
-    error UnexpectedDecodedLength(bytes32 handle, uint256 length);
     error BooleanOutOfRange(bytes32 handle, uint256 value);
 
     constructor(CurveGraphRegistry graph_, NoxCurveEngine engine_, QuoteEpochController controller_) {
@@ -83,8 +83,9 @@ contract CurveResultVerifier {
         // looked at, so a caller can never learn whether an arbitrary proof would have verified.
         graph.requireBoundResult(epochId, role, handle);
         bytes memory decoded = INoxCompute(Nox.noxComputeContract()).validateDecryptionProof(handle, decryptionProof);
-        if (decoded.length != 32) revert UnexpectedDecodedLength(handle, decoded.length);
-        value = abi.decode(decoded, (uint256));
+        // The gateway encodes the plaintext at its natural width, so a published `euint16` arrives
+        // as two bytes and a `euint256` as thirty-two. `abi.decode` would revert on the former.
+        value = DecryptedValue.toUint(decoded);
     }
 
     /// @notice The whole public surface of one quote, verified together.

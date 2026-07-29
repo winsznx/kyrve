@@ -118,6 +118,22 @@ export interface KyrveHandleClient {
 
   /** Waits for a handle to become computable without decrypting it. */
   waitReady(handle: Handle, options?: WaitOptions): Promise<HandleStatus>;
+
+  /**
+   * Reads a handle that was deliberately published, and returns the gateway's proof with it.
+   *
+   * THE PROOF IS THE POINT, AND IT IS REPLAYABLE. `validateDecryptionProof` is a pure EIP-712
+   * signature check — no ACL, no nonce, no expiry, no caller binding — so this proof attests that
+   * the gateway decrypted SOME handle to SOME value and nothing more. Anyone may replay it, in any
+   * contract, forever. It becomes a statement about a quote only once `CurveGraphRegistry` has
+   * confirmed the handle is the one this epoch's sealed graph committed to for that role.
+   *
+   * Works for anyone: publication is `allowPublicDecryption`, which is IRREVERSIBLE.
+   */
+  publicDecrypt(
+    handle: Handle,
+    options?: WaitOptions,
+  ): Promise<{ value: bigint; decryptionProof: Hex }>;
 }
 
 /**
@@ -184,6 +200,23 @@ export async function createHandleClient(
 
     async waitReady(handle, options) {
       return waitForHandle(network, handle, options);
+    },
+
+    async publicDecrypt(handle, options) {
+      // Readiness first, with real backoff. The SDK's own retry inside `publicDecrypt` gives up
+      // after three attempts at 1s/2s/4s, which is not a policy a keeper can adopt when testnet
+      // latency is UNVERIFIED (AS-1).
+      await waitForHandle(network, handle, options);
+      const result = await sdk.publicDecrypt(handle);
+      const { value, decryptionProof } = result;
+      if (typeof value === "bigint") return { value, decryptionProof: decryptionProof as Hex };
+      if (typeof value === "boolean") {
+        return { value: value ? 1n : 0n, decryptionProof: decryptionProof as Hex };
+      }
+      throw new NoxClientError(
+        `the gateway returned a ${typeof value} for published handle ${handle}; Kyrve only ` +
+          "publishes numeric and boolean values.",
+      );
     },
 
     async decrypt(handle, options) {

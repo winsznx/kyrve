@@ -11,9 +11,9 @@
  * about the value behind the handle.
  */
 
-import type { PublicClient } from "viem";
+import type { PublicClient, WalletClient } from "viem";
 
-import type { Address, Handle, NoxNetwork } from "./types.js";
+import type { Address, Handle, Hex, NoxNetwork } from "./types.js";
 
 const ACL_ABI = [
   {
@@ -127,3 +127,67 @@ export const CONFIDENTIAL_STATE_COPY: Record<
       "un-publish.",
   },
 };
+
+/**
+ * Grants another address permanent admin access to one handle, from the OWNER's own wallet.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHY THIS EXISTS, AND WHY IT CANNOT BE DONE ANY OTHER WAY
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * The Phase 2 mandate book, request book and vault each grant exactly two things per handle:
+ * `allowThis` to themselves, and `allow(handle, owner)` to the owner. Neither reaches the Phase 3
+ * curve engine, and all three contracts are deployed, verified and immutable — they cannot be
+ * taught about a contract that did not exist when they were written.
+ *
+ * `INoxCompute.allow` is `external` and gated `onlyAllowed(handle)`, so the owner — and only the
+ * owner — can extend access. That is why this is a wallet write and not a contract call: there is
+ * no delegation path, and adding one would mean re-encrypting the mandate into the engine, which
+ * nothing on chain could prove equals the mandate the book holds.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHAT THE CALLER IS AGREEING TO — SAY THIS IN THE INTERFACE, IN THESE WORDS
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ *  - **It is permanent.** `sdk/Nox.sol` version 0.2.4 has no `removeAdmin`, no `removeViewer` and
+ *    no un-publish. Only `disallowTransient` exists, and this is not transient.
+ *  - **Admin is not read-only.** The recipient may compute on the handle, grant it onward, and call
+ *    `allowPublicDecryption` on it. Kyrve's engine does none of those except for the five published
+ *    results — but that is a property of reviewed code, not of the ACL, and must be described as
+ *    such rather than as a guarantee the cryptography makes.
+ *  - **It is per handle.** There is no batch entry point in `INoxCompute` 0.2.4, so a mandate is 35
+ *    transactions. Replacing a mandate mints new handles and needs the grants again; the old ones
+ *    stop authorising activity because `activeEpoch` moved, not because they were removed.
+ */
+export async function grantHandleAccess(
+  walletClient: WalletClient,
+  network: NoxNetwork,
+  handle: Handle,
+  recipient: Address,
+): Promise<Hex> {
+  const account = walletClient.account;
+  if (account === undefined) {
+    throw new Error(
+      "granting access is a write from the handle owner's own wallet — `INoxCompute.allow` is " +
+        "gated on the caller already holding access — so the wallet client needs an account.",
+    );
+  }
+  return walletClient.writeContract({
+    address: network.noxCompute,
+    abi: GRANT_ABI,
+    functionName: "allow",
+    args: [handle, recipient],
+    account,
+    chain: walletClient.chain ?? null,
+  });
+}
+
+const GRANT_ABI = [
+  {
+    type: "function",
+    name: "allow",
+    stateMutability: "nonpayable",
+    inputs: [{ type: "bytes32" }, { type: "address" }],
+    outputs: [],
+  },
+] as const;

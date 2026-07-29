@@ -86,6 +86,9 @@ importers:
       '@kyrve/config':
         specifier: workspace:*
         version: link:../packages/config
+      '@kyrve/curve':
+        specifier: workspace:*
+        version: link:../packages/curve
       '@kyrve/nox':
         specifier: workspace:*
         version: link:../packages/nox

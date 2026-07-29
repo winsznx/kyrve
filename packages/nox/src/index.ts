@@ -26,6 +26,7 @@ export {
   CONFIDENTIAL_STATE_COPY,
   type ConfidentialState,
   confidentialStateOf,
+  grantHandleAccess,
   type HandleAcl,
   readAcl,
 } from "./acl-chain.js";
