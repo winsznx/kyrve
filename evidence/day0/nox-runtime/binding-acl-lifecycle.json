@@ -7,78 +7,78 @@
     "truncated proof": "REJECTED",
     "addViewer": "GRANTED, and no removeViewer exists in the ABI",
     "allowPublicDecryption": "SET, and there is no un-set",
-    "indistinguishability": "status/logs/topics identical across 5 scenarios; distinct gas values observed: 4"
+    "indistinguishability": "status/logs/topics identical across 5 scenarios; distinct gas values observed: 3"
   },
   "samples": [
     {
       "scenario": "small graph (6 ops)",
       "ops": 6,
       "txGas": 139418,
+      "inclusionMs": 11,
+      "handleReadyMs": 497
+    },
+    {
+      "scenario": "small graph (6 ops)",
+      "ops": 6,
+      "txGas": 142368,
+      "inclusionMs": 16,
+      "handleReadyMs": 480
+    },
+    {
+      "scenario": "small graph (6 ops)",
+      "ops": 6,
+      "txGas": 142380,
+      "inclusionMs": 15,
+      "handleReadyMs": 458
+    },
+    {
+      "scenario": "small graph (6 ops)",
+      "ops": 6,
+      "txGas": 142380,
       "inclusionMs": 12,
-      "handleReadyMs": 354
+      "handleReadyMs": 483
     },
     {
       "scenario": "small graph (6 ops)",
       "ops": 6,
-      "txGas": 142380,
+      "txGas": 142368,
+      "inclusionMs": 17,
+      "handleReadyMs": 370
+    },
+    {
+      "scenario": "small graph (6 ops)",
+      "ops": 6,
+      "txGas": 142368,
       "inclusionMs": 14,
-      "handleReadyMs": 378
+      "handleReadyMs": 483
     },
     {
       "scenario": "small graph (6 ops)",
       "ops": 6,
-      "txGas": 142380,
-      "inclusionMs": 13,
-      "handleReadyMs": 470
-    },
-    {
-      "scenario": "small graph (6 ops)",
-      "ops": 6,
-      "txGas": 142380,
+      "txGas": 142368,
       "inclusionMs": 18,
-      "handleReadyMs": 387
-    },
-    {
-      "scenario": "small graph (6 ops)",
-      "ops": 6,
-      "txGas": 142380,
-      "inclusionMs": 14,
-      "handleReadyMs": 455
-    },
-    {
-      "scenario": "small graph (6 ops)",
-      "ops": 6,
-      "txGas": 142344,
-      "inclusionMs": 13,
-      "handleReadyMs": 468
+      "handleReadyMs": 365
     },
     {
       "scenario": "small graph (6 ops)",
       "ops": 6,
       "txGas": 142380,
       "inclusionMs": 13,
-      "handleReadyMs": 463
+      "handleReadyMs": 480
     },
     {
       "scenario": "small graph (6 ops)",
       "ops": 6,
-      "txGas": 142356,
+      "txGas": 142368,
       "inclusionMs": 12,
-      "handleReadyMs": 588
+      "handleReadyMs": 469
     },
     {
       "scenario": "small graph (6 ops)",
       "ops": 6,
       "txGas": 142380,
-      "inclusionMs": 20,
-      "handleReadyMs": 280
-    },
-    {
-      "scenario": "small graph (6 ops)",
-      "ops": 6,
-      "txGas": 142380,
-      "inclusionMs": 12,
-      "handleReadyMs": 484
+      "inclusionMs": 23,
+      "handleReadyMs": 464
     }
   ]
 }

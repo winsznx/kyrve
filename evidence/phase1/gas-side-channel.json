@@ -1,0 +1,74 @@
+{
+  "noiseFloor": {
+    "min": 139406,
+    "max": 142380,
+    "spread": 2974,
+    "distinct": 3,
+    "values": [
+      139406,
+      142368,
+      142368,
+      142380,
+      142380,
+      142380
+    ],
+    "calldataBytes": [
+      548
+    ]
+  },
+  "predicate": {
+    "eligible": {
+      "min": 139418,
+      "max": 142380,
+      "spread": 2962,
+      "distinct": 3,
+      "values": [
+        139418,
+        142368,
+        142380
+      ]
+    },
+    "rejected": {
+      "min": 142368,
+      "max": 142380,
+      "spread": 12,
+      "distinct": 2,
+      "values": [
+        142380,
+        142368,
+        142380
+      ]
+    },
+    "fullySeparated": false,
+    "gapBetweenGroups": 0
+  },
+  "reason": {
+    "flagFalse": {
+      "min": 139418,
+      "max": 142380,
+      "spread": 2962,
+      "distinct": 3,
+      "values": [
+        139418,
+        142380,
+        142368
+      ]
+    },
+    "zeroAmount": {
+      "min": 142368,
+      "max": 142380,
+      "spread": 12,
+      "distinct": 2,
+      "values": [
+        142368,
+        142380,
+        142380
+      ]
+    },
+    "reasonSeparable": false
+  },
+  "verdict": "NO LEAK ABOVE THE NOISE FLOOR",
+  "noiseFloorSpread": 2974,
+  "predicateGap": 0,
+  "$comment": "Controlled investigation of Day 0 V-24 / T-1. Day 0's five scenarios included three with identical inputs, so its four distinct gas values could not distinguish predicate effects from position effects. This separates them."
+}

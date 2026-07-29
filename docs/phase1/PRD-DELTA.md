@@ -128,11 +128,46 @@ degrades gracefully.
 
 ---
 
+## P-5 · V-24 / THREAT-MODEL T-1 — the gas side channel was a measurement artifact · CORRECTION
+
+*Executable proof: `spikes/nox/test/05-gas-side-channel.ts` against the real local Nox stack.
+Raw data: `evidence/phase1/gas-side-channel.json`. Full write-up:
+[`GAS-SIDE-CHANNEL.md`](GAS-SIDE-CHANNEL.md).*
+
+Day 0 recorded V-24 as **FAIL, open**: five scenarios, four distinct gas values, 2,974 spread, with
+T-1 warning that an observer might distinguish private failure reasons.
+
+That experiment could not support that conclusion. Three of its five scenarios —
+`rate-ineligible`, `cap-constrained` and `market-disabled` — supply **identical inputs**
+(amount 1000, eligible 0). They are one case wearing three labels, so any difference between them
+is by construction not predicate-driven.
+
+Controlled re-run, separating position from predicate:
+
+| Measure | Result |
+|---|---:|
+| noise floor, six **identical** inputs | **2,974 gas** — the Day 0 spread, reproduced with no predicate variation |
+| predicate gap, eligible vs rejected, interleaved | **0 gas** — groups overlap entirely |
+| rejection reason separable | **no** |
+
+The 2,974 spread is the first-call cold-to-warm storage transition on the accumulator slot. Gas
+tracks **position**, not the predicate.
+
+**Required change:** T-1 is reclassified from OPEN-FAIL to **NOT SUPPORTED BY EVIDENCE**, with a
+residual 12-gas jitter attributable to ciphertext zero-byte composition (calldata length is
+constant at 548 bytes) that appears identically in both groups.
+
+**Unchanged:** Kyrve still must not claim gas indistinguishability. This proves the Day 0 evidence
+never showed a leak; it does not prove no leak exists. Sample size is small, the contract is a toy,
+and the measurement is local-only. Phase 2 must repeat it against the real curve engine.
+
+---
+
 ## Residuals carried forward from Day 0
 
 | Item | Status after Phase 1 |
 |---|---|
-| Gas indistinguishability (V-24 / T-1) | **STILL OPEN.** Not investigated in this phase. |
+| Gas indistinguishability (V-24 / T-1) | **INVESTIGATED — see P-5.** Reclassified: the Day 0 finding was a measurement artifact. The claim still must not be made. |
 | Testnet Nox latency and gas (AS-1) | **STILL UNVERIFIED.** All figures remain local. |
 | Storage under realistic load (AS-4) | **STILL UNVERIFIED.** |
 | Concurrent epochs (AS-5) | **STILL UNVERIFIED.** |
