@@ -1,8 +1,8 @@
 /**
  * GENERATED FILE — do not edit by hand. Run `pnpm generate`.
  *
- * 11 contract ABIs, generated from the pinned Midnight release and Kyrve's own
- * contracts at commit eaf759022bbdc05d71dfe85fb968314efe2c49d8.
+ * 11 contract ABIs, generated from Midnight 2026-07-23
+ * (dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0) and Kyrve's own contracts.
  *
  * Deliberately NOT generated yet:
  *   - INoxCompute / Nox SDK: @iexec-nox/* is not a dependency of the root workspace. Only packages/nox may depend on Nox (A-15), and its TypeScript side deliberately avoids the beta SDK. Generated when Phase 2 introduces the confidential contracts.

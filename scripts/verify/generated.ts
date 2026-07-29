@@ -45,6 +45,8 @@ function main(): void {
 
   console.log("regenerating ABIs...");
   run("pnpm", ["exec", "tsx", "scripts/generate/abis.ts"]);
+  console.log("regenerating the embedded deployment record...");
+  run("pnpm", ["exec", "tsx", "scripts/generate/deployments.ts"]);
   console.log("regenerating rate grids...");
   run("pnpm", ["exec", "tsx", "scripts/generate/rate-grids.ts"]);
   console.log("regenerating quote-math and market fixtures...");

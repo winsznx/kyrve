@@ -7,12 +7,12 @@
  *
  * Command:   pnpm generate
  * Verify:    pnpm verify:generated  (regenerates and asserts `git diff` is empty)
- * Commit:    eaf759022bbdc05d71dfe85fb968314efe2c49d8
+ * Pinned:    Midnight 2026-07-23 @ dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0
  * Content:   sha256:481fcdab84764e609c42388e6f27d3c2ed49a7e445750c42bb8352b02485c8f0
  *
  * TIMESTAMP POLICY: none is emitted, deliberately. A generation timestamp would change this file
- * on every run with no source change, which would make the diff check above worthless. The commit
- * and content hash change only when the input actually changes.
+ * on every run with no source change, which would make the diff check above worthless. The pinned
+ * release and content hash change only when the input actually changes.
  */
 
 export const KyrveDeploymentVerifierAbi = [
