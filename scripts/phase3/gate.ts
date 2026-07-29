@@ -391,10 +391,28 @@ const GATES: readonly Gate[] = [
           "`pnpm exec tsx scripts/test/sepolia-epoch-budget.ts`. Every stage is proven against " +
           "the real Nox stack locally, and the deployed layer is verified read-only above.",
     execute: () => {
-      const evidence = readJson<{ epochId: string; gasUsed: string }>(
-        repoPath("evidence/phase3/sepolia-epoch.json"),
-      );
-      return `epoch ${evidence.epochId}, ${evidence.gasUsed} gas`;
+      const evidence = readJson<{
+        epochId: string;
+        matchesPlaintextReferenceModel: boolean;
+        published: { aggregateFillAmount: string; quoteReady: boolean };
+      }>(repoPath("evidence/phase3/sepolia-epoch.json"));
+
+      // The whole reason for running on a public network. A recorded epoch that did NOT match the
+      // model must fail the gate rather than be reported as "ran".
+      if (!evidence.matchesPlaintextReferenceModel) {
+        throw new Error("the Sepolia epoch did not match the plaintext reference model");
+      }
+      if (!evidence.published.quoteReady) {
+        throw new Error("the Sepolia epoch produced no quote, so it proves nothing about a fill");
+      }
+
+      // Cost comes from the balance-derived measurement, not from the epoch evidence: a `--resume`
+      // verification spends nothing, so reading gas from there would report zero for a real epoch.
+      const costPath = repoPath("evidence/phase3/sepolia-epoch-cost.json");
+      const cost = existsSync(costPath)
+        ? readJson<{ totalEth: string }>(costPath).totalEth
+        : "cost not measured";
+      return `epoch ${evidence.epochId.slice(0, 10)}…, aggregate ${evidence.published.aggregateFillAmount}, matches the model, ${cost} ETH`;
     },
   },
 ];
