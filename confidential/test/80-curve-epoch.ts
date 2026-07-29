@@ -38,7 +38,7 @@ import {
   setupProvider,
   verifyPublishedQuote,
 } from "./curve-helpers.js";
-import { clientFor, SUITE_POLL } from "./helpers.js";
+import { SUITE_POLL } from "./helpers.js";
 
 describe("Phase 3: one confidential quote from four encrypted mandates", () => {
   let h: CurveHarness;

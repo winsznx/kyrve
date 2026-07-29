@@ -123,9 +123,15 @@ function main(): void {
   }
 
   // No caret, tilde or range may appear anywhere in the workspace.
-  const ranges = Object.entries(rootPkg.devDependencies).filter(([, v]) =>
-    /[\^~]|\*|\bx\b/.test(v),
-  );
+  //
+  // `workspace:*` is EXCLUDED, and it is not an exception being carved out. The `workspace:`
+  // protocol resolves to the package in this repository at the path pnpm already knows; there is
+  // no registry lookup and nothing to drift, so it is exact in the only sense that matters here.
+  // Treating its `*` as a version range flagged `@kyrve/config`, `@kyrve/curve` and `@kyrve/nox`
+  // — the three packages whose contents are pinned by being in the commit.
+  const ranges = Object.entries(rootPkg.devDependencies)
+    .filter(([, v]) => !v.startsWith("workspace:"))
+    .filter(([, v]) => /[\^~]|\*|\bx\b/.test(v));
   if (ranges.length > 0) {
     console.error(
       `\n  FAIL inexact dependency pins: ${ranges.map(([k, v]) => `${k}@${v}`).join(", ")}`,

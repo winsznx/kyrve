@@ -14,7 +14,6 @@
 
 import assert from "node:assert/strict";
 
-import { nox } from "@iexec-nox/nox-hardhat-plugin";
 import {
   buildUniverse,
   type CurveRequest,
@@ -508,7 +507,9 @@ export async function openAndSeal(
 }
 
 function record(gas: Record<string, number[]>, stage: string, receipt: any): void {
-  (gas[stage] ??= []).push(Number(receipt.gasUsed));
+  const samples = gas[stage] ?? [];
+  samples.push(Number(receipt.gasUsed));
+  gas[stage] = samples;
 }
 
 /** Runs every chunk of one stage, then advances. Returns the chunk count it executed. */

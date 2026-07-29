@@ -58,6 +58,40 @@ function dockerAvailable(): boolean {
 const SUITE_LOG = repoPath("evidence/phase3/curve-suite.log");
 
 const GATES: readonly Gate[] = [
+  {
+    /**
+     * FIRST IN THE ARRAY, and displayed under quality because that is where it belongs.
+     *
+     * Later gates legitimately rewrite evidence files — the benchmark records fresh gas, the gas
+     * experiment records fresh samples — so a clean-tree check that ran after them would fail on
+     * the gate's own output and would have to be weakened until it stopped meaning anything. Run
+     * first, it checks the tree as the developer left it, which is the question worth asking.
+     */
+    section: "QUALITY AND SECURITY",
+    name: "Git identity and a clean working tree",
+    execute: () => {
+      const name = run("git", ["config", "user.name"]).stdout.trim();
+      const email = run("git", ["config", "user.email"]).stdout.trim();
+      if (name !== "winsznx") {
+        throw new Error(`git user.name is "${name}", expected winsznx`);
+      }
+      const trailers = run("bash", [
+        "-c",
+        "git log --format=%B phase/02-confidential-assets..HEAD | grep -ci 'Co-Authored-By' || true",
+      ]).stdout.trim();
+      if (trailers !== "0") {
+        throw new Error(`${trailers} commit(s) carry a Co-Authored-By trailer; none may`);
+      }
+      const dirty = run("git", ["status", "--porcelain"]).stdout.trim();
+      if (dirty.length > 0) {
+        throw new Error(
+          `the working tree is not clean:\n${dirty.split("\n").slice(0, 5).join("\n")}`,
+        );
+      }
+      return `${name} <${email}>, no co-author trailers, tree clean`;
+    },
+  },
+
   // ── Locks and boundaries ──────────────────────────────────────────────────────────────────
   {
     section: "LOCKS AND BOUNDARIES",
@@ -262,32 +296,6 @@ const GATES: readonly Gate[] = [
     name: "generated artifacts are byte-identical on regeneration",
     execute: () => summarise(run("pnpm", ["exec", "tsx", "scripts/verify/generated.ts"]).stdout, 2),
   },
-  {
-    section: "QUALITY AND SECURITY",
-    name: "Git identity and a clean working tree",
-    execute: () => {
-      const name = run("git", ["config", "user.name"]).stdout.trim();
-      const email = run("git", ["config", "user.email"]).stdout.trim();
-      if (name !== "winsznx") {
-        throw new Error(`git user.name is "${name}", expected winsznx`);
-      }
-      const trailers = run("bash", [
-        "-c",
-        "git log --format=%B phase/02-confidential-assets..HEAD | grep -ci 'Co-Authored-By' || true",
-      ]).stdout.trim();
-      if (trailers !== "0") {
-        throw new Error(`${trailers} commit(s) carry a Co-Authored-By trailer; none may`);
-      }
-      const dirty = run("git", ["status", "--porcelain"]).stdout.trim();
-      if (dirty.length > 0) {
-        throw new Error(
-          `the working tree is not clean:\n${dirty.split("\n").slice(0, 5).join("\n")}`,
-        );
-      }
-      return `${name} <${email}>, no co-author trailers, tree clean`;
-    },
-  },
-
   // ── Sepolia ───────────────────────────────────────────────────────────────────────────────
   {
     section: "SEPOLIA",

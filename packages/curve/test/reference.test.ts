@@ -93,7 +93,7 @@ describe("the selection rank is positional, so no criterion can outrank a higher
     expect(worstAtRate3).toBeLessThan(bestAtRate4);
   });
 
-  it("the maturity term sits between the rate index and the public tail", () => {
+  it("the maturity term sits between the rate index and the public tail (criterion 4)", () => {
     // One maturity step (128) must outweigh the whole tail (max (7<<4)|7 = 119) and never reach
     // one rate step (512). Both bounds are what put criterion 4 exactly where the policy says.
     const oneMaturityStep = maturityTerm(universe, 0, 1) - maturityTerm(universe, 0, 0);
@@ -134,7 +134,7 @@ describe("eligibility is a six-term conjunction and any one term excludes silent
     });
   }
 
-  it("excludes a provider on every market when their confidential balance is short", () => {
+  it("excludes a provider on EVERY market when their confidential balance is short", () => {
     const set = providers(3, (slot) => (slot === 2 ? { balance: 0n } : {}));
     const result = computeCurve(universe, set, request);
     for (let market = 0; market < universe.markets.length; market += 1) {
@@ -153,7 +153,7 @@ describe("eligibility is a six-term conjunction and any one term excludes silent
 });
 
 describe("the privacy floor zeroes a leaf instead of reporting anything", () => {
-  it("a leaf with fewer eligible providers than the floor carries zero capacity", () => {
+  it("a leaf with fewer eligible providers than the floor carries encrypted ZERO capacity", () => {
     const universe = universeOf(1, 4, { privacyFloor: 3 });
     // Two providers can serve rate index 0; the third has a minimum of 3, so rate 0 has two
     // eligible providers and rate 3 has three.
@@ -219,7 +219,7 @@ describe("the rate window is two-sided", () => {
 });
 
 describe("the borrower's size bounds are applied in the order the contract applies them", () => {
-  it("the fill is capped at the desired size before the minimum is tested", () => {
+  it("the fill is capped at the desired size BEFORE the minimum is tested", () => {
     const universe = universeOf(1, 2);
     // Capacity 1,500 units; desired 600; minimum 700. Capping first gives 600, which is BELOW the
     // minimum, so there is no quote. Testing the minimum first against 1,500 would wrongly accept.
@@ -264,7 +264,7 @@ describe("allocation is pro-rata, floors, and conserves", () => {
     assertDustBound(result);
   });
 
-  it("dust is the flooring residue and never exceeds the contributing provider count", () => {
+  it("dust is the flooring residue and never exceeds the contributing provider COUNT", () => {
     const universe = universeOf(1, 2);
     // Deliberately awkward: a fill that does not divide evenly by the capacity.
     const set = providers(3, (slot) => ({

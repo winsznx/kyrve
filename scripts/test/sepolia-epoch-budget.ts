@@ -6,7 +6,7 @@
  * prices it from MEASURED local gas at the live gas price and reports the shortfall exactly.
  */
 
-import { createPublicClient, formatEther, http, parseGwei } from "viem";
+import { createPublicClient, formatEther, http } from "viem";
 import { sepolia } from "viem/chains";
 
 import { deployer, sepoliaRpc } from "../lib/env.js";

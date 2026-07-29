@@ -13,102 +13,102 @@
   "samples": [
     {
       "group": "fillable",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "fillable",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "fillable",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "fillable",
-      "finalizeGas": 738614,
-      "accumulateGas": 619931,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "fillable",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "fillable",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738626,
-      "accumulateGas": 619943,
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     }
   ],
   "ranges": {
     "fillable": {
-      "min": 738614,
-      "max": 738626
+      "min": 738954,
+      "max": 738954
     },
     "noFill": {
-      "min": 738626,
-      "max": 738626
+      "min": 738954,
+      "max": 738954
     }
   },
   "verdict": {
     "groupsSeparatedByGas": false,
-    "noiseFloorGas": 12,
+    "noiseFloorGas": 0,
     "claim": "This experiment falsifies a leak claim for the branch measured. It does NOT establish gas indistinguishability, and Kyrve must not claim it. Local node, local stack, one contract, six samples per group. Testnet gas is UNVERIFIED (AS-1).",
     "limits": [
       "local Hardhat node, not a live network",
