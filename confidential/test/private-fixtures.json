@@ -1,0 +1,49 @@
+{
+  "$comment": "The plaintext values the Phase 2 suite encrypts, decrypts and asserts on. THIS FILE IS THE ONLY PLACE IN THE REPOSITORY THEY ARE ALLOWED TO APPEAR. `scripts/verify/privacy-scan.ts` reads them from here and then fails the build if any of them is found in a log, an evidence file, a deployment manifest, a generated artifact, a Worker source, a test snapshot or any other tracked or untracked file. They are deliberately high-entropy so a match cannot be a coincidence: a scan for a round number like 1000000 would false-positive on unrelated code and would prove nothing.",
+  "wrapAmount": "1000000741",
+  "vaultDeposit": "400000269",
+  "mandate": {
+    "totalBudget": "5000000317",
+    "marketCaps": ["2000000581", "1500000433", "0", "1000000907"],
+    "minRateIndexes": [12, 18, 0, 25],
+    "enabledFlags": [1, 1, 0, 1],
+    "collateralFamilyCaps": ["3000000653", "2000000129"],
+    "maturityBucketCaps": ["2500000731", "2500000199"],
+    "maxDurationIndex": 3,
+    "allocationWeight": 100
+  },
+  "replacementTotalBudget": "9000000823",
+  "request": {
+    "desiredAssets": "1200000487",
+    "minimumAssets": "1000000373",
+    "maxRateIndexes": [30, 30, 0, 30],
+    "enabledFlags": [1, 1, 0, 1],
+    "preferredMaturityIndex": 1
+  },
+  "$scanned": [
+    "1000000741",
+    "400000269",
+    "5000000317",
+    "2000000581",
+    "1500000433",
+    "1000000907",
+    "3000000653",
+    "2000000129",
+    "2500000731",
+    "2500000199",
+    "9000000823",
+    "1200000487",
+    "1000000373"
+  ],
+  "$notScanned": {
+    "reason": "Rate indexes, enabled flags, maturity indexes and allocation weights are small integers (0-100). They are just as private as the amounts, but a repository-wide scan for the string '12' or '25' would match thousands of unrelated bytes and prove nothing at all. Their confidentiality rests on the same mechanism as the amounts — the same handles, the same ACL, the same client-only decryption — and is covered by the structural half of the scan, which checks that no code path can write a decrypted value anywhere.",
+    "fields": [
+      "minRateIndexes",
+      "enabledFlags",
+      "maxRateIndexes",
+      "preferredMaturityIndex",
+      "maxDurationIndex",
+      "allocationWeight"
+    ]
+  }
+}

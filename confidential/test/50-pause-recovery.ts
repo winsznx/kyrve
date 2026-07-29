@@ -26,12 +26,12 @@ import {
   SUITE_POLL,
   sampleMandate,
   sampleRequest,
+  VAULT_DEPOSIT,
+  WRAP_AMOUNT,
 } from "./helpers.js";
 
 const UNIVERSE = `0x${"44".repeat(32)}` as `0x${string}`;
 const BOND = 2_000_000_000_000_000n;
-const WRAP_AMOUNT = 1_000_000_000n;
-const DEPOSIT = 300_000_000n;
 const COLLATERAL_REF = `0x${"cd".repeat(32)}` as `0x${string}`;
 
 describe("Phase 2: emergency pause stops entry and never blocks recovery", () => {
@@ -73,7 +73,7 @@ describe("Phase 2: emergency pause stops entry and never blocks recovery", () =>
     );
 
     const client = await clientFor(h, 1);
-    const deposit = await client.encrypt(DEPOSIT, "euint256", h.vault.address);
+    const deposit = await client.encrypt(VAULT_DEPOSIT, "euint256", h.vault.address);
     await mine(
       h,
       await h.vault.write.deposit(
@@ -181,7 +181,7 @@ describe("Phase 2: emergency pause stops entry and never blocks recovery", () =>
 
   it("14c. RECOVERY: a provider still withdraws from the vault while everything is paused", async () => {
     const client = await clientFor(h, 1);
-    const amount = await client.encrypt(DEPOSIT, "euint256", h.vault.address);
+    const amount = await client.encrypt(VAULT_DEPOSIT, "euint256", h.vault.address);
 
     await mine(
       h,

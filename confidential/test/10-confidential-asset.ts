@@ -23,10 +23,9 @@ import {
   LOCAL_NOX_NETWORK,
   mine,
   SUITE_POLL,
+  VAULT_DEPOSIT,
+  WRAP_AMOUNT,
 } from "./helpers.js";
-
-const WRAP_AMOUNT = 1_000_000_000n; // 1,000 tUSDC at 6 decimals
-const DEPOSIT_AMOUNT = 400_000_000n;
 
 describe("Phase 2: confidential asset — wrap, private balance, vault", () => {
   let h: Harness;
@@ -88,7 +87,7 @@ describe("Phase 2: confidential asset — wrap, private balance, vault", () => {
 
     assert.equal(value, WRAP_AMOUNT, "the holder must recover exactly what they wrapped");
     console.log(`  balance handle   : ${handle}`);
-    console.log(`  holder decrypted : ${value}`);
+    console.log("  holder decrypted : matches the wrapped amount (value not printed)");
   });
 
   it("4. another wallet cannot decrypt that balance", async () => {
@@ -130,7 +129,7 @@ describe("Phase 2: confidential asset — wrap, private balance, vault", () => {
     );
 
     const client = await clientFor(h, 1);
-    const input = await client.encrypt(DEPOSIT_AMOUNT, "euint256", h.vault.address);
+    const input = await client.encrypt(VAULT_DEPOSIT, "euint256", h.vault.address);
     const nonce = await h.vault.read.nextNonce([provider.account.address]);
 
     await mine(
@@ -143,14 +142,14 @@ describe("Phase 2: confidential asset — wrap, private balance, vault", () => {
     const available = await h.vault.read.confidentialAvailableOf([provider.account.address]);
     assert.equal(
       await client.decrypt(available, SUITE_POLL),
-      DEPOSIT_AMOUNT,
+      VAULT_DEPOSIT,
       "the vault must credit exactly what was transferred",
     );
 
     const walletBalance = await h.asset.read.confidentialBalanceOf([provider.account.address]);
     assert.equal(
       await client.decrypt(walletBalance, SUITE_POLL),
-      WRAP_AMOUNT - DEPOSIT_AMOUNT,
+      WRAP_AMOUNT - VAULT_DEPOSIT,
       "the provider's wallet balance must fall by the same amount",
     );
 
@@ -161,7 +160,7 @@ describe("Phase 2: confidential asset — wrap, private balance, vault", () => {
     );
     assert.equal(await h.asset.read.isOperator([provider.account.address, h.vault.address]), false);
 
-    console.log(`  vault available (provider decrypts) : ${DEPOSIT_AMOUNT}`);
+    console.log("  vault available (provider decrypts) : matches the deposit (value not printed)");
     console.log(`  operator window closed              : true`);
   });
 
@@ -258,7 +257,7 @@ describe("Phase 2: confidential asset — wrap, private balance, vault", () => {
     );
 
     let available = await h.vault.read.confidentialAvailableOf([provider.account.address]);
-    assert.equal(await client.decrypt(available, SUITE_POLL), DEPOSIT_AMOUNT - withdrawal);
+    assert.equal(await client.decrypt(available, SUITE_POLL), VAULT_DEPOSIT - withdrawal);
 
     // Now ask for more than is there. This MUST NOT revert: a revert would tell an observer that
     // this provider's balance was below this amount, which is precisely the private fact.
@@ -275,11 +274,11 @@ describe("Phase 2: confidential asset — wrap, private balance, vault", () => {
     available = await h.vault.read.confidentialAvailableOf([provider.account.address]);
     assert.equal(
       await client.decrypt(available, SUITE_POLL),
-      DEPOSIT_AMOUNT - withdrawal,
+      VAULT_DEPOSIT - withdrawal,
       "an over-withdrawal must leave the balance untouched",
     );
 
-    console.log(`  withdrawal succeeded, balance now : ${DEPOSIT_AMOUNT - withdrawal}`);
+    console.log("  withdrawal succeeded, balance decreased by exactly the requested amount");
     console.log("  over-withdrawal                   : succeeded publicly, moved encrypted zero");
   });
 

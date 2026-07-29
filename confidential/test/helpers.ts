@@ -13,6 +13,7 @@
  */
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import { handleGatewayUrl, NOX_COMPUTE_ADDRESS, nox } from "@iexec-nox/nox-hardhat-plugin";
 import {
@@ -158,28 +159,72 @@ export async function mine(harness: Harness, hash: `0x${string}`): Promise<any> 
   return receipt;
 }
 
+/**
+ * The plaintext fixtures, loaded from the one file in the repository allowed to contain them.
+ *
+ * They live in JSON rather than inline so `scripts/verify/privacy-scan.ts` can read exactly the
+ * values this suite decrypts and then prove none of them reaches a log, an evidence file, a
+ * manifest, a generated artifact or any other tracked or untracked file. Inlining them would put
+ * the same strings in a `.ts` the scanner would have to special-case as well, and every additional
+ * exception is somewhere a real leak could hide.
+ *
+ * The values are deliberately high-entropy. Scanning for a round number like 1000000 would match
+ * unrelated bytes across the repository and prove nothing.
+ */
+const FIXTURES = JSON.parse(
+  readFileSync(new URL("./private-fixtures.json", import.meta.url), "utf8"),
+) as {
+  wrapAmount: string;
+  vaultDeposit: string;
+  replacementTotalBudget: string;
+  mandate: {
+    totalBudget: string;
+    marketCaps: string[];
+    minRateIndexes: number[];
+    enabledFlags: number[];
+    collateralFamilyCaps: string[];
+    maturityBucketCaps: string[];
+    maxDurationIndex: number;
+    allocationWeight: number;
+  };
+  request: {
+    desiredAssets: string;
+    minimumAssets: string;
+    maxRateIndexes: number[];
+    enabledFlags: number[];
+    preferredMaturityIndex: number;
+  };
+};
+
+/** PUBLIC by construction — the wrap amount is a plain uint256 in calldata and cannot be hidden. */
+export const WRAP_AMOUNT = BigInt(FIXTURES.wrapAmount);
+/** PRIVATE — encrypted in the client before it is ever sent anywhere. */
+export const VAULT_DEPOSIT = BigInt(FIXTURES.vaultDeposit);
+/** PRIVATE — the budget a mandate replacement moves to. */
+export const REPLACEMENT_BUDGET = BigInt(FIXTURES.replacementTotalBudget);
+
 /** A realistic multi-market mandate: three markets enabled at different floors, five sitting out. */
 export function sampleMandate(): MandatePlaintext {
   return {
-    totalBudget: 5_000_000_000n,
-    marketCaps: [2_000_000_000n, 1_500_000_000n, 0n, 1_000_000_000n],
-    minRateIndexes: [12, 18, 0, 25],
-    enabledFlags: [1, 1, 0, 1],
-    collateralFamilyCaps: [3_000_000_000n, 2_000_000_000n],
-    maturityBucketCaps: [2_500_000_000n, 2_500_000_000n],
-    maxDurationIndex: 3,
-    allocationWeight: 100,
+    totalBudget: BigInt(FIXTURES.mandate.totalBudget),
+    marketCaps: FIXTURES.mandate.marketCaps.map(BigInt),
+    minRateIndexes: FIXTURES.mandate.minRateIndexes,
+    enabledFlags: FIXTURES.mandate.enabledFlags,
+    collateralFamilyCaps: FIXTURES.mandate.collateralFamilyCaps.map(BigInt),
+    maturityBucketCaps: FIXTURES.mandate.maturityBucketCaps.map(BigInt),
+    maxDurationIndex: FIXTURES.mandate.maxDurationIndex,
+    allocationWeight: FIXTURES.mandate.allocationWeight,
   };
 }
 
 /** A borrower request that fits inside the sample mandate's envelope. */
 export function sampleRequest(): RequestPlaintext {
   return {
-    desiredAssets: 1_200_000_000n,
-    minimumAssets: 1_000_000_000n,
-    maxRateIndexes: [30, 30, 0, 30],
-    enabledFlags: [1, 1, 0, 1],
-    preferredMaturityIndex: 1,
+    desiredAssets: BigInt(FIXTURES.request.desiredAssets),
+    minimumAssets: BigInt(FIXTURES.request.minimumAssets),
+    maxRateIndexes: FIXTURES.request.maxRateIndexes,
+    enabledFlags: FIXTURES.request.enabledFlags,
+    preferredMaturityIndex: FIXTURES.request.preferredMaturityIndex,
   };
 }
 

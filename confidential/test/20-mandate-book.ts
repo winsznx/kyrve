@@ -30,6 +30,7 @@ import {
   type Harness,
   LOCAL_NOX_NETWORK,
   mine,
+  REPLACEMENT_BUDGET,
   SUITE_POLL,
   sampleMandate,
 } from "./helpers.js";
@@ -177,7 +178,7 @@ describe("Phase 2: encrypted mandate book — submit, decrypt, replace, expire t
 
     const replacement = {
       ...sampleMandate(),
-      totalBudget: 9_000_000_000n,
+      totalBudget: REPLACEMENT_BUDGET,
       minRateIndexes: [30, 30, 0, 30],
     };
     const encoded = await encryptMandate(client, h.mandateBook.address, replacement);
@@ -196,7 +197,7 @@ describe("Phase 2: encrypted mandate book — submit, decrypt, replace, expire t
     // Epoch 2 is live and carries the new values.
     await h.mandateBook.read.assertUsable([mandateId, 2]);
     const epoch2 = await h.mandateBook.read.handlesOf([mandateId, 2]);
-    assert.equal(await client.decrypt(epoch2.totalBudget, SUITE_POLL), 9_000_000_000n);
+    assert.equal(await client.decrypt(epoch2.totalBudget, SUITE_POLL), REPLACEMENT_BUDGET);
 
     // Epoch 1 no longer authorises. This is the PRD invariant-13 check.
     assert.equal(await h.mandateBook.read.isUsable([mandateId, 1]), false);
