@@ -22,12 +22,18 @@ importers:
       '@kyrve/curve':
         specifier: workspace:*
         version: link:packages/curve
+      '@kyrve/midnight':
+        specifier: workspace:*
+        version: link:packages/midnight
       '@kyrve/nox':
         specifier: workspace:*
         version: link:packages/nox
       '@kyrve/quote':
         specifier: workspace:*
         version: link:packages/quote
+      '@kyrve/quote-math':
+        specifier: workspace:*
+        version: link:packages/quote-math
       '@types/node':
         specifier: 26.1.2
         version: 26.1.2

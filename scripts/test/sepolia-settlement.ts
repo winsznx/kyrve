@@ -84,15 +84,42 @@ interface EpochEvidence {
   };
 }
 
+function registryEarlyAddress(settlement: SettlementDeployment): Address {
+  const address = settlement.addresses["KyrveQuoteRegistry"];
+  if (address === undefined) throw new Error("the manifest records no registry");
+  return address;
+}
+
+function activatorAddress(settlement: SettlementDeployment): Address {
+  const address = settlement.addresses["QuoteActivator"];
+  if (address === undefined) throw new Error("the manifest records no activator");
+  return address;
+}
+
 function artifact(name: string): { abi: readonly unknown[] } {
-  const path = repoPath(`out/${name}.sol/${name}.json`);
-  if (!existsSync(path)) throw new Error(`no artifact for ${name}; run \`forge build\``);
+  return artifactIn(name, name);
+}
+
+/**
+ * One artifact, by source file and contract name.
+ *
+ * Foundry keys the directory on the SOURCE basename and the file on the contract name, so a source
+ * declaring several interfaces — `ICurveLayer.sol` declares five — has no artifact under its own
+ * name. Asking for `ICurveLayer` is how a first run of this script died two thirds of the way
+ * through, after the proofs had already verified.
+ */
+function artifactIn(sourceName: string, contractName: string): { abi: readonly unknown[] } {
+  const path = repoPath(`out/${sourceName}.sol/${contractName}.json`);
+  if (!existsSync(path)) {
+    throw new Error(`no artifact at ${path}; run \`forge build\``);
+  }
   return readJson<{ abi: readonly unknown[] }>(path);
 }
 
 async function main(): Promise<void> {
   const settlementPath = repoPath("deployments/sepolia/settlement.json");
   const epochPath = repoPath("evidence/phase4/sepolia-epoch.json");
+  const activationPath = repoPath("evidence/phase4/sepolia-activation.json");
 
   if (!existsSync(settlementPath)) {
     throw new Error(
@@ -204,7 +231,7 @@ async function main(): Promise<void> {
 
   const leafCount = (await publicClient.readContract({
     address: universes,
-    abi: artifact("ICurveLayer").abi as never,
+    abi: artifactIn("ICurveLayer", "ICurveUniverseRegistry").abi as never,
     functionName: "leafCount",
     args: [epoch.universeId],
   })) as bigint;
@@ -214,7 +241,7 @@ async function main(): Promise<void> {
   for (let index = 0n; index < leafCount; index += 1n) {
     const leaf = (await publicClient.readContract({
       address: universes,
-      abi: artifact("ICurveLayer").abi as never,
+      abi: artifactIn("ICurveLayer", "ICurveUniverseRegistry").abi as never,
       functionName: "leafAt",
       args: [epoch.universeId, index],
     })) as { marketIndex: number; rateIndex: number; tick: number };
@@ -241,7 +268,7 @@ async function main(): Promise<void> {
 
   const spec = (await publicClient.readContract({
     address: universes,
-    abi: artifact("ICurveLayer").abi as never,
+    abi: artifactIn("ICurveLayer", "ICurveUniverseRegistry").abi as never,
     functionName: "marketAt",
     args: [epoch.universeId, BigInt(verified.marketIndex)],
   })) as { marketId: Hex; marketStructHash: Hex };
@@ -316,7 +343,26 @@ async function main(): Promise<void> {
     functionName: "balanceOf",
     args: [vault],
   })) as bigint;
-  if (vaultBalance < size.buyerAssets) {
+  // Funding is skipped once the quote is consumed: on a resume the vault has legitimately paid out
+  // and topping it up again would be a transaction for nothing.
+  const quoteAlready = (await publicClient.readContract({
+    address: registryEarlyAddress(settlement),
+    abi: artifact("KyrveQuoteRegistry").abi as never,
+    functionName: "quoteOfEpoch",
+    args: [epoch.epochId],
+  })) as Hex;
+  const consumedAlready =
+    quoteAlready !== `0x${"00".repeat(32)}` &&
+    (
+      (await publicClient.readContract({
+        address: registryEarlyAddress(settlement),
+        abi: artifact("KyrveQuoteRegistry").abi as never,
+        functionName: "executionOf",
+        args: [quoteAlready],
+      })) as { status: number }
+    ).status === 2;
+
+  if (!consumedAlready && vaultBalance < size.buyerAssets) {
     await send(
       "fund vault",
       await wallet.writeContract({
@@ -334,44 +380,117 @@ async function main(): Promise<void> {
   const activator = settlement.addresses["QuoteActivator"];
   if (activator === undefined) throw new Error("the manifest records no activator");
 
-  const activationHash = await wallet.writeContract({
-    address: activator,
-    abi: artifact("QuoteActivator").abi as never,
-    functionName: "activate",
-    args: [
-      {
+  /**
+   * One epoch produces at most one quote, forever — so a re-run must ADOPT the existing one rather
+   * than attempt a second activation the registry would refuse. That is not a convenience: this
+   * script broadcasts real transactions, and a step failing after activation must be resumable
+   * without paying for another epoch.
+   */
+  const registryEarly = settlement.addresses["KyrveQuoteRegistry"];
+  if (registryEarly === undefined) throw new Error("the manifest records no registry");
+  const existingQuote = (await publicClient.readContract({
+    address: registryEarly,
+    abi: artifact("KyrveQuoteRegistry").abi as never,
+    functionName: "quoteOfEpoch",
+    args: [epoch.epochId],
+  })) as Hex;
+
+  let quoteId: Hex;
+  let offerBytes: Hex;
+
+  if (existingQuote !== `0x${"00".repeat(32)}`) {
+    console.log(`\n  adopting the quote this epoch already produced: ${existingQuote}`);
+    quoteId = existingQuote;
+    /**
+     * The offer comes from the activation RECEIPT, not from a log search.
+     *
+     * `eth_getLogs` over an open block range is capped at ten blocks on Alchemy's free tier, and a
+     * first resume died on exactly that. The activation transaction is recorded when it happens, so a
+     * resume reads one receipt instead of scanning a chain — and the offer cannot be reconstructed
+     * locally in any case, because `offer.start` is the activation block's timestamp and `offerHash`
+     * covers it.
+     */
+    if (!existsSync(activationPath)) {
+      throw new Error(
+        `the registry holds quote ${existingQuote} for this epoch, but ${activationPath} does not ` +
+          "exist, so the activation transaction is unknown and the offer cannot be recovered. The " +
+          "offer is only ever obtainable from the `OfferPublished` log of that transaction; put its " +
+          'hash in that file as { "quoteId", "activationTxHash" } and re-run.',
+      );
+    }
+    const record = readJson<{ quoteId: Hex; activationTxHash: Hex }>(activationPath);
+    if (record.quoteId.toLowerCase() !== existingQuote.toLowerCase()) {
+      throw new Error(
+        `${activationPath} records quote ${record.quoteId}, but this epoch's quote is ${existingQuote}`,
+      );
+    }
+    const receipt = await publicClient.getTransactionReceipt({ hash: record.activationTxHash });
+    const recovered = parseEventLogs({
+      abi: artifact("QuoteActivator").abi as never,
+      logs: receipt.logs,
+      eventName: "OfferPublished",
+    })[0] as unknown as { args: { quoteId: Hex; offer: Hex } } | undefined;
+    if (recovered === undefined) {
+      throw new Error(`${record.activationTxHash} published no offer`);
+    }
+    offerBytes = recovered.args.offer;
+  } else {
+    const activationHash = await wallet.writeContract({
+      address: activator,
+      abi: artifact("QuoteActivator").abi as never,
+      functionName: "activate",
+      args: [
+        {
+          epochId: epoch.epochId,
+          expectedGraphRoot: epoch.graphRoot,
+          expectedRequestId: epoch.requestId,
+          expectedUniverseId: epoch.universeId,
+          market,
+          leafIndex: BigInt(leafIndex),
+          lifetime: 3_600n,
+          maxPendingFee: size.buyerAssets,
+        },
+        {
+          marketProof: epoch.proofs.market,
+          rateProof: epoch.proofs.rate,
+          floorProof: epoch.proofs.floor,
+          readyProof: epoch.proofs.ready,
+          aggregateProof: epoch.proofs.aggregate,
+        },
+      ],
+      account,
+      chain: sepolia,
+    });
+    console.log("\n  activating:");
+    await send("activate", activationHash);
+
+    const activationReceipt = await publicClient.getTransactionReceipt({ hash: activationHash });
+    const published = parseEventLogs({
+      abi: artifact("QuoteActivator").abi as never,
+      logs: activationReceipt.logs,
+      eventName: "OfferPublished",
+    })[0] as unknown as { args: { quoteId: Hex; offer: Hex } } | undefined;
+    if (published === undefined) throw new Error("activation published no offer");
+
+    quoteId = published.args.quoteId;
+    offerBytes = published.args.offer;
+
+    // Written IMMEDIATELY, before anything else can fail. Every later step is resumable only if this
+    // exists: the offer lives in one log of one transaction and nothing can rebuild it.
+    mkdirSync(repoPath("evidence/phase4"), { recursive: true });
+    writeFileSync(
+      activationPath,
+      `${stableStringify({
+        $comment:
+          "The activation transaction for this epoch's one quote. The offer is recoverable ONLY from " +
+          "its OfferPublished log — `offer.start` is the activation block's timestamp, so no client " +
+          "can rebuild the offer the ratifier hashed.",
         epochId: epoch.epochId,
-        expectedGraphRoot: epoch.graphRoot,
-        expectedRequestId: epoch.requestId,
-        expectedUniverseId: epoch.universeId,
-        market,
-        leafIndex: BigInt(leafIndex),
-        lifetime: 3_600n,
-        maxPendingFee: size.buyerAssets,
-      },
-      {
-        marketProof: epoch.proofs.market,
-        rateProof: epoch.proofs.rate,
-        floorProof: epoch.proofs.floor,
-        readyProof: epoch.proofs.ready,
-        aggregateProof: epoch.proofs.aggregate,
-      },
-    ],
-    account,
-    chain: sepolia,
-  });
-  console.log("\n  activating:");
-  await send("activate", activationHash);
-
-  const activationReceipt = await publicClient.getTransactionReceipt({ hash: activationHash });
-  const published = parseEventLogs({
-    abi: artifact("QuoteActivator").abi as never,
-    logs: activationReceipt.logs,
-    eventName: "OfferPublished",
-  })[0] as unknown as { args: { quoteId: Hex; offer: Hex } } | undefined;
-  if (published === undefined) throw new Error("activation published no offer");
-
-  const quoteId = published.args.quoteId;
+        quoteId: published.args.quoteId,
+        activationTxHash: activationHash,
+      })}\n`,
+    );
+  }
   // The offer's ABI parameter, taken from the activator's own artifact rather than transcribed. A
   // hand-written Offer tuple here would be a second definition of the struct the ratifier hashes.
   const offerParam = (
@@ -380,7 +499,7 @@ async function main(): Promise<void> {
   if (offerParam === undefined) {
     throw new Error("the activator artifact declares no offer output for `activate`");
   }
-  const offer = decodeAbiParameters([offerParam as never] as never, published.args.offer)[0];
+  const offer = decodeAbiParameters([offerParam as never] as never, offerBytes)[0];
 
   console.log(`    quote id                 ${quoteId}`);
 
@@ -393,84 +512,248 @@ async function main(): Promise<void> {
     args: [quoteId],
   })) as { offerHash: Hex; exactUnits: bigint; expectedBuyerAssets: bigint; taker: Address };
 
-  if (keccak256(published.args.offer) !== execution.offerHash) {
+  if (keccak256(offerBytes) !== execution.offerHash) {
     throw new Error("the recovered offer does not hash to what the registry stored");
   }
   if (execution.exactUnits !== size.units) {
     throw new Error(`the registry sized the quote at ${execution.exactUnits}, not ${size.units}`);
   }
 
-  // ── 5. A partial fill, which must be refused ──────────────────────────────────────────────
-  console.log("\n  attempting a partial fill (must be refused):");
-  let partialRejection = "";
-  try {
-    await publicClient.simulateContract({
+  const alreadySettled =
+    (
+      (await publicClient.readContract({
+        address: registryEarly,
+        abi: artifact("KyrveQuoteRegistry").abi as never,
+        functionName: "executionOf",
+        args: [quoteId],
+      })) as { status: number }
+    ).status === 2;
+
+  /**
+   * ── 5. A partial fill, which must be refused ────────────────────────────────────────────────
+   *
+   * ONCE THE QUOTE IS CONSUMED THIS CANNOT BE RE-DEMONSTRATED, and re-attempting it would be
+   * misleading rather than merely redundant: a consumed quote is refused by `QuoteNotExecutable` at
+   * the ratifier, not by `WrongUnits` at the vault, so a fresh attempt would record the wrong
+   * refusal for the wrong reason. The rejection observed BEFORE settlement is carried in the
+   * activation record and labelled as such; nothing is invented if it is absent.
+   */
+  const carried = readJson<{
+    partialFillRejection?: string;
+    partialFillRollbackObserved?: boolean;
+  }>(activationPath);
+
+  if (alreadySettled) {
+    if (carried.partialFillRejection === undefined) {
+      throw new Error(
+        "the quote is already consumed and no pre-settlement partial-fill refusal is recorded in " +
+          `${activationPath}. That demonstration cannot be reproduced against a consumed quote, and ` +
+          "this script will not record one it did not observe.",
+      );
+    }
+    console.log(
+      "\n  partial fill (observed before settlement, carried from the activation record):",
+    );
+    console.log(`    refused: ${carried.partialFillRejection.slice(0, 120)}`);
+  }
+
+  console.log(alreadySettled ? "" : "\n  attempting a partial fill (must be refused):");
+  let partialRejection = carried.partialFillRejection ?? "";
+  if (!alreadySettled) {
+    try {
+      await publicClient.simulateContract({
+        address: settlement.midnight,
+        abi: artifact("IMidnight").abi as never,
+        functionName: "take",
+        args: [
+          offer,
+          "0x",
+          execution.exactUnits - 1n,
+          execution.taker,
+          execution.taker,
+          "0x0000000000000000000000000000000000000000",
+          "0x",
+        ],
+        account,
+      });
+    } catch (error) {
+      partialRejection =
+        (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "";
+    }
+    if (partialRejection === "") {
+      throw new Error("a partial fill was ADMITTED on Sepolia. Refusing to continue.");
+    }
+    console.log(`    refused: ${partialRejection.slice(0, 120)}`);
+    writeFileSync(
+      activationPath,
+      `${stableStringify({
+        ...readJson<Record<string, unknown>>(activationPath),
+        partialFillRejection: partialRejection.slice(0, 300),
+      })}\n`,
+    );
+  }
+
+  // ── 6. Rollback: nothing moved ────────────────────────────────────────────────────────────
+  //
+  // Only meaningful before settlement: after it, the group is legitimately consumed by the exact
+  // fill. The observation is recorded when it is made.
+  if (!alreadySettled) {
+    const consumedAfterPartial = (await publicClient.readContract({
+      address: settlement.midnight,
+      abi: artifact("IMidnight").abi as never,
+      functionName: "consumed",
+      args: [vault, quoteId],
+    })) as bigint;
+    if (consumedAfterPartial !== 0n) {
+      throw new Error(
+        `the refused partial fill consumed ${consumedAfterPartial} units of the group`,
+      );
+    }
+    console.log("    rollback: group consumption is 0, no credit, no debt");
+    writeFileSync(
+      activationPath,
+      `${stableStringify({
+        ...readJson<Record<string, unknown>>(activationPath),
+        partialFillRollbackObserved: true,
+      })}\n`,
+    );
+  } else if (carried.partialFillRollbackObserved !== true) {
+    throw new Error(
+      "no pre-settlement rollback observation is recorded, and it cannot be reproduced against a " +
+        "consumed quote",
+    );
+  }
+
+  // ── 6b. The borrower's collateral ──────────────────────────────────────────────────────────
+  //
+  // WITHOUT THIS, `take` reverts `SellerIsLiquidatable` — which is what a first run did, after the
+  // proofs had verified, the series had been created and the quote had been activated. Midnight
+  // checks the seller's health before it will let them take on debt, and on a public network nobody
+  // has supplied collateral on the borrower's behalf.
+  //
+  // Generous rather than exact: the health check is Midnight's and this script is not about it. The
+  // collateral token, its LLTV and its oracle all come from the market struct the universe curated,
+  // so nothing here chooses them.
+  const collateralLeg = (market["collateralParams"] as readonly { token: Address }[])[0];
+  if (collateralLeg === undefined) throw new Error("the market has no collateral leg");
+
+  const supplied = (await publicClient.readContract({
+    address: settlement.midnight,
+    abi: artifact("IMidnight").abi as never,
+    functionName: "collateral",
+    args: [spec.marketId, execution.taker, 0n],
+  })) as bigint;
+
+  const collateralNeeded = (execution.exactUnits * 10n ** 18n * 4n) / 1_000_000n;
+  if (!alreadySettled && supplied < collateralNeeded) {
+    console.log("\n  supplying the borrower's collateral:");
+    await send(
+      "mint collateral",
+      await wallet.writeContract({
+        address: collateralLeg.token,
+        abi: artifact("TestERC20").abi as never,
+        functionName: "mint",
+        args: [execution.taker, collateralNeeded],
+        account,
+        chain: sepolia,
+      }),
+    );
+    await send(
+      "approve Midnight",
+      await wallet.writeContract({
+        address: collateralLeg.token,
+        abi: artifact("TestERC20").abi as never,
+        functionName: "approve",
+        args: [settlement.midnight, collateralNeeded],
+        account,
+        chain: sepolia,
+      }),
+    );
+    await send(
+      "supplyCollateral",
+      await wallet.writeContract({
+        address: settlement.midnight,
+        abi: artifact("IMidnight").abi as never,
+        functionName: "supplyCollateral",
+        args: [market, 0n, collateralNeeded, execution.taker],
+        account,
+        chain: sepolia,
+      }),
+    );
+  }
+
+  // ── 7. The exact fill ─────────────────────────────────────────────────────────────────────
+  const recordedSettlement = readJson<{ settlementTxHash?: Hex }>(activationPath).settlementTxHash;
+  if (alreadySettled && recordedSettlement === undefined) {
+    throw new Error(
+      "the quote is consumed but no settlement transaction is recorded, so its block cannot be " +
+        "identified and the credit and debt this fill created cannot be measured as deltas",
+    );
+  }
+
+  let settleHash: Hex;
+  if (alreadySettled && recordedSettlement !== undefined) {
+    console.log(`\n  already settled by ${EXPLORER}/tx/${recordedSettlement}`);
+    settleHash = recordedSettlement;
+  } else {
+    console.log("\n  settling the exact fill:");
+    settleHash = await wallet.writeContract({
       address: settlement.midnight,
       abi: artifact("IMidnight").abi as never,
       functionName: "take",
       args: [
         offer,
         "0x",
-        execution.exactUnits - 1n,
+        execution.exactUnits,
         execution.taker,
         execution.taker,
         "0x0000000000000000000000000000000000000000",
         "0x",
       ],
       account,
+      chain: sepolia,
     });
-  } catch (error) {
-    partialRejection =
-      (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "";
+    await send("take (exact fill)", settleHash);
   }
-  if (partialRejection === "") {
-    throw new Error("a partial fill was ADMITTED on Sepolia. Refusing to continue.");
-  }
-  console.log(`    refused: ${partialRejection.slice(0, 120)}`);
-
-  // ── 6. Rollback: nothing moved ────────────────────────────────────────────────────────────
-  const consumedAfterPartial = (await publicClient.readContract({
-    address: settlement.midnight,
-    abi: artifact("IMidnight").abi as never,
-    functionName: "consumed",
-    args: [vault, quoteId],
-  })) as bigint;
-  if (consumedAfterPartial !== 0n) {
-    throw new Error(`the refused partial fill consumed ${consumedAfterPartial} units of the group`);
-  }
-  console.log("    rollback: group consumption is 0, no credit, no debt");
-
-  // ── 7. The exact fill ─────────────────────────────────────────────────────────────────────
-  console.log("\n  settling the exact fill:");
-  const settleHash = await wallet.writeContract({
-    address: settlement.midnight,
-    abi: artifact("IMidnight").abi as never,
-    functionName: "take",
-    args: [
-      offer,
-      "0x",
-      execution.exactUnits,
-      execution.taker,
-      execution.taker,
-      "0x0000000000000000000000000000000000000000",
-      "0x",
-    ],
-    account,
-    chain: sepolia,
-  });
-  await send("take (exact fill)", settleHash);
+  writeFileSync(
+    activationPath,
+    `${stableStringify({
+      ...readJson<Record<string, unknown>>(activationPath),
+      settlementTxHash: settleHash,
+    })}\n`,
+  );
 
   // ── 8-12. Credit, debt, tokens, consumption ───────────────────────────────────────────────
-  const read = async (fn: string, args: readonly unknown[]): Promise<bigint> =>
+  //
+  // MEASURED AS DELTAS ACROSS THE SETTLEMENT BLOCK, not as absolutes.
+  //
+  // Credit and debt are CUMULATIVE positions in a shared public market. This borrower already held
+  // 3,000,000 units of debt from Phase 1's Sepolia integration run, so a first version asserting
+  // `debt == exactUnits` failed on a settlement that was entirely correct. The property that actually
+  // matters is that this fill created exactly `exactUnits` of credit and exactly `exactUnits` of
+  // debt, which is what the difference across the block says and what an absolute never could.
+  const read = async (
+    fn: string,
+    args: readonly unknown[],
+    blockNumber?: bigint,
+  ): Promise<bigint> =>
     (await publicClient.readContract({
       address: settlement.midnight,
       abi: artifact("IMidnight").abi as never,
       functionName: fn,
       args: args as never,
+      ...(blockNumber === undefined ? {} : { blockNumber }),
     })) as bigint;
 
-  const credit = await read("credit", [spec.marketId, vault]);
-  const debt = await read("debt", [spec.marketId, execution.taker]);
+  const settlementBlock = (await publicClient.getTransactionReceipt({ hash: settleHash }))
+    .blockNumber;
+
+  const creditBefore = await read("credit", [spec.marketId, vault], settlementBlock - 1n);
+  const debtBefore = await read("debt", [spec.marketId, execution.taker], settlementBlock - 1n);
+  const credit = await read("credit", [spec.marketId, vault], settlementBlock);
+  const debt = await read("debt", [spec.marketId, execution.taker], settlementBlock);
+  const creditCreated = credit - creditBefore;
+  const debtCreated = debt - debtBefore;
   const consumed = await read("consumed", [vault, quoteId]);
   const status = (await publicClient.readContract({
     address: registry,
@@ -479,14 +762,21 @@ async function main(): Promise<void> {
     args: [quoteId],
   })) as { status: number };
 
-  console.log(`\n  vault credit             ${credit}`);
-  console.log(`  borrower debt            ${debt}`);
-  console.log(`  group consumed           ${consumed}`);
-  console.log(`  quote status             ${status.status} (2 = consumed)`);
+  console.log(
+    `\n  credit created by this fill  ${creditCreated}  (position ${creditBefore} -> ${credit})`,
+  );
+  console.log(`  debt created by this fill    ${debtCreated}  (position ${debtBefore} -> ${debt})`);
+  console.log(`  group consumed               ${consumed}`);
+  console.log(`  quote status                 ${status.status} (2 = consumed)`);
 
-  if (credit !== execution.exactUnits)
-    throw new Error(`credit is ${credit}, expected ${size.units}`);
-  if (debt !== execution.exactUnits) throw new Error(`debt is ${debt}, expected ${size.units}`);
+  if (creditCreated !== execution.exactUnits) {
+    throw new Error(
+      `this fill created ${creditCreated} of credit, expected ${execution.exactUnits}`,
+    );
+  }
+  if (debtCreated !== execution.exactUnits) {
+    throw new Error(`this fill created ${debtCreated} of debt, expected ${execution.exactUnits}`);
+  }
   if (consumed !== execution.exactUnits) throw new Error("the group was not consumed exactly");
   if (status.status !== 2)
     throw new Error(`the quote status is ${status.status}, expected Consumed`);
@@ -533,8 +823,17 @@ async function main(): Promise<void> {
     exactUnits: execution.exactUnits.toString(),
     expectedBuyerAssets: execution.expectedBuyerAssets.toString(),
     unreservedResidue: size.residue.toString(),
-    creditUnits: credit.toString(),
-    debtUnits: debt.toString(),
+    creditCreatedByThisFill: creditCreated.toString(),
+    debtCreatedByThisFill: debtCreated.toString(),
+    vaultCreditPositionAfter: credit.toString(),
+    borrowerDebtPositionAfter: debt.toString(),
+    borrowerDebtPositionBefore: debtBefore.toString(),
+    borrowerDebtNote:
+      "Credit and debt are CUMULATIVE positions in a shared public market. This borrower already " +
+      "held debt from Phase 1's Sepolia integration run, so the figure that describes THIS " +
+      "settlement is the delta across the settlement block, not the absolute.",
+    creditUnits: creditCreated.toString(),
+    debtUnits: debtCreated.toString(),
     consumedUnits: consumed.toString(),
     quoteStatus: status.status,
     settled: true,

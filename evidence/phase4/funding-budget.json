@@ -27,6 +27,38 @@
       "recordedAt": "2026-07-29T20:52:28.851Z",
       "safetyMargin": 0.35,
       "shortfallEth": "0"
+    },
+    {
+      "actualCostEth": null,
+      "baseFeePerGasWei": "943471616",
+      "components": [
+        {
+          "gas": 7343172,
+          "name": "settlement layer deployment and bindings",
+          "source": "evidence/phase4/settlement-gas.json (six deployment receipts plus three bindings, measured against a real chain by the confidential suite)"
+        },
+        {
+          "gas": 4287996,
+          "name": "one four-cell confidential epoch",
+          "source": "evidence/phase3/stage-gas.json (measured against the real Nox stack)"
+        },
+        {
+          "gas": 1104825,
+          "name": "activation, funding and one exact take",
+          "source": "evidence/phase4/settlement-gas.json (measured on the local lifecycle run)"
+        }
+      ],
+      "deployerBalanceEth": "0.10398350783359023",
+      "effectiveGasPriceWei": "1888443232",
+      "estimatedGas": 12735993,
+      "funded": true,
+      "predictedCostEth": "0.024051199783649376",
+      "predictedCostWithMarginEth": "0.032469119707926657",
+      "predictionErrorPercent": null,
+      "priorityFeePerGasWei": "1500000",
+      "recordedAt": "2026-07-29T21:52:30.667Z",
+      "safetyMargin": 0.35,
+      "shortfallEth": "0"
     }
   ]
 }

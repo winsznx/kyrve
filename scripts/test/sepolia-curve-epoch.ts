@@ -46,7 +46,9 @@ import {
   makeUniverseDraft,
   type Provider,
   UNIT,
+  type UniverseDraft,
 } from "@kyrve/curve";
+import { encodeMarket } from "@kyrve/midnight";
 import {
   createHandleClient,
   encryptMandate,
@@ -54,6 +56,7 @@ import {
   grantHandleAccess,
   type Handle,
 } from "@kyrve/nox";
+import { tickToPrice } from "@kyrve/quote-math";
 import {
   type Address,
   createPublicClient,
@@ -61,6 +64,7 @@ import {
   formatEther,
   type Hex,
   http,
+  keccak256,
   type PublicClient,
   parseEther,
   type WalletClient,
@@ -171,7 +175,87 @@ async function sendBatch(
   }
 }
 
+/**
+ * A universe whose one market IS a deployed Sepolia Midnight market, and whose grid prices ARE
+ * `TickLib.tickToPrice`.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHY THE DEFAULT UNIVERSE CANNOT BE SETTLED AGAINST
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * Phase 3 had no settlement, so its Sepolia epoch used `makeUniverseDraft`: synthetic market ids,
+ * synthetic struct hashes and a synthetic price curve. That is entirely correct for proving the curve
+ * engine, and entirely unusable for proving a quote — `QuoteActivator` checks the market against
+ * Midnight's own `IdLib.toId` AND its struct hash, and checks the leaf price against the pinned
+ * `TickLib`. A synthetic universe is refused, as it should be.
+ *
+ * So this mode exists, off by default, behind `KYRVE_SETTLEMENT_UNIVERSE=true`. The Phase 3 epoch
+ * keeps its exact previous behaviour; Phase 4 asks for a universe it can actually settle.
+ *
+ * The ticks are chosen high, where `tickToPrice` is strictly descending — the registry requires that
+ * — and comfortably above the market's settlement fee, which `take` subtracts with a checked
+ * subtraction (PRD v1.1 A-3).
+ */
+function settlementGradeDraft(label: string, registry: Hex): UniverseDraft {
+  const record = readJson<{
+    markets: readonly {
+      readonly id: Hex;
+      readonly key: string;
+      readonly market: Record<string, unknown>;
+    }[];
+  }>(repoPath("deployments/sepolia/markets.json"));
+
+  // The 90-day WETH market: one collateral leg, the same shape the local harness settles against.
+  const chosen = record.markets.find((entry) => entry.key === "usdc-90d-weth") ?? record.markets[0];
+  if (chosen === undefined) throw new Error("deployments/sepolia/markets.json records no market");
+
+  const ticks = [6000, 5968];
+  const pricesWad = ticks.map((tick) => tickToPrice(BigInt(tick)));
+  for (let i = 1; i < pricesWad.length; i += 1) {
+    const previous = pricesWad[i - 1];
+    const current = pricesWad[i];
+    if (previous === undefined || current === undefined || previous <= current) {
+      throw new Error(`the settlement grid must be strictly descending; tick ${ticks[i]} is not`);
+    }
+  }
+
+  console.log(`  universe   SETTLEMENT-GRADE, market ${chosen.key} (${chosen.id})`);
+
+  return {
+    label,
+    chainId: CHAIN_ID,
+    registry,
+    maxProviders: 2,
+    privacyFloor: 2,
+    minTicketAssets: UNIT,
+    cellsPerChunk: 4,
+    markets: [
+      {
+        spec: {
+          marketId: chosen.id,
+          marketStructHash: keccak256(encodeMarket(chosen.market as never)),
+          maturity: BigInt((chosen.market as { maturity: string }).maturity),
+          collateralFamily: 0,
+          maturityBucket: 0,
+          tickSpacing: 4,
+          // The 90-day fee is far below any of these prices; the floor is a static guard and the
+          // live check happens in `QuoteActivator` against `IMidnight.settlementFee`.
+          settlementFeeFloorWad: 10n ** 15n,
+          publicPriority: 0,
+        },
+        ticks,
+        pricesWad,
+      },
+    ],
+  };
+}
+
 async function main(): Promise<void> {
+  /**
+   * Off by default. Phase 3's epoch keeps its synthetic universe; Phase 4 asks for one whose market
+   * and prices a quote can actually be activated against.
+   */
+  const settlementUniverse = process.env["KYRVE_SETTLEMENT_UNIVERSE"] === "true";
   loadEnv();
   assertBroadcastArmed();
 
@@ -269,16 +353,18 @@ async function main(): Promise<void> {
   });
 
   const label = `kyrve-sepolia-epoch-${Date.now()}`;
-  const draft = makeUniverseDraft({
-    label,
-    chainId: CHAIN_ID,
-    registry: curve.CurveUniverseRegistry,
-    markets: 1,
-    ratesPerMarket: 2,
-    maxProviders: 2,
-    privacyFloor: 2,
-    cellsPerChunk: 4,
-  });
+  const draft = settlementUniverse
+    ? settlementGradeDraft(label, curve.CurveUniverseRegistry)
+    : makeUniverseDraft({
+        label,
+        chainId: CHAIN_ID,
+        registry: curve.CurveUniverseRegistry,
+        markets: 1,
+        ratesPerMarket: 2,
+        maxProviders: 2,
+        privacyFloor: 2,
+        cellsPerChunk: 4,
+      });
   const built = buildUniverse(draft);
   const universe = resumeUniverse === undefined ? built : { ...built, id: resumeUniverse };
 
@@ -926,6 +1012,50 @@ async function main(): Promise<void> {
   assertNoSecrets(payload, "evidence/phase3/sepolia-epoch.json");
   mkdirSync(repoPath("evidence/phase3"), { recursive: true });
   writeFileSync(repoPath("evidence/phase3/sepolia-epoch.json"), payload);
+
+  /**
+   * In settlement mode, the same epoch is recorded again with the GATEWAY PROOFS, so
+   * `scripts/test/sepolia-settlement.ts` can activate it without paying for a second epoch.
+   *
+   * The proofs are public artifacts: each is a gateway signature over a handle and a value the engine
+   * deliberately published. Recording one discloses nothing that `allowPublicDecryption` has not
+   * already made readable by anyone, and `assertNoSecrets` inspects the file before it is written.
+   */
+  if (settlementUniverse) {
+    const settlementEvidence = {
+      $comment:
+        "A real confidential curve epoch on Ethereum Sepolia over a SETTLEMENT-GRADE universe — one " +
+        "whose market is a deployed Midnight market and whose grid prices are TickLib.tickToPrice. " +
+        "Carries the five gateway proofs so the quote can be activated without re-running the epoch. " +
+        "Every value is public; no private value is recorded here or anywhere else.",
+      measuredAt: new Date().toISOString(),
+      chainId: CHAIN_ID,
+      epochId,
+      universeId: universe.id,
+      requestId,
+      graphRoot: verified.graphRoot,
+      published: {
+        selectedMarketIndex: Number(verified.marketIndex),
+        selectedRateIndex: Number(verified.rateIndex),
+        privacyFloorPassed: verified.privacyFloorPassed,
+        quoteReady: verified.quoteReady,
+        aggregateFillAmount: verified.aggregateFillAmount.toString(),
+      },
+      proofs: {
+        market: market.decryptionProof,
+        rate: rate.decryptionProof,
+        floor: floor.decryptionProof,
+        ready: ready.decryptionProof,
+        aggregate: aggregate.decryptionProof,
+      },
+      matchesPlaintextReferenceModel: agree,
+    };
+    const settlementPayload = `${stableStringify(settlementEvidence)}\n`;
+    assertNoSecrets(settlementPayload, "evidence/phase4/sepolia-epoch.json");
+    mkdirSync(repoPath("evidence/phase4"), { recursive: true });
+    writeFileSync(repoPath("evidence/phase4/sepolia-epoch.json"), settlementPayload);
+    console.log("  recorded in evidence/phase4/sepolia-epoch.json (with gateway proofs)");
+  }
 
   if (ctx.gas > 0n) console.log(`\n  ${ctx.gas} gas spent by this run`);
   console.log(

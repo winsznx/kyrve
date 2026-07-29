@@ -1,0 +1,10 @@
+{
+  "$comment": "The activation transaction for this epoch's one quote. The offer is recoverable ONLY from its OfferPublished log — `offer.start` is the activation block's timestamp, so no client can rebuild the offer the ratifier hashed.",
+  "activationTxHash": "0x623e0dc052fab93ff0d12267ef8ab84fe8ece25ccb04e08a7dc323afb1883080",
+  "epochId": "0x782496e10f71189f2a8fcb8591108c2c02b18cebeb9ef455dac64735395b2c7e",
+  "partialFillRejection": "The contract function \"take\" reverted with the following signature: (WrongUnits, refused at KyrveSeriesVault.onBuy before settlement)",
+  "partialFillRollbackObserved": true,
+  "quoteId": "0x383d8e08331fdb87bc081a0ab765fbaf10872392fac47e206b901202edb1c5d5",
+  "settlementTxHash": "0x0962faa7c99998be8f35a6ba3c36b667d1d66b846d29177656589301e6ec2ff2"
+}
+

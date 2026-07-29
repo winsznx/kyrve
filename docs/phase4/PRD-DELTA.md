@@ -52,9 +52,9 @@ environment is more permissive, so a hard production failure becomes a silent lo
 
 ---
 
-## S-2 · Osaka caps a single transaction at 2^24 gas, and the launch epoch exceeds it
+## S-2 · Osaka caps a single transaction at 2^24 gas, and the launch epoch exceeded it
 
-**Severity: blocking for launch scale. NOT fixed — the remedy is Phase 5 work and is specified below.**
+**Severity: was blocking for launch scale. RESOLVED — see the resolution at the end of this entry.**
 
 EIP-7825, introduced in Osaka, caps a single transaction at **16,777,216 gas** regardless of the
 block gas limit. Measured on the correctly-configured local node, not cited:
@@ -118,8 +118,53 @@ Then re-measure the benchmark and update `@kyrve/curve`'s `CURVE_STAGE_GAS`, whi
 against the recorded evidence.
 
 **Guard.** `pnpm verify:gas-cap` reads the recorded measurements and fails while any exceeds the cap,
-naming each one. It is wired into `verify:phase4` and is **expected to fail** until the remedy
-lands. A green gate that hid this would be worth less than nothing.
+naming each one. It is wired into `verify:phase4`.
+
+### Resolution
+
+Both parts are done, and the second one was cheaper than the first assessment implied because
+`cellsPerChunk` is a universe parameter — but the constant that BOUNDS it is not, so the durable half
+still needed a redeployment.
+
+`CURVE_TRANSACTION_GAS_CEILING` is now **16,777,216**, the protocol limit rather than a judgement.
+`CURVE_MAX_CELLS_PER_TRANSACTION` and `CURVE_RECOMMENDED_CELLS_PER_TRANSACTION` are both **192**; the
+maximum and the recommendation coincide now because under a 16.7M cap the margin belongs in the
+maximum, and a universe created at the maximum must be executable.
+
+Re-measured against the real Nox stack at 192 cells over the full 16 × 128 universe:
+
+| stage | at 256 | at 192 | vs the cap |
+|---|---|---|---|
+| `accumulateLeafChunk` | 18,193,386 | **13,915,899** | 2,861,317 to spare |
+| `cacheProviderChunk` | 14,984,397 | 14,984,397 | 1,792,819 to spare — **now the peak** |
+| `finalizeLeafChunk` | 14,139,942 | 14,139,942 | 2,637,274 to spare |
+| every other stage | — | — | millions to spare |
+
+The peak moved from stage C to stage B, and `cacheProviderChunk`'s 10.7% margin is the tightest left.
+`verify:gas-cap` reports any stage within 2,000,000 gas of the cap as **tight** rather than waiting
+for it to become a failure, so that width is named on every gate run. Nothing is claimed about it
+beyond the measurement: it fits today, on a local node, and testnet gas is UNVERIFIED (AS-1).
+
+**The launch epoch is now 25 transactions rather than 22**, at the same ~301M total gas — three more
+stage-C chunks. The planner's regression pin, the keeper's reported budget and the benchmark all
+moved together. That count is exactly the quantity delta R-7 says keeper timeouts must scale with
+rather than hardcode.
+
+**The negative fixture is retained in two places**, both asserting that 256 does NOT fit:
+`packages/curve/test/constants.test.ts` in arithmetic, and `confidential/test/08-chunk-width.ts`
+against the deployed registry, where 192 is accepted and 193 and 256 are each refused by name. 193
+matters because a bound that only rejects a distant value is not a bound. Neither fixture can be
+satisfied by widening the bound back.
+
+**The curve layer was redeployed on Sepolia**, because lowering the constant changed
+`CurveUniverseRegistry`'s runtime bytecode and every contract holding its address as an immutable had
+to move with it. The prior records are kept as `deployments/sepolia/curve-superseded-phase3.json` and
+`curve-etherscan-superseded-phase3.json`, each carrying a `$superseded` note, because they describe
+contracts that are still on chain.
+
+`packages/config`'s Day 0 `OPERATION_BUDGET` is deliberately **unchanged**. It is a historical record
+of what Day 0 published, not live sizing — `@kyrve/curve`'s measured constants supersede it, which is
+what delta R-3 already established.
 
 ---
 

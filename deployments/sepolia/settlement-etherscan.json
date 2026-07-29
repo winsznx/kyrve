@@ -77,10 +77,21 @@
       "fullyQualifiedName": "contracts/kyrve/KyrveSeriesFactory.sol:KyrveSeriesFactory",
       "runtimeBytecodeHash": "0x446a01ff8967b32af1f07da97bdb1903af1d1292e21bf3bbd9ddf27ff4fa9a2b",
       "status": "already-verified"
+    },
+    {
+      "address": "0x787E88E249fdff3d675Ad6e5ada811d4E1FF09c0",
+      "constructorArgs": "000000000000000000000000a8774feba7ddcadce4c299c3ec376b8ef447b2d700000000000000000000000007348f7542af233db32d36d3afec1e9737fe6b50000000000000000000000000bec8b5cb3b4b71daad486eb1d1419523bb49ae78000000000000000000000000ebff49b6fbe4db4320220927bd0d2c52c73103930000000000000000000000000257e18aa1a631864aaf1dcedc6b5741c96a1ef900000000000000000000000036c3d1af18b9186a662b1e277c80ab54be2765c2be58a832b9795448369698b1fe00dcf92e71c7e4807b74baab07f2fa1d9c9194",
+      "contract": "KyrveSeriesVault",
+      "deploymentTxHash": "0xa635cfd3fc4b8cde88c27230eea0d7224e8d3516a62d8227d9cdd85eae125c76",
+      "detail": "Contract successfully verified",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0x787E88E249fdff3d675Ad6e5ada811d4E1FF09c0#code",
+      "fullyQualifiedName": "contracts/kyrve/KyrveSeriesVault.sol:KyrveSeriesVault",
+      "runtimeBytecodeHash": "0xf285cfcb075046a557f966254b87ca583d9d616a3dd3be6d89deab8625d55362",
+      "status": "verified"
     }
   ],
   "explorer": "https://sepolia.etherscan.io",
-  "total": 6,
-  "vaultInstances": 0,
-  "verified": 6
+  "total": 7,
+  "vaultInstances": 1,
+  "verified": 7
 }
