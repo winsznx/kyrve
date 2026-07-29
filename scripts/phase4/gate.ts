@@ -200,8 +200,12 @@ const GATES: readonly Gate[] = [
     skipIf: () =>
       existsSync(repoPath("deployments/local/settlement.json"))
         ? null
-        : "no local settlement deployment recorded. Deploy with: pnpm deploy:settlement local " +
-          "(needs a local node with the Phase 2 and Phase 3 layers already on it)",
+        : "NO STANDING LOCAL NODE. This needs a persistent chain carrying the Phase 2 confidential " +
+          "layer and the Phase 3 curve layer, which the confidential suite's node is not — it is " +
+          "created and torn down per run, so a manifest describing it would outlive the chain it " +
+          "describes. With such a node: `pnpm deploy:settlement local` then " +
+          "`pnpm verify:settlement local`. The same checks run against Sepolia below, on a chain " +
+          "that persists.",
     execute: () =>
       summarise(run("pnpm", ["exec", "tsx", "scripts/verify/settlement.ts", "local"]).stdout, 2),
   },
@@ -229,7 +233,13 @@ const GATES: readonly Gate[] = [
         `mkdir -p "$(dirname ${SUITE_LOG})" && pnpm --filter @kyrve/confidential test 2>&1 | tee ${SUITE_LOG}`,
       ]);
       const log = run("bash", ["-c", `grep -E "passing|failing" ${SUITE_LOG} | tail -2`]).stdout;
-      if (/[1-9][0-9]* failing/.test(log)) throw new Error(`confidential suite: ${log.trim()}`);
+      // The FAILING line first, deliberately. A first version reported "122 passing" as the reason a
+      // run with two failures had failed, because that was the first line of the grep — a gate whose
+      // failure message leads with good news is a gate somebody will misread.
+      const failing = log.split("\n").find((line) => /[1-9][0-9]* failing/.test(line));
+      if (failing !== undefined) {
+        throw new Error(`confidential suite: ${failing.trim()} — see ${SUITE_LOG}`);
+      }
       return summarise(log, 2);
     },
   },
