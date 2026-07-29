@@ -1,0 +1,44 @@
+{
+  "addresses": {
+    "ConfidentialRequestBook": "0x96aa8b16ec3e91c5a3d8ce526f196a4934cb3b39",
+    "EncryptedMandateBook": "0xbfe15b60ce998e0f19de3eb1d953aa09dd50bbf9",
+    "KyrveConfidentialAssetVault": "0x07e7247726270f7d409580fe2a872ea333257e45",
+    "KyrveEmergencyController": "0x856d03263a96269a599bc7b1f6d6074a0e153da7",
+    "KyrveWrappedAsset": "0x9e1e5cb703194df3c22c0531bd15f04ec9de11c7",
+    "TestUnderlyingERC20": "0xd3f224ae2d32c386da0697aa920c9a9eb32df896"
+  },
+  "chainId": 11155111,
+  "compiler": {
+    "bytecodeHash": "none",
+    "divergenceReason": "nox-protocol-contracts 0.2.4 requires ^0.8.35; the Midnight substrate is pinned at 0.8.34 for bytecode comparability. Recorded as Phase 2 delta Q-1.",
+    "divergesFromSubstrate": true,
+    "evmVersion": "osaka",
+    "optimizer": true,
+    "optimizerRuns": 200,
+    "solc": "0.8.36",
+    "viaIR": true
+  },
+  "deployedAt": "2026-07-29T13:19:00.000Z",
+  "deployer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "deploymentBlock": "11375738",
+  "disclosure": "Kyrve is open-source software integrating an unmodified, source-available Morpho Midnight testnet replica under its applicable non-production licence.",
+  "environment": "sepolia",
+  "gasUsed": "6505207",
+  "noxCompute": "0x24Ef36Ec5b626D7DCD09a98F3083c2758F0F77bF",
+  "runtimeHashes": {
+    "ConfidentialRequestBook": "0xab77b2f8a14b3e5f51621019b1a99952c89de8153ab2e7e7da83b94c2c215d58",
+    "EncryptedMandateBook": "0x3f1c320cc601e1bb9b051f1f8f3b381bae4c70518b3b7b061663d334c525f288",
+    "KyrveConfidentialAssetVault": "0xcb96f5fe888406aa2bc98d957f4711594a3b4f0e0327452fc415010cd9b4d51d",
+    "KyrveEmergencyController": "0x750b1207bb82f4bef7b80fc3a013b7e00069c57bdd004a0605d5b32a880fbc91",
+    "KyrveWrappedAsset": "0xb136abd64d14b6c576f0b29340dd04eeee259ed7fa5951c59a61e65365babbdb",
+    "TestUnderlyingERC20": "0x60725c3571ded693e941914cec7ee014ef1cd2f3852283fca8aeeb52fc6cb993"
+  },
+  "wiringVerified": [
+    "KyrveWrappedAsset.emergencyController() -> KyrveEmergencyController",
+    "KyrveWrappedAsset.underlying() -> TestUnderlyingERC20",
+    "KyrveConfidentialAssetVault.asset() -> KyrveWrappedAsset",
+    "KyrveConfidentialAssetVault.emergencyController() -> KyrveEmergencyController",
+    "EncryptedMandateBook.emergencyController() -> KyrveEmergencyController",
+    "ConfidentialRequestBook.emergencyController() -> KyrveEmergencyController"
+  ]
+}

@@ -41,6 +41,7 @@
     "verify:deployed-bytecode": "tsx scripts/verify/deployed-bytecode.ts",
     "verify:deployment": "tsx scripts/verify/deployment.ts",
     "verify:etherscan": "tsx scripts/verify/etherscan.ts",
+    "verify:etherscan:confidential": "tsx scripts/verify/etherscan-confidential.ts",
     "verify:generated": "tsx scripts/verify/generated.ts",
     "verify:licence": "tsx scripts/verify/licence.ts",
     "verify:local": "tsx scripts/verify/deployment.ts local",
