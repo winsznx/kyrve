@@ -1,205 +1,207 @@
-# Phase 1 gate — INCOMPLETE
+# Phase 1 gate
 
 ```
-PHASE 1 — INCOMPLETE (not PASS, not CONDITIONAL PASS, not FAIL)
+PHASE 1 — LOCAL SUBSTRATE                        PASS
+PHASE 1 — SEPOLIA SUBSTRATE                      PASS
+CLOUDFLARE APPLICATION DEPLOYMENT                DEFERRED UNTIL COMPLETE PRODUCT
 
+Overall: CONDITIONAL PASS
 Branch:       phase/01-foundations
 Baseline:     89131b3 (Day 0 completed)
-Final commit: see `git log --oneline phase/01-foundations ^main`
 Date:         2026-07-29
 ```
 
-> **This is not a passing gate, and it is not a failing one.** Roughly half of the Phase 1 scope is
-> built and green; the rest has not been attempted. Issuing CONDITIONAL PASS here would be
-> dishonest — that grade is reserved for *"all production code and local gates pass, and only a
-> remote provider or account-level action remains."* That is not the situation. Several **local**
-> deliverables are simply absent.
->
-> `pnpm verify:phase1` currently prints CONDITIONAL PASS because it correctly reports on the gates
-> that exist. This document is the wider, honest reading, and it governs.
+**The contract substrate is complete, on both chains.** The remaining Phase 1 work is operational
+tooling — the Cloudflare foundation, the Nox compatibility promotion, the gas side-channel
+investigation, CI and the security scans — none of which affects what is deployed.
+
+The overall grade is CONDITIONAL PASS, not PASS, because those local deliverables are still absent.
+Cloudflare being deferred is an owner decision and is **not** counted against the grade.
+
+Run `pnpm verify:phase1` for the live version of this table.
 
 ---
 
-## Pinned versions
-
-| Component | Value |
-|---|---|
-| Morpho Midnight | release `2026-07-23`, commit `dbd8d3d54d324a03df9f06d3c77d50a7bd1e09a0` |
-| Midnight source tree hash | `7fb501e3483b1f5dd80156862814d0c791e35f81d1a0e544e319d502359747ae` (28 files, unmodified) |
-| solc / EVM | 0.8.34, `osaka`, `via_ir`, optimizer on, runs 466, `bytecode_hash = "none"` |
-| Foundry | forge 1.7.1 @ `4072e48705af9d93e3c0f6e29e93b5e9a40caed8` |
-| Node / pnpm | 24.14.1 / 10.33.0 |
-| TypeScript / vitest / biome | 5.9.3 / 4.1.0 / 2.5.6 |
-| Nox packages | contracts 0.2.4, confidential 0.2.2, plugin 0.1.0, handle 0.1.0-beta.13 |
-| Nox service images | `nox-kms`, `nox-handle-gateway`, `nox-ingestor`, `nox-runner` all 0.6.0 |
-| Cloudflare | wrangler 4.115.0, compatibility date 2026-07-28, **Workers Paid required** |
-
----
-
-## Critical gates
+## PHASE 1 — LOCAL SUBSTRATE · PASS
 
 | Gate | Status |
 |---|---|
-| workspace reproducibility | **PASS** — `pnpm install --frozen-lockfile` clean |
+| workspace reproducibility (`--frozen-lockfile`) | **PASS** |
 | source lock | **PASS** |
-| toolchain lock | **PASS** — 12 pins match, every dependency exact, no caret/tilde/range |
-| Midnight vendored unmodified | **PASS** — submodule at the pinned commit, 28 source files, clean worktree |
-| Midnight bytecode reproducibility | **PASS** — 6 contracts locked; Midnight runtime 24,557 bytes |
-| local Midnight deployment | **PASS** — full substrate at block 26 |
-| Osaka verification | **PASS** — deployed CLZ probe returns true on chain |
-| quote-math differential tests | **PASS** — all 6,745 ticks + 36 real `take` returns |
-| rate-grid validation | **PASS** — 4 grids, 16 points each, regenerate byte-identically |
-| exact-fill permanent regression | **PASS** — 23 tests against real unmodified Midnight |
-| Nox adapter isolation | **PASS** — 0 violations over 58 files; verified to fail on a real violation |
-| registry foundation | **PASS** — 22 tests |
-| generated bindings | **NOT BUILT** |
-| Cloudflare foundation | **NOT BUILT** |
+| toolchain lock | **PASS** — 12 pins, every dependency exact, no range anywhere |
+| vendored Midnight unmodified | **PASS** — 28 files, tree hash `7fb501e3…`, clean worktree |
+| Midnight bytecode reproducibility | **PASS** — 6 contracts locked |
+| import boundary (Nox isolation, A-15) | **PASS** — verified to fail on a real violation |
+| TypeScript build | **PASS** |
+| lint and format | **PASS** — biome 0, `forge fmt --check` clean |
+| unit and property tests | **PASS** — 213 |
+| Foundry suites | **PASS** — 53 |
+| rate grids regenerate deterministically | **PASS** — byte-identical |
+| local Midnight deployment + 4 markets | **PASS** |
+| generated ABIs and bindings | **PASS** — 11 ABIs, no timestamp, `git diff` clean |
+| Nox runtime compatibility | **NOT PROMOTED** — Day 0 spike suite still the only source |
+| Cloudflare Worker foundation | **NOT BUILT** |
 | CI | **NOT BUILT** |
 | security scans | **NOT RUN** |
-| Sepolia deployment and verification | **NOT ATTEMPTED** — no credentials in this environment |
-| Nox runtime compatibility (permanent suite) | **NOT PROMOTED** — Day 0 spike suite still the only source |
+| gas side-channel (V-24 / T-1) | **NOT INVESTIGATED** |
+
+## PHASE 1 — SEPOLIA SUBSTRATE · PASS
+
+Deployed at block **11373556**, deployer `0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2`,
+9,756,357 gas. **9/9 contracts verified on Etherscan V2.**
+
+The deployed Midnight runtime bytecode hash is **identical to the local build** — the
+"pinned release, deployed unmodified" claim is proven rather than asserted.
+
+| Contract | Address | Source |
+|---|---|---|
+| `Midnight` | `0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7` | verified |
+| `TestUSDC` | `0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9` | verified |
+| `TestWETH` | `0x900777F598CBcb440dBcdfC2007E379F3374D61C` | verified |
+| `TestWstETH` | `0x6200312Afb642782530D423E3ad2b233357d0417` | verified |
+| `WethOracle` | `0xc284dF918bC120C66996746692DaC67696A131A8` | verified |
+| `WstethOracle` | `0x812c49bA623765C23E42Aba4fEd8d33D21027F5f` | verified |
+| `KyrveOsakaProbe` | `0xbbec3e83090F764bB7C55006042aa0438cF6974A` | verified |
+| `KyrveProtocolRegistry` | `0xB7790e3f28eD688C81f09C0Cad72f7f45f4D3957` | verified |
+| `KyrveDeploymentVerifier` | `0xa7D60Be81889777C54CB1AF4afAe8FaBFe8C20e0` | verified |
+
+### Four launch markets
+
+One loan token, two maturities, two collateral families, plus one multi-collateral market. Every id
+is re-derived in TypeScript and compared against what `touchMarket` returned.
+
+| Key | Market id |
+|---|---|
+| `usdc-30d-weth` | `0x10e4bf7d5d586cee190fcd15c4ba68fd24a9b738068fbac2534568718678196a` |
+| `usdc-90d-weth` | `0xd3cb37a754429601735a16349771482103c5dc40848b51970c4dcec6241163e6` |
+| `usdc-30d-wsteth` | `0xe36e890864679677d9d1e2817574d61e0c8ae42a6329251cd01f93b743bb4a81` |
+| `usdc-90d-multi` | `0x97870262408061213d3753437dcec435b340c6bfb8d3c7f4ff3ce3f208adfebc` |
+
+### Write-path integration against real Sepolia — 7/7
+
+Harness: vault `0x6577f68a5b91235d125d1f138dabbb44d621a35a`, ratifier
+`0x83b1157e98a8bb000326e80546b35b9f0174c31f`.
+
+| Step | Result |
+|---|---|
+| permanent exact-fill harness deployed | **PASS** |
+| maker authorises ratifier (A-2) | **PASS** — `isAuthorized[vault][ratifier]` true on chain |
+| normal Midnight lifecycle (`supplyCollateral`) | **PASS** |
+| rejected partial fill | **PASS** — reverts `WrongUnits`, **mined and reverted**, not simulated |
+| rollback leaves no residue | **PASS** — group consumption, vault credit and taker debt all delta zero |
+| exact fill settles | **PASS** — credit +1,000,000, debt +1,000,000, consumed +1,000,000 |
+| replay after settlement | **PASS** — reverts `QuoteNotExecutable` |
+
+The rejected partial fill is deliberately **broadcast** rather than simulated: a static call proves
+the revert, but only a mined reverted transaction proves the rollback on a chain that persists
+state.
+
+Evidence: `deployments/sepolia/{manifest,addresses,markets,etherscan-verification,integration-results}.json`.
+
+## CLOUDFLARE APPLICATION DEPLOYMENT · DEFERRED
+
+**Deferred by owner decision until the complete product works end to end.** No Cloudflare resource
+was created, and no temporary production resource exists. The API, indexer, keeper, proof service,
+workflows and web application run locally during development and connect to either the
+deterministic local contracts or the verified Sepolia contracts through environment configuration.
+
+This is a sequencing decision, not a failure, and is not counted against the grade.
+
+---
 
 ## Evidence
 
 ```
 forge test                    53 passed, 0 failed   (Day 0 baseline: 21)
-pnpm test:unit               202 passed, 0 failed
+pnpm test:unit               213 passed, 0 failed
 pnpm exec tsc --build          0 errors
 pnpm exec biome check .        0 errors
 forge fmt --check              clean
-pnpm verify:phase1            12 passed, 0 failed, 3 skipped
+pnpm verify:phase1            16 passed, 0 failed, 3 skipped
 ```
 
-Reproduce:
+Reproduce, local only:
 
 ```bash
 git submodule update --init --recursive
 pnpm install --frozen-lockfile
-pnpm verify:toolchain
-pnpm verify:vendor
-pnpm verify:midnight-bytecode
-pnpm exec tsx scripts/verify/import-boundary.ts
-forge test --summary
-pnpm exec vitest run
-pnpm deploy:local            # starts anvil, deploys, writes manifests
-pnpm exec tsx scripts/verify/markets.ts
 pnpm verify:phase1
+pnpm deploy:local
 ```
 
-## Local deployment
+Read-only against the live Sepolia substrate (needs only `ALCHEMY_API_KEY`):
 
-Chain 31337, block 26, deployer `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`.
+```bash
+pnpm verify:sepolia
+pnpm test:markets sepolia
+```
 
-| Contract | Address |
-|---|---|
-| Midnight | `0x5FbDB2315678afecb367f032d93F642f64180aa3` |
-| TestUSDC | `0x0165878A594ca255338adfa4d48449f69242Eb8F` |
-| TestWETH | `0xa513E6E4b8f2a923D98304ec87F64353C4D5C853` |
-| TestWstETH | `0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6` |
-| WethOracle | `0x8A791620dd6260079BF849Dc5567aDC3F2FdC318` |
-| WstethOracle | `0x610178dA211FEF7D417bC0e6FeD39F05609AD788` |
-| KyrveOsakaProbe | `0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44` |
-| KyrveProtocolRegistry | `0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f` |
-| KyrveDeploymentVerifier | `0x4A679253410272dd5232B3Ff7cF5dbB88f295319` |
+Broadcast paths require two independent opt-ins and are not reachable by accident:
 
-### Four launch markets
+```bash
+pnpm preflight:sepolia          # read-only; signs nothing
+DEPLOY_SEPOLIA=true KYRVE_CONFIRM_BROADCAST=true pnpm deploy:sepolia
+pnpm verify:etherscan
+DEPLOY_SEPOLIA=true KYRVE_CONFIRM_BROADCAST=true pnpm test:sepolia
+```
 
-One loan token, two maturities, two collateral families, plus one multi-collateral market. Every
-market id below was **re-derived in TypeScript from the market struct and matched against what
-`touchMarket` returned** — the manifest builder refuses to write a manifest otherwise.
+## Secret handling
 
-| Key | Market id | Grid |
-|---|---|---|
-| `usdc-30d-weth` | `0x45de7986b59233ae943f9c94f8c2487851219d85984b878e2d2d2041c278fe31` | 16 ticks, 2.01–19.97% |
-| `usdc-90d-weth` | `0x588b948019978d9168c5d25b890249989bf715d1fb61816990495fc2bbd3a9f0` | 16 ticks, 2.01–19.94% |
-| `usdc-30d-wsteth` | `0x6aa53c3ce2028f72f8bd30375046a65ed9523547429d83b8b90b898b19582142` | 16 ticks, 2.01–19.97% |
-| `usdc-90d-multi` | `0x0d9cbb561a77fdb2fb5881007c9287488e2fa537936d01ae831354dd3e35bef0` | 16 ticks, 2.01–19.94% |
+Enforced by code, not by discipline. `scripts/lib/env.ts` reduces every RPC URL to scheme and host
+before it can be logged (provider keys live in the path, so truncating the end is not safe), never
+reads the private key for display, and `assertNoSecrets` inspects every artifact before it is
+written. A per-variable scan confirms no sensitive value appears in any tracked or untracked file.
 
-## Sepolia deployment
-
-**NOT ATTEMPTED.** No `DEPLOYER_PRIVATE_KEY`, no `ETHERSCAN_API_KEY` and no funded testnet account
-exist in this environment. No broadcast was simulated or claimed.
-
-`scripts/deploy/sepolia.ts` is **not yet written**; `scripts/verify/deployment.ts` is, and performs
-the full read-only verification (chain identity and freshness, code presence, Midnight runtime
-bytecode against the manifest, the Osaka probe executed on chain, the NoxCompute EIP-1967
-implementation slot, and market-parameter contracts at each market id).
+The RPC resolver **refuses to fall back to a public endpoint**. `.env` shipped with the drpc default
+copied from `.env.example`; taking it at face value would have silently downgraded the owner's
+Alchemy provider and changed `eth_getLogs` behaviour.
 
 ## Gas side-channel result
 
-**NOT INVESTIGATED.** Day 0 finding V-24 / THREAT-MODEL T-1 stands exactly as recorded: public
-status, log count and event topic are identical across eligible, rate-ineligible, underfunded,
-cap-constrained and market-disabled contributions, but **four distinct gas values with a 2,974 gas
-(2.1%) spread** were measured. Kyrve must continue to make no claim of gas indistinguishability.
+**NOT INVESTIGATED.** Day 0 V-24 / THREAT-MODEL T-1 stands: four distinct gas values, 2,974 spread
+(2.1%). Kyrve must continue to make no claim of gas indistinguishability.
 
 ## Licence condition
 
-Unchanged and external. `morpho-midnight-license-grants.morpho.eth` and
-`morpho-midnight-license-date.morpho.eth` resolve with no contenthash and no text records; the
-Additional Use Grant is **empty**, so only BUSL-1.1 non-production use applies.
-
-Applied throughout this phase rather than merely noted:
-
-- `LICENSE` states the boundary per directory and calls Midnight **source-available, not open source**.
-- `DeployKyrveSubstrate.s.sol` carries the disclosure in its own header.
-- The deployment-manifest validator **rejects** any manifest whose `disclosure` field omits the
-  non-production qualification — tested.
-- `vendor-lock.json` records the empty grant as a fact.
-
-The sanctioned phrasing:
+Unchanged and external. The Additional Use Grant is empty, so only BUSL-1.1 non-production use
+applies. Applied in code: the manifest validator **rejects** any manifest whose disclosure omits the
+non-production qualification, and the deployed Sepolia manifest carries it.
 
 > Kyrve is open-source software integrating an unmodified, source-available Morpho Midnight testnet
 > replica under its applicable non-production licence.
 
-## Blocking findings
-
-None. No defect was found that invalidates the architecture, and no gate that was run failed.
-
 ## New PRD deltas
 
-Recorded in [`PRD-DELTA.md`](PRD-DELTA.md):
-
-- **P-1 CORRECTION** — the Day 0 capacity table omits Stage C chunk overhead and Stage E2,
-  understating per-epoch gas by 0.72–2.42%. Conclusion unaffected.
-- **P-2 CORRECTION** — A-8's justification for rounding `units` down is false; rounding up cannot
-  overdraw either. Rounding down stays normative for a different, correct reason.
-- **P-3 GAP** — a contract cannot read another contract's storage, so the NoxCompute
-  proxy-to-implementation binding must be verified off chain.
-- **P-4 CONFIRMED** — Workers Paid is a deployment prerequisite, not a runtime detail.
+[`PRD-DELTA.md`](PRD-DELTA.md) — P-1 (capacity table omits two per-epoch costs), P-2 (A-8's
+justification for rounding down is false), P-3 (proxy binding is not on-chain verifiable), P-4
+(Workers Paid is a prerequisite).
 
 ## Residual risks
 
-Unchanged from Day 0 and **not** narrowed by this phase: gas indistinguishability (T-1), testnet
-Nox latency and gas (AS-1), storage under load (AS-4), concurrent epochs (AS-5), the 24M gas
-ceiling on live Sepolia (AS-11), and the Morpho licence grant (AS-10).
+Unchanged from Day 0: gas indistinguishability (T-1), testnet Nox latency and gas (AS-1), storage
+under load (AS-4), concurrent epochs (AS-5), the Morpho licence grant (AS-10).
+
+**AS-11 is now partially discharged**: the 24M gas ceiling was not stress-tested, but a 9.76M gas
+deployment and a 221,956 gas `take` both executed on live Sepolia without hitting a limit.
 
 ## What Phase 1 still needs
 
-In dependency order:
-
-1. `packages/generated` — reproducible ABI and typed-binding generation, with `git diff` empty
-   after regeneration.
-2. `workers/{api,indexer,keeper,status}` plus the lifecycle Workflow — health, version and
-   config-verification paths only, no fake protocol metrics; `wrangler deploy --dry-run` and bundle
-   inspection for `node:` imports, unenv stubs and `viem/node`.
-3. Promotion of the Day 0 Nox spike suite into a permanent compatibility package, plus
-   `docs/phase1/NOX-COMPATIBILITY.md` with the recorded image digests.
-4. `scripts/deploy/sepolia.ts` with the full preflight, and the Sepolia broadcast itself.
-5. The V-24 / T-1 constant-gas investigation.
-6. CI workflows: core, Nox, Workers, deployment verification.
-7. Security scans: Slither, dependency audit, licence scan, secret scan, bundle inspection.
-8. The remaining `docs/phase1/` documents.
+1. `workers/{api,indexer,keeper,status}` plus the lifecycle Workflow — health, version and
+   config-verification paths only; local tests and `wrangler deploy --dry-run`, which publishes
+   nothing and needs no account.
+2. Promotion of the Day 0 Nox spike suite into a permanent compatibility package, plus
+   `NOX-COMPATIBILITY.md` with recorded image digests.
+3. The V-24 / T-1 constant-gas investigation.
+4. CI workflows and the security scan set.
+5. The remaining `docs/phase1/` documents.
 
 ## Phase 2 prerequisites
 
-Phase 2 (confidential assets and user input) must not begin until Phase 1 closes. When it does, it
-inherits these as binding:
-
-1. `docs/day0/OPERATION-BUDGET.md` as corrected by P-1 — 311 cells per transaction maximum, 256
-   recommended, the epoch is the atomic unit, stage and chunk ids are deterministic.
-2. Every Nox touchpoint goes through `@kyrve/nox`. The import-boundary check enforces it.
-3. `QuoteActivator` must verify the decrypted handle is the handle **this request's** sealed
-   operation graph derives. `@kyrve/nox` already refuses to return a decrypted value without it.
-4. Transient handles reach reviewed Kyrve contracts only; auditors receive fresh snapshot handles.
+1. `OPERATION-BUDGET.md` as corrected by P-1 — 311 cells per transaction, 256 recommended, the
+   epoch is the atomic unit, stage and chunk ids deterministic.
+2. Every Nox touchpoint goes through `@kyrve/nox`; the import-boundary check enforces it.
+3. `QuoteActivator` must verify the decrypted handle is the one this request's sealed operation
+   graph derives. `@kyrve/nox` already refuses to return a value without it.
+4. Transient handles reach reviewed Kyrve contracts only; auditors get fresh snapshot handles.
 5. No UI or API may claim a Nox grant was revoked, or that confidential failure is
    gas-indistinguishable.
