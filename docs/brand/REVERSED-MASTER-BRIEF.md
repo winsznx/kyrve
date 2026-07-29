@@ -1,7 +1,10 @@
 # Commissioning brief — Kyrve reversed symbol master
 
-Hand this to whoever draws the reversed master. Everything an automated check will enforce is
-stated here, so the asset can be got right the first time.
+**Status: deferred. This is a future design task, not a build blocker.** Dark headers use plain
+lowercase `kyrve` text in Ivory until someone picks this up, which is fine indefinitely. Nothing in
+the build waits on it and no further engineering is needed here.
+
+Kept so the asset can be got right the first time whenever it is commissioned.
 
 Policy context is in [`KYRVE-BRAND-LOCK.md`](KYRVE-BRAND-LOCK.md). The acceptance checks are in
 `scripts/brand/verify-assets.py` and run as part of `pnpm brand:verify`.

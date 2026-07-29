@@ -109,7 +109,7 @@ and 256 as embedded PNG frames.
 | Master | Authored for | Status |
 | --- | --- | --- |
 | **Positive** — navy | Light surfaces, social cards, the CTA panel, every favicon size | Approved, shipped, unchanged |
-| **Reversed** — Ivory body, Cobalt leaf | Onyx `#171721` and Graphite `#1e1e2a` | **Commissioned, not yet delivered** |
+| **Reversed** — Ivory body, Cobalt leaf | Onyx `#171721` and Graphite `#1e1e2a` | **Deferred — a future design task, not a build blocker** |
 
 The reversed master is a **separate approved asset**, not a silent mutation of the positive one.
 It must preserve the exact approved symbol geometry and proportions, changing only the colour
@@ -134,7 +134,13 @@ the full lockup is worse at 1.20:1 median. The dark presentation that exists tod
 OG and CTA rasters on a near-black field (`#01091a`, `#00060f`) — a different surface from the
 product canvas.
 
-### Interim, until the reversed master is delivered
+### The working rule
+
+- Approved **positive** logo on light surfaces.
+- Plain lowercase **`kyrve` text in Ivory** on dark headers.
+- Approved **favicon** as delivered.
+- **OG and CTA** assets in their intended locations.
+- Reversed master: future design task. Not a blocker, and not revisited during the build.
 
 - Dark application headers use the lowercase **`kyrve` wordmark set as TEXT in Ivory `#ededf3`**.
 - The navy positive symbol is **not** rendered on Onyx.
