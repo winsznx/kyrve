@@ -18,7 +18,7 @@ import {CurveGraphRegistry} from "./CurveGraphRegistry.sol";
 import {DecryptedValue} from "./DecryptedValue.sol";
 import {CurveUniverseRegistry} from "./CurveUniverseRegistry.sol";
 import {EncryptedMandateBook} from "./EncryptedMandateBook.sol";
-import {KyrveConfidentialAssetVault} from "./KyrveConfidentialAssetVault.sol";
+import {KyrveCustodyVault} from "./KyrveCustodyVault.sol";
 import {KyrveCurveBase} from "./KyrveCurveBase.sol";
 import {KyrveEmergencyController} from "./KyrveEmergencyController.sol";
 import {QuoteEpochController} from "./QuoteEpochController.sol";
@@ -161,7 +161,7 @@ contract NoxCurveEngine is KyrveCurveBase {
     ReservationLedger public immutable ledger;
     EncryptedMandateBook public immutable mandateBook;
     ConfidentialRequestBook public immutable requestBook;
-    KyrveConfidentialAssetVault public immutable vault;
+    KyrveCustodyVault public immutable vault;
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
     // Storage
@@ -228,7 +228,7 @@ contract NoxCurveEngine is KyrveCurveBase {
         ReservationLedger ledger_,
         EncryptedMandateBook mandateBook_,
         ConfidentialRequestBook requestBook_,
-        KyrveConfidentialAssetVault vault_,
+        KyrveCustodyVault vault_,
         KyrveEmergencyController controller__
     ) KyrveCurveBase(controller__) {
         if (
@@ -901,12 +901,6 @@ contract NoxCurveEngine is KyrveCurveBase {
         }
     }
 
-    function _requireLedgerAccess(bytes32 handle) private view {
-        if (!INoxCompute(Nox.noxComputeContract()).isAllowed(handle, address(ledger))) {
-            revert EngineNotAuthorisedForHandle(handle, address(ledger));
-        }
-    }
-
     function _copyProviderSnapshot(bytes32 epochId, uint16 slot, bytes32 mandateId, uint32 mandateEpoch) private {
         EncryptedMandateBook.MandateEpochHandles memory handles = mandateBook.handlesOf(mandateId, mandateEpoch);
         ProviderSnapshot storage snapshot = _snapshots[epochId][slot];
@@ -933,11 +927,17 @@ contract NoxCurveEngine is KyrveCurveBase {
             snapshot.maturityBucketCaps[f] = handles.maturityBucketCaps[f];
         }
 
-        // The vault balance is the sixth eligibility predicate and the reservation ledger's seed,
-        // so BOTH contracts need access and only the provider can grant either.
+        // The custody balance is the sixth eligibility predicate, so this contract needs access and
+        // only the provider can grant it.
+        //
+        // THE LEDGER NO LONGER NEEDS IT, and that is a deliberate reduction rather than an omission.
+        // Phase 3 required a second grant here because `ReservationLedger` subtracted from this
+        // handle; Phase 5 moved that subtraction into `KyrveCustodyVault`, which computed its own
+        // balance and already holds `allowThis` on it. Every grant a provider makes is PERMANENT —
+        // there is no `removeAdmin` — so one fewer irreversible grant per provider per epoch is
+        // worth naming. Delta T-5.
         euint256 balance = vault.confidentialAvailableOf(msg.sender);
         _requireEngineAccess(euint256.unwrap(balance));
-        _requireLedgerAccess(euint256.unwrap(balance));
         snapshot.balance = balance;
 
         ledger.seedProvider(epochId, msg.sender, mandateId, mandateEpoch, balance);

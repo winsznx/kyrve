@@ -4,48 +4,46 @@ pragma solidity 0.8.36;
 import {Nox, ebool, euint256} from "@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol";
 
 import {KyrveCurveBase} from "./KyrveCurveBase.sol";
+import {KyrveCustodyVault} from "./KyrveCustodyVault.sol";
 import {KyrveEmergencyController} from "./KyrveEmergencyController.sol";
 
 /**
  * @title ReservationLedger
- * @notice Encrypted per-provider reservations for one curve epoch (PRD §11.10, §13.3).
+ * @notice Epoch state for encrypted per-provider reservations (PRD §11.10, §13.3).
  *
  * ────────────────────────────────────────────────────────────────────────────────────────────
- * WHY THIS IS NOT `KyrveConfidentialAssetVault.openReservation`
+ * WHAT CHANGED IN PHASE 5, AND WHY THIS FILE IS SHORTER THAN IT WAS
  * ────────────────────────────────────────────────────────────────────────────────────────────
  *
- * The Phase 2 vault's reservation entry point takes `(externalEuint256, bytes inputProof)` — a
- * gateway proof minted by the reserver for an amount the reserver knows in plaintext. That shape is
- * correct for a human keeper reserving a number it chose, and it is **structurally incapable** of
- * accepting a curve-engine allocation, because the whole point of the engine is that nobody knows
- * that number. No proof can be minted for a value that exists only as a handle.
+ * Phase 3's version performed its own `safeSub` against a SNAPSHOT of the provider's vault balance,
+ * because there was nowhere else to do it: the Phase 2 vault's reservation entry point takes
+ * `(externalEuint256, bytes inputProof)` and `Nox.fromExternal` needs a gateway proof for a value
+ * its owner knows in plaintext — which a curve allocation, existing only as a handle, can never
+ * have. Delta [R-1](../../docs/phase3/PRD-DELTA.md).
  *
- * The vault is deployed, verified and immutable, so Phase 3 does not edit it and does not fork it.
- * This ledger is the handle-native counterpart: it takes an `euint256` the engine computed, and
- * performs the same `safeSub -> select -> select` shape the vault uses, against a snapshot of the
- * provider's vault balance sealed into the epoch. Recorded as delta [R-1](../../docs/phase3/PRD-DELTA.md).
+ * That produced exactly the defect prerequisite P5-1 names: `sum(reserved)` and *the capital that
+ * can actually pay* were two independent quantities that happened to agree because one operator
+ * funded both. This ledger reserved against a snapshot, took no custody, and could not stop a
+ * provider withdrawing afterwards.
  *
- * **The honest limit, stated here rather than in a footnote.** This ledger reserves against a
- * SNAPSHOT handle. It does not custody capital and it cannot stop the provider withdrawing from the
- * vault after the snapshot was taken. Making a reservation move real vault capital requires the
- * vault to gain a handle-native entry point, which is a change to a deployed contract's trust model
- * and belongs with `QuoteActivator` in Phase 4, where a reservation first becomes a payment
- * obligation. Phase 3 proves the arithmetic, the conservation and the release; it does not claim
- * the capital is locked.
+ * **There is now exactly one subtraction and it is not here.** {KyrveCustodyVault.lockAllocation}
+ * takes the `euint256` the engine computed and subtracts it from the provider's LIVE available
+ * balance, in the same contract that holds the wrapper coverage backing it. This ledger keeps epoch
+ * state — who was seeded, who reserved, which lock is theirs — and delegates the arithmetic. It no
+ * longer tracks a parallel remainder, because a parallel remainder is the thing that was wrong.
+ * See `docs/phase5/P5-1-DECISION.md`.
  *
  * ────────────────────────────────────────────────────────────────────────────────────────────
- * WHY A SHORT RESERVATION CANNOT REVERT
+ * WHY A SHORT RESERVATION STILL CANNOT REVERT
  * ────────────────────────────────────────────────────────────────────────────────────────────
  *
- * A provider whose snapshot is too small must not be identifiable — that is exactly the private
- * fact the product exists to protect (PRD invariant 1, §6.4). So every path here is
+ * A provider whose balance is too small must not be identifiable — that is exactly the private fact
+ * the product exists to protect (PRD invariant 1, §6.4). The `safeSub -> select -> select` shape
+ * that guarantees it now lives in the custody vault, unchanged in behaviour: the transaction
+ * succeeds either way, writes the same slots either way, and emits the same event either way.
  *
- *     (ok, candidate) = safeSub(remaining, amount)      // both CIPHERTEXTS
- *     applied         = select(ok, amount, 0)           // encrypted zero when short
- *     remaining       = select(ok, candidate, remaining) // unchanged when short
- *
- * `ok` can never be branched on in Solidity. The transaction succeeds either way, writes the same
- * slots either way and emits the same event either way.
+ * Public reverts here are reserved for PUBLIC faults — a provider seeded twice, a reservation asked
+ * for twice, a release with nothing reserved. None of them discloses an amount.
  *
  * ────────────────────────────────────────────────────────────────────────────────────────────
  * THERE IS DELIBERATELY NO ENCRYPTED GLOBAL TOTAL HERE
@@ -57,8 +55,8 @@ import {KyrveEmergencyController} from "./KyrveEmergencyController.sol";
  * operands, hence one handle with one PERMANENT ACL entry, and `allow` has no inverse.
  *
  * The public aggregate is instead summed by the engine from the isolated `reserved` handles this
- * contract returns, under an epoch- and role-scoped isolation domain that no provider handle can
- * share. See {KyrveCurveBase._isolate}.
+ * contract passes through from the custody vault, each isolated there under a lock-scoped domain
+ * that no provider handle can share. See {KyrveCurveBase._isolate}.
  *
  * ────────────────────────────────────────────────────────────────────────────────────────────
  * PUBLIC / PRIVATE BOUNDARY
@@ -90,14 +88,25 @@ contract ReservationLedger is KyrveCurveBase {
 
     address public immutable deployer;
 
+    /**
+     * @notice The custody contract that holds the capital and performs the one subtraction.
+     * @dev Immutable. A mutable custodian on this path would let a rebinding redirect every future
+     *      reservation at a contract of someone else's choosing while the epoch state stayed valid.
+     */
+    KyrveCustodyVault public immutable custody;
+
     /// @notice The only contract permitted to seed, reserve or release. Bound once, never again.
     address public engine;
 
     mapping(bytes32 epochId => mapping(address provider => Reservation)) private _reservations;
-    /// @dev The provider's vault balance as sealed into this epoch. Never mutated.
+    /// @dev The provider's custody balance as sealed into this epoch. Never mutated. This is the
+    ///      sixth eligibility predicate's operand, not an accounting quantity: the live remainder is
+    ///      `custody.confidentialAvailableOf(provider)` and there is no second copy of it.
     mapping(bytes32 epochId => mapping(address provider => euint256)) private _seed;
-    mapping(bytes32 epochId => mapping(address provider => euint256)) private _remaining;
     mapping(bytes32 epochId => mapping(address provider => euint256)) private _reserved;
+    /// @dev The custody lock this reservation opened. Recorded so release and consumption address
+    ///      exactly the lock this epoch created and cannot reach another.
+    mapping(bytes32 epochId => mapping(address provider => bytes32)) private _lockId;
 
     event EngineBound(address indexed engineAddress);
     event ProviderSeeded(bytes32 indexed epochId, address indexed provider, bytes32 mandateId, uint32 mandateEpoch);
@@ -114,7 +123,9 @@ contract ReservationLedger is KyrveCurveBase {
     error NothingReserved(bytes32 epochId, address provider);
     error ZeroAddress();
 
-    constructor(KyrveEmergencyController controller) KyrveCurveBase(controller) {
+    constructor(KyrveCustodyVault custody_, KyrveEmergencyController controller) KyrveCurveBase(controller) {
+        if (address(custody_) == address(0)) revert ZeroAddress();
+        custody = custody_;
         deployer = msg.sender;
     }
 
@@ -134,12 +145,14 @@ contract ReservationLedger is KyrveCurveBase {
 
     /**
      * @notice The ledger's immutable transient-handle allowlist.
-     * @dev The ledger hands transient handles to exactly one contract: the engine that drives it,
-     *      fixed at binding. Transient access carries full persistent-grant power, so this is a
-     *      single address rather than a set.
+     * @dev Two contracts, both fixed: the engine that drives it, bound once, and the custody vault
+     *      it was deployed against, which needs the allocation and the epoch condition for exactly
+     *      the transaction in which it locks them. Transient access carries full persistent-grant
+     *      power, so this is never a mutable set.
      */
     function isReviewedTransientRecipient(address recipient) public view override returns (bool) {
-        return recipient != address(0) && recipient == engine;
+        if (recipient == address(0)) return false;
+        return recipient == engine || recipient == address(custody);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -147,12 +160,17 @@ contract ReservationLedger is KyrveCurveBase {
     // ─────────────────────────────────────────────────────────────────────────────────────────
 
     /**
-     * @notice Records the provider's sealed vault-balance snapshot for one epoch.
+     * @notice Records the provider's sealed custody-balance snapshot for one epoch.
      * @dev Stores a handle; it performs no operation, so it creates no new handle and cannot
      *      collide with anything. The provider must already have granted this contract access to
-     *      `balanceSnapshot` — the engine proves that on chain before calling, because a ledger
-     *      that discovered the missing grant at `safeSub` time would revert mid-epoch with a
-     *      NoxCompute error that says nothing useful.
+     *      `balanceSnapshot` — the engine proves that on chain before calling, because a ledger that
+     *      discovered the missing grant later would revert mid-epoch with a NoxCompute error that
+     *      says nothing useful.
+     *
+     *      The snapshot is NO LONGER a debit target. Phase 5 moved the subtraction into
+     *      {KyrveCustodyVault}, so this handle is read by the engine as the sixth eligibility
+     *      predicate and is never mutated by anything. A second copy of the remainder is exactly the
+     *      parallel quantity P5-1 removed.
      */
     function seedProvider(
         bytes32 epochId,
@@ -171,7 +189,6 @@ contract ReservationLedger is KyrveCurveBase {
         reservation.seededAt = uint64(block.timestamp);
 
         _seed[epochId][provider] = balanceSnapshot;
-        _remaining[epochId][provider] = balanceSnapshot;
 
         emit ProviderSeeded(epochId, provider, mandateId, mandateEpoch);
     }
@@ -181,14 +198,32 @@ contract ReservationLedger is KyrveCurveBase {
     // ─────────────────────────────────────────────────────────────────────────────────────────
 
     /**
-     * @notice Moves an encrypted amount from a provider's remaining snapshot into a reservation.
-     * @param epochCondition the epoch's isolation condition, supplied by the engine so that both
-     *        contracts isolate under one shared, epoch-unique lineage.
-     * @return reservedHandle the isolated amount actually reserved — encrypted zero if the snapshot
-     *         was short. The engine sums these into the public aggregate, which is why the aggregate
-     *         is the sum of what was TAKEN rather than of what was asked for.
+     * @notice Opens a real capital lock for one provider and returns what it actually took.
      *
-     * @dev Double reservation is refused publicly. It is a public fault: the keeper asked twice for
+     * @param amount the allocation handle the engine computed. Handle-native end to end: no gateway
+     *        proof exists for it and none is needed.
+     * @param epochCondition the epoch's isolation condition, supplied by the engine so that this
+     *        contract, the engine and the custody vault all isolate under one shared, epoch-unique
+     *        lineage.
+     * @return reservedHandle the isolated amount actually locked — encrypted zero if the provider's
+     *         live balance was short. The engine sums these into the public aggregate, which is why
+     *         the aggregate is the sum of what was TAKEN rather than of what was asked for.
+     *
+     * @dev THIS IS WHERE A RESERVATION BECAME A LOCK. The subtraction happens inside
+     *      {KyrveCustodyVault.lockAllocation}, against the provider's LIVE available balance in the
+     *      contract that holds the coverage — not against a snapshot this contract keeps. So the
+     *      value the engine folds into the aggregate and the value that can actually pay Midnight
+     *      are the same value, which is what prerequisite P5-1 required and delta S-6 said Phase 4
+     *      did not have.
+     *
+     *      Two transient grants, both to the one reviewed custody contract fixed at construction:
+     *      the allocation it is locking, and the epoch condition it isolates its three outputs
+     *      under. The condition is easy to forget because this contract holds a persistent grant on
+     *      nothing and the engine holds one on the condition — the failure surfaces only inside the
+     *      vault, as a bare `NotAllowed` from NoxCompute naming a contract the caller did not think
+     *      it was calling.
+     *
+     *      Double reservation is refused publicly. It is a public fault: the keeper asked twice for
      *      the same (epoch, provider), which says nothing about any amount.
      */
     function reserve(bytes32 epochId, address provider, euint256 amount, ebool epochCondition)
@@ -204,36 +239,26 @@ contract ReservationLedger is KyrveCurveBase {
 
         // One-shot: an allocation handle may fund exactly one reservation, ever, at this contract.
         // Nox supplies no such guard — `validateInputProof` has no nonce and no consumption marker
-        // (delta Q-2), and an on-chain operation output has no guard at all.
+        // (delta Q-2), and an on-chain operation output has no guard at all. The custody vault
+        // applies the same guard independently, because a one-shot enforced in only one of two
+        // contracts is a one-shot that a future caller can route around.
         _consumeHandle(euint256.unwrap(amount));
 
-        euint256 remaining = _remaining[epochId][provider];
-        (ebool ok, euint256 candidate) = Nox.safeSub(remaining, amount);
+        _assertReviewedTransientRecipient(address(custody));
+        Nox.allowTransient(amount, address(custody));
+        Nox.allowTransient(epochCondition, address(custody));
 
-        // `ok` is a ciphertext and cannot be branched on. It is threaded through both selects, so a
-        // short snapshot reserves encrypted zero and leaves `remaining` untouched.
-        euint256 applied = Nox.select(ok, amount, Nox.toEuint256(0));
-        euint256 newRemaining = Nox.select(ok, candidate, remaining);
-
-        reservedHandle =
-            _isolate(applied, epochCondition, isolationDomain(epochId, ROLE_RESERVED, uint256(uint160(provider))));
-        euint256 isolatedRemaining = _isolate(
-            newRemaining, epochCondition, isolationDomain(epochId, ROLE_REMAINING, uint256(uint160(provider)))
-        );
+        bytes32 lockId;
+        (lockId, reservedHandle) = custody.lockAllocation(epochId, provider, amount, epochCondition);
 
         _reserved[epochId][provider] = reservedHandle;
-        _remaining[epochId][provider] = isolatedRemaining;
+        _lockId[epochId][provider] = lockId;
         reservation.state = ReservationState.Reserved;
         reservation.changedAt = uint64(block.timestamp);
 
-        // The provider may decrypt their own reservation and their own remaining balance. Nobody
-        // else may, and neither handle can equal another provider's — that is what the isolation
-        // domains above buy, and demonstration 17 asserts it on chain.
-        _grantOwnerOnly(reservedHandle, provider);
-        _grantOwnerOnly(isolatedRemaining, provider);
-
         // The engine needs the reserved handle for exactly this transaction, to fold it into the
-        // running aggregate. Transient, and only to the one reviewed contract that drives us.
+        // running aggregate. The vault granted this contract transient access; passing it on is
+        // itself a transient grant, and only to the one reviewed contract that drives us.
         _assertReviewedTransientRecipient(msg.sender);
         Nox.allowTransient(reservedHandle, msg.sender);
 
@@ -245,34 +270,33 @@ contract ReservationLedger is KyrveCurveBase {
     // ─────────────────────────────────────────────────────────────────────────────────────────
 
     /**
-     * @notice Returns a reservation to the provider's remaining snapshot, in full.
-     * @dev `add` rather than a safe op on purpose: the value being restored is exactly the value
-     *      this contract subtracted, so the sum cannot exceed the seed and cannot overflow. The
-     *      conservation invariant `remaining + reserved == seed` therefore holds before and after,
-     *      and the suite asserts it by decrypting all three.
+     * @notice Releases a reservation's lock, returning the capital to the provider in full.
+     * @dev The restoration arithmetic is the custody vault's, for the same reason the subtraction is:
+     *      there is one place the balance lives and one place it changes. The vault restores exactly
+     *      the value it locked, so the sum cannot exceed what was there and cannot overflow, and the
+     *      conservation statement is the vault's own
+     *      `sum(available) + sum(locked) <= confidentialBalanceOf(vault)` rather than a per-epoch
+     *      `remaining + reserved == seed` over a snapshot nothing spends.
      *
      *      No pause flag exists for this path and none can be added — {KyrveEmergencyController}'s
-     *      enum has no member for it (PRD invariant 20).
+     *      enum has no member for it (PRD invariant 20, delta Q-6). Invariant 10.
      */
     function release(bytes32 epochId, address provider, ebool epochCondition) external onlyEngine {
         Reservation storage reservation = _reservations[epochId][provider];
         if (reservation.state != ReservationState.Reserved) revert NothingReserved(epochId, provider);
 
-        euint256 reservedAmount = _reserved[epochId][provider];
-        euint256 restored = Nox.add(_remaining[epochId][provider], reservedAmount);
-        euint256 isolatedRemaining = _isolate(
-            restored, epochCondition, isolationDomain(epochId, ROLE_REMAINING, uint256(uint160(provider)) + 1)
-        );
+        bytes32 lockId = _lockId[epochId][provider];
 
-        _remaining[epochId][provider] = isolatedRemaining;
         // `delete` is meaningless for a handle — it is a reference and the ciphertext behind it
         // cannot be destroyed. Clearing the slot to the undefined handle is the closest correct
-        // action; Nox resolves an undefined handle to encrypted zero.
+        // action; Nox resolves an undefined handle to encrypted zero. Done BEFORE the external call.
         _reserved[epochId][provider] = euint256.wrap(bytes32(0));
         reservation.state = ReservationState.Released;
         reservation.changedAt = uint64(block.timestamp);
 
-        _grantOwnerOnly(isolatedRemaining, provider);
+        _assertReviewedTransientRecipient(address(custody));
+        Nox.allowTransient(epochCondition, address(custody));
+        custody.releaseLock(lockId, epochCondition);
 
         emit ReservationReleased(epochId, provider);
     }
@@ -286,8 +310,19 @@ contract ReservationLedger is KyrveCurveBase {
         return _seed[epochId][provider];
     }
 
-    function confidentialRemainingOf(bytes32 epochId, address provider) external view returns (euint256) {
-        return _remaining[epochId][provider];
+    /**
+     * @notice The provider's live remaining balance.
+     * @dev Reads through to custody deliberately. Phase 3 kept a per-epoch copy and that copy was
+     *      the defect: it could disagree with the capital that pays. There is now one remainder and
+     *      this accessor names where it is rather than duplicating it.
+     */
+    function confidentialRemainingOf(bytes32, address provider) external view returns (euint256) {
+        return custody.confidentialAvailableOf(provider);
+    }
+
+    /// @notice The custody lock this reservation opened, or zero if none.
+    function lockIdOf(bytes32 epochId, address provider) external view returns (bytes32) {
+        return _lockId[epochId][provider];
     }
 
     function confidentialReservedOf(bytes32 epochId, address provider) external view returns (euint256) {
