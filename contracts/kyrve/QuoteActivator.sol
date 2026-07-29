@@ -95,6 +95,7 @@ contract QuoteActivator {
     error PriceBelowSettlementFee(uint256 price, uint256 settlementFee);
     error PriceIsZero(int24 tick);
     error UnitsAreZero(uint256 aggregate, uint256 price);
+    error UniverseHashMismatch(bytes32 universeId, bytes32 sealedHash, bytes32 registryHash);
     error UnselectedLeaf(uint256 leafIndex, uint8 marketIndex, uint8 rateIndex);
     error ValueTooLarge(string field, uint256 value);
     error WrongChain(uint256 expected, uint256 actual);
@@ -275,7 +276,17 @@ contract QuoteActivator {
         view
         returns (QuoteProvenance memory provenance)
     {
-        UNIVERSES.requireActive(verified.universeId);
+        // The return value is CHECKED rather than discarded, and the check is not cosmetic. A
+        // universe is frozen at activation and its hash covers every market, every grid point, the
+        // privacy floor and the chunk width — so a hash that disagreed with the one the epoch
+        // sealed would mean the epoch was computed over a different universe than the one being
+        // priced against now. It cannot happen, because activation is terminal and there is no edit
+        // path; asserting it costs one comparison and makes "it cannot happen" checkable.
+        bytes32 universeHash = UNIVERSES.requireActive(verified.universeId);
+        require(
+            universeHash == verified.universeHash,
+            UniverseHashMismatch(verified.universeId, verified.universeHash, universeHash)
+        );
 
         uint256 leaves = UNIVERSES.leafCount(verified.universeId);
         require(request.leafIndex < leaves, LeafIndexOutOfRange(request.leafIndex, leaves));

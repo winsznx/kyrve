@@ -264,6 +264,24 @@ contract ActivationTest is SettlementHarness {
         this.externalActivate();
     }
 
+    /**
+     * @dev The universe the epoch sealed must still be the universe being priced against.
+     *
+     * A universe is frozen at activation and its hash covers every market, every grid point, the
+     * privacy floor and the chunk width, so this cannot drift in production. The check exists
+     * because "cannot" is a property of code that changes, and it is tested because a check with no
+     * failing case proves nothing.
+     */
+    function test_attack_universeHashDisagreesWithTheEpoch_reverts() public {
+        bytes32 substituted = keccak256("kyrve.universe.substituted-hash");
+        curve.setUniverse(universeId, true, substituted);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(QuoteActivator.UniverseHashMismatch.selector, universeId, universeHash, substituted)
+        );
+        this.externalActivate();
+    }
+
     function test_attack_negativeTick_reverts() public {
         curve.setLeaf(universeId, 0, CurveLeaf({marketIndex: 0, rateIndex: 0, tick: -4, priceWad: 1}));
         vm.expectRevert(abi.encodeWithSelector(QuoteActivator.NegativeTick.selector, int24(-4)));
