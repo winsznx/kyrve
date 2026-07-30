@@ -58,6 +58,29 @@ function testTally(output: string): string {
   return requirePassingTally(output);
 }
 
+/**
+ * Runs one connected suite, having first made sure nothing else owns the chain.
+ *
+ * Each suite starts its OWN chain on port 8545 through the Nox plugin's test override — that is what
+ * makes them reproducible, and it means a running `stack:local` blocks all four. The first full run
+ * after the stack work failed exactly this way: four suites reporting `exited 1` for a reason that
+ * had nothing to do with any of them.
+ *
+ * Stopping the stack here rather than telling the operator to remember. A gate whose instructions
+ * include "and first, stop the other thing" is a gate that will be run wrong.
+ */
+let stackStopped = false;
+
+function runSuite(file: string): string {
+  if (!stackStopped) {
+    run("pnpm", ["stack:local:stop"], { allowFailure: true });
+    stackStopped = true;
+  }
+  return testTally(
+    run("npx", ["hardhat", "test", `test/${file}`], { cwd: repoPath("confidential") }).stdout,
+  );
+}
+
 function dockerAvailable(): boolean {
   try {
     run("docker", ["info"], { allowFailure: true });
@@ -245,44 +268,25 @@ const GATES: readonly Gate[] = [
     section: "JOURNEYS",
     name: "provider and borrower, in a real Chromium against real Nox and real Midnight",
     skipIf: noDocker,
-    execute: () =>
-      testTally(
-        run("npx", ["hardhat", "test", "test/70-browser-flow.ts"], {
-          cwd: repoPath("confidential"),
-        }).stdout,
-      ),
+    execute: () => runSuite("70-browser-flow.ts"),
   },
   {
     section: "JOURNEYS",
     name: "activation, refused partial fill and exact settlement, in a real browser",
     skipIf: noDocker,
-    execute: () =>
-      testTally(
-        run("npx", ["hardhat", "test", "test/91-settlement-browser.ts"], {
-          cwd: repoPath("confidential"),
-        }).stdout,
-      ),
+    execute: () => runSuite("91-settlement-browser.ts"),
   },
   {
     section: "JOURNEYS",
     name: "confidential ownership, and another wallet refused, in two browser contexts",
     skipIf: noDocker,
-    execute: () =>
-      testTally(
-        run("npx", ["hardhat", "test", "test/101-series-browser.ts"], {
-          cwd: repoPath("confidential"),
-        }).stdout,
-      ),
+    execute: () => runSuite("101-series-browser.ts"),
   },
   {
     section: "JOURNEYS",
     name: "the proof page disagrees with a record that lies",
     skipIf: noDocker,
-    execute: () =>
-      testTally(
-        run("npx", ["hardhat", "test", "test/130-roll.ts"], { cwd: repoPath("confidential") })
-          .stdout,
-      ),
+    execute: () => runSuite("130-roll.ts"),
   },
 
   // ── The connected lifecycle ───────────────────────────────────────────────────────────────
