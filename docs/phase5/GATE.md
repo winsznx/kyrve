@@ -8,9 +8,15 @@ Command: `pnpm verify:phase5`. Full captured output: `evidence/phase5/gate-run.l
   nothing will be. This is not a PASS and must not be recorded as one.
 ```
 
-Phase 5 has **not** reached full PASS, and this file does not round it up. One condition is unmet and it
-is a balance, not a defect: the whole Sepolia sequence is priced from real measurements and the deployer
-is short by **0.028154403729974622 ETH**.
+Phase 5 has **not** reached full PASS, and this file does not round it up. **27 gates passed, 1 failed,
+3 skipped.** The one failure is a balance, not a defect: the whole Sepolia sequence is priced from real
+measurements and the deployer cannot cover it.
+
+**The gas total is fixed at 58,546,501 and the ETH figures are not.** Gas used is reproducible; the base fee is
+not, which is the entire reason the ledger appends rather than overwrites. Across the recorded samples the
+shortfall has ranged from **0.028154403729974620** to **0.028494721425871398 ETH** on the same 58,546,501 gas. Quoting one sample's
+ETH figure as though it were the number would be quoting a fee, so the authoritative record is
+`evidence/phase5/funding-budget.json` and the figures below are its latest sample.
 
 `NOT FUNDED` is a distinct verdict from `FAIL` on purpose. A funding shortfall is a fact about a wallet
 rather than a broken build, and the summary must not be readable either way round — nothing is asserted
@@ -52,14 +58,14 @@ the live base and priority fee, and appends the prediction to an append-only led
 | Etherscan V2 source verification | 0 | an HTTP submission, no gas |
 | **TOTAL** | **58,546,501** | |
 ```
-base fee            971,318,563 wei
+base fee            975,624,323 wei          <- moves every block
 priority fee        1,500,000 wei
-effective price     972,818,563 wei
-predicted cost      0.056955122971498063 ETH
+effective price     977,124,323 wei
+predicted cost      0.057207210153643823 ETH
 safety margin       35%
-REQUIRED BALANCE    0.076889416011522385 ETH
+REQUIRED BALANCE    0.077229733707419161 ETH
 deployer balance    0.048735012281547763 ETH
-SHORTFALL           0.028154403729974622 ETH
+SHORTFALL           0.028494721425871398 ETH
 ```
 
 The 35% floor is not padding. Phase 3's real Sepolia epoch cost 0.029918 ETH against a local prediction
@@ -140,8 +146,8 @@ the wrong reason proves the wrong thing — and that the browser read solvency a
 
 ```
 FAIL  the whole sequence is priced against the live network, and the balance covers it
-      NOT FUNDED — 58,546,501 gas needs 0.076889416011522385 ETH at a 35% margin;
-      balance is 0.048735012281547763 ETH, short by 0.028154403729974622 ETH
+      NOT FUNDED — 58,546,501 gas needs 0.077229733707419161 ETH at a 35% margin;
+      balance is 0.048735012281547763 ETH, short by 0.028494721425871398 ETH
 
 SKIP  series layer deployed, bound and wired on Sepolia
 SKIP  Etherscan source verification

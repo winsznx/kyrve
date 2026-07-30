@@ -45,10 +45,15 @@ ledger.
 | — the confidential epoch alone | 26,931,546 gas (46%) |
 | — every deployment | 26,610,154 gas |
 | effective gas price | 972,818,563 wei |
-| predicted cost | 0.056955122971498063 ETH |
-| required at a 35% margin | **0.076889416011522385 ETH** |
+| predicted cost | 0.057207210153643823 ETH |
+| required at a 35% margin | **0.077229733707419161 ETH** |
 | deployer balance | 0.048735012281547763 ETH |
-| **shortfall** | **0.028154403729974622 ETH** |
+| **shortfall** | **0.028494721425871398 ETH** |
+
+The gas is fixed; the ETH is not. Across the recorded samples the shortfall has ranged from
+0.028154 to 0.028495 ETH on the same 58,546,501 gas, because the base fee moves every block — which is why the
+ledger appends rather than overwrites, and why the authoritative record is
+`evidence/phase5/funding-budget.json` rather than any figure quoted in prose.
 
 **Required:** fund `0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2` by at least the shortfall and re-run the
 preflight. It reports FUNDED and names the deploy command, or it reports the new shortfall. The gate keeps

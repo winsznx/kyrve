@@ -6,7 +6,7 @@ series claims**, funded by capital a curve reservation really locked.
 > One quote. The curve stays private. And now the ownership does too.
 
 Run `pnpm verify:phase5`. Current verdict: **NOT FUNDED** — every executable gate passes and the Sepolia
-sequence is priced at 58,546,501 gas against a deployer short by 0.028154403729974622 ETH. See
+sequence is priced at 58,546,501 gas against a deployer short by roughly 0.0285 ETH. See
 [`GATE.md`](GATE.md); nothing was broadcast and the shortfall is not rounded up to a pass.
 
 ---
