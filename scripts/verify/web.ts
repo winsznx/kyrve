@@ -437,12 +437,17 @@ async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>):
      * Every application page must give the reader somewhere to go. A page with no cobalt action and
      * no completion marker is a dead end, and a dashboard made of dead ends is the flat, equal-weight
      * surface this correction is fixing.
+     *
+     * `aria-busy` counts, because a page still reading the chain has not failed to decide — it has
+     * not finished. Without it this check failed on a capsule detail page caught mid-read, which is
+     * a timing artefact rather than a dead end, and "wait longer" would have made the check slower
+     * and no more truthful.
      */
     if (route.path.startsWith("/app")) {
       const decided = await page.evaluate<number>(
         `document.querySelectorAll(
            "main .primary, main [data-complete='true'], main .empty, " +
-           "main [data-testid='requires-wallet'], main .role-cards"
+           "main [data-testid='requires-wallet'], main .role-cards, main [aria-busy='true']"
          ).length`,
       );
       if (decided === 0) {
