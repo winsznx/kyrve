@@ -23,6 +23,7 @@ import {
   type NoxNetwork,
   type RequestPlaintext,
 } from "@kyrve/nox";
+import { getContract } from "viem";
 
 export const LOCAL_NOX_NETWORK = (): NoxNetwork => ({
   chainId: 31337,
@@ -92,6 +93,23 @@ export interface Harness {
   requestBook: any;
   /** The wallet permitted to open and release reservations in this deployment. */
   reserver: `0x${string}`;
+  /**
+   * The Foundry-built Midnight substrate, when this harness was asked for one.
+   *
+   * WHY IT CAN COME FIRST. Phase 5 funds settlement by UNWRAPPING confidential capital into the
+   * market's loan token, so the ERC-7984 wrapper's underlying and the Midnight market's `loanToken`
+   * must be the SAME ERC-20. Phases 2 to 4 could keep them separate because nothing ever crossed
+   * back: the wrapper wrapped its own test token and the vault was funded by minting the fixture's
+   * USDC. Delta T-10.
+   */
+  substrate?: MidnightSubstrate;
+}
+
+export interface MidnightSubstrate {
+  readonly fixture: any;
+  readonly midnight: any;
+  readonly usdc: any;
+  readonly weth: any;
 }
 
 /**
@@ -100,7 +118,9 @@ export interface Harness {
  * Each suite gets its own deployment. Sharing one would make the `nonce` and consumed-handle state
  * of one test visible to another, and those are exactly what several tests assert on.
  */
-export async function deployHarness(options: { reserver?: `0x${string}` } = {}): Promise<Harness> {
+export async function deployHarness(
+  options: { reserver?: `0x${string}`; substrate?: boolean } = {},
+): Promise<Harness> {
   await assertGatewayReachable();
   const connection = await nox.connect();
   const publicClient = await connection.viem.getPublicClient();
@@ -113,11 +133,26 @@ export async function deployHarness(options: { reserver?: `0x${string}` } = {}):
   const reserver = options.reserver ?? (wallets[3].account.address as `0x${string}`);
 
   const controller = await connection.viem.deployContract("KyrveEmergencyController", [guardian]);
-  const underlying = await connection.viem.deployContract("TestUnderlyingERC20", [
-    "Kyrve Test USDC",
-    "tUSDC",
-    6,
-  ]);
+
+  /**
+   * THE UNDERLYING IS THE MIDNIGHT MARKET'S LOAN TOKEN WHEN A SUBSTRATE IS ASKED FOR. Delta T-10.
+   *
+   * Phase 5's funding path unwraps confidential capital back into a public ERC-20 and hands it to the
+   * series vault, which pays Midnight in the market's `loanToken`. If the wrapper wrapped a different
+   * token, `finalizeUnwrap` would move the wrong asset and the vault would still be empty — which is
+   * exactly how this surfaced: `activate` reverted `FundingShortfall(600000509, 0)` on a run where
+   * every confidential step had succeeded.
+   *
+   * `LocalMidnightFixture` hardcodes its own USDC as the loan token of every market it builds, so the
+   * fixture must be deployed BEFORE the wrapper rather than after it.
+   */
+  const substrate = options.substrate
+    ? await deployMidnightSubstrate({ connection, publicClient, wallets })
+    : undefined;
+
+  const underlying =
+    substrate?.usdc ??
+    (await connection.viem.deployContract("TestUnderlyingERC20", ["Kyrve Test USDC", "tUSDC", 6]));
   const asset = await connection.viem.deployContract("KyrveWrappedAsset", [
     "Kyrve Confidential USDC",
     "cUSDC",
@@ -158,6 +193,85 @@ export async function deployHarness(options: { reserver?: `0x${string}` } = {}):
     mandateBook,
     requestBook,
     reserver,
+    substrate,
+  };
+}
+
+/** Where `forge build` writes. One artifact per source file basename. */
+export function foundryArtifact(name: string): {
+  abi: readonly unknown[];
+  bytecode: `0x${string}`;
+} {
+  const path = new URL(`../../out/${name}.sol/${name}.json`, import.meta.url);
+  const artifact = JSON.parse(readFileSync(path, "utf8")) as {
+    abi: readonly unknown[];
+    bytecode: { object: string };
+  };
+  const object = artifact.bytecode.object;
+  assert.ok(
+    object !== undefined && object.length > 2,
+    `${name} has no creation bytecode; run \`forge build\` before this suite`,
+  );
+  return { abi: artifact.abi, bytecode: object as `0x${string}` };
+}
+
+/**
+ * The ABI of any Foundry-compiled source, by name — including INTERFACES.
+ *
+ * Separate from {foundryArtifact} because that one asserts creation bytecode exists, which an
+ * interface has none of. Resolving a revert selector needs `IMidnight`'s error list, so the reader
+ * that fetches it must not demand something interfaces cannot have.
+ */
+export function foundryArtifactAbi(name: string): readonly unknown[] {
+  const path = new URL(`../../out/${name}.sol/${name}.json`, import.meta.url);
+  const artifact = JSON.parse(readFileSync(path, "utf8")) as { abi: readonly unknown[] };
+  assert.ok(
+    Array.isArray(artifact.abi),
+    `${name} has no ABI; run \`forge build\` before this suite`,
+  );
+  return artifact.abi;
+}
+
+/**
+ * Deploys REAL unmodified Morpho Midnight and its test tokens from the Foundry artifacts.
+ *
+ * Deployed from the EXACT bytes `forge build` produced — same compiler, same settings — so
+ * "unmodified local Midnight" is literally true rather than a re-compilation of the pinned submodule.
+ */
+export async function deployMidnightSubstrate(context: {
+  connection: Awaited<ReturnType<typeof nox.connect>>;
+  publicClient: any;
+  wallets: any[];
+}): Promise<MidnightSubstrate> {
+  const wallet = context.wallets[0];
+  const { abi, bytecode } = foundryArtifact("LocalMidnightFixture");
+  const hash = await wallet.deployContract({ abi, bytecode, args: [], account: wallet.account });
+  const receipt = await context.publicClient.waitForTransactionReceipt({ hash });
+  assert.equal(receipt.status, "success", "LocalMidnightFixture deployment reverted");
+
+  const fixture = getContract({
+    address: receipt.contractAddress as `0x${string}`,
+    abi,
+    client: { public: context.publicClient, wallet },
+  });
+
+  const anchor = (await context.publicClient.getBlock()).timestamp;
+  const deployHash = await fixture.write.deploy([anchor]);
+  const deployed = await context.publicClient.waitForTransactionReceipt({ hash: deployHash });
+  assert.equal(deployed.status, "success", "LocalMidnightFixture.deploy reverted");
+
+  const bind = (address: `0x${string}`, name: string): any =>
+    getContract({
+      address,
+      abi: foundryArtifactAbi(name),
+      client: { public: context.publicClient, wallet },
+    });
+
+  return {
+    fixture,
+    midnight: bind((await fixture.read.midnight()) as `0x${string}`, "Midnight"),
+    usdc: bind((await fixture.read.usdc()) as `0x${string}`, "TestERC20"),
+    weth: bind((await fixture.read.weth()) as `0x${string}`, "TestERC20"),
   };
 }
 

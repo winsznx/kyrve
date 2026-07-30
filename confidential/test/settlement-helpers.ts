@@ -28,7 +28,6 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 
 import {
   buildUniverse,
@@ -45,22 +44,16 @@ import { tickToPrice } from "@kyrve/quote-math";
 import { decodeAbiParameters, getContract, keccak256, parseEventLogs } from "viem";
 
 import type { CurveHarness, PollOptions } from "./curve-helpers.js";
-import { clientFor, mine, SUITE_POLL } from "./helpers.js";
+import {
+  clientFor,
+  deployMidnightSubstrate,
+  foundryArtifact,
+  foundryArtifactAbi,
+  mine,
+  SUITE_POLL,
+} from "./helpers.js";
 
-/** Where `forge build` writes. One artifact per source file basename. */
-function foundryArtifact(name: string): { abi: readonly unknown[]; bytecode: `0x${string}` } {
-  const path = new URL(`../../out/${name}.sol/${name}.json`, import.meta.url);
-  const artifact = JSON.parse(readFileSync(path, "utf8")) as {
-    abi: readonly unknown[];
-    bytecode: { object: string };
-  };
-  const object = artifact.bytecode.object;
-  assert.ok(
-    object !== undefined && object.length > 2,
-    `${name} has no creation bytecode; run \`forge build\` before this suite`,
-  );
-  return { abi: artifact.abi, bytecode: object as `0x${string}` };
-}
+export { foundryArtifact, foundryArtifactAbi };
 
 /**
  * Deploys one Foundry-compiled contract onto the Nox Hardhat node.
@@ -136,26 +129,18 @@ export async function deploySettlement(
   const operatorWallet = h.wallets[options.operatorIndex ?? 8];
   const operator = operatorWallet.account.address as `0x${string}`;
 
-  const anchor = (await h.publicClient.getBlock()).timestamp;
-  const fixture = await deployFoundry(h, "LocalMidnightFixture", []);
-  await mine(h, await fixture.write.deploy([anchor]));
-
-  const midnightAddress = (await fixture.read.midnight()) as `0x${string}`;
-  const midnight = getContract({
-    address: midnightAddress,
-    abi: foundryArtifact("Midnight").abi,
-    client: { public: h.publicClient, wallet: h.wallets[0] },
-  });
-  const usdc = getContract({
-    address: (await fixture.read.usdc()) as `0x${string}`,
-    abi: foundryArtifact("TestERC20").abi,
-    client: { public: h.publicClient, wallet: h.wallets[0] },
-  });
-  const weth = getContract({
-    address: (await fixture.read.weth()) as `0x${string}`,
-    abi: foundryArtifact("TestERC20").abi,
-    client: { public: h.publicClient, wallet: h.wallets[0] },
-  });
+  // Reuse the substrate the harness already deployed, when it did. Phase 5 asks for one FIRST,
+  // because the confidential wrapper must wrap the market's own loan token — delta T-10. Deploying a
+  // second Midnight here would give the series vault a market whose loan token nobody wrapped.
+  const substrate =
+    h.substrate ??
+    (await deployMidnightSubstrate({
+      connection: h.connection,
+      publicClient: h.publicClient,
+      wallets: h.wallets,
+    }));
+  const { fixture, midnight, usdc, weth } = substrate;
+  const midnightAddress = midnight.address as `0x${string}`;
 
   const addGas = (gas: bigint): void => {
     deploymentGas += gas;
@@ -612,21 +597,4 @@ export async function activateQuote(
     activationGas: receipt.gasUsed as bigint,
     fundingGas,
   };
-}
-
-/**
- * The ABI of any Foundry-compiled source, by name — including INTERFACES.
- *
- * Separate from `foundryArtifact` because that one asserts creation bytecode exists, which an
- * interface has none of. Resolving a revert selector needs `IMidnight`'s error list, so the reader
- * that fetches it must not demand something interfaces cannot have.
- */
-export function foundryArtifactAbi(name: string): readonly unknown[] {
-  const path = new URL(`../../out/${name}.sol/${name}.json`, import.meta.url);
-  const artifact = JSON.parse(readFileSync(path, "utf8")) as { abi: readonly unknown[] };
-  assert.ok(
-    Array.isArray(artifact.abi),
-    `${name} has no ABI; run \`forge build\` before this suite`,
-  );
-  return artifact.abi;
 }

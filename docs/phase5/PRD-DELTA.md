@@ -260,3 +260,57 @@ authorised this epoch's read" is worth one transaction.
 So the cost is **one permanent grant per provider per epoch after the first** — which is the grant T-5
 removed, spent differently. `openAndSeal` re-grants the current handle and skips the call when the
 handle has not moved, so a first epoch pays nothing extra.
+
+## T-9 · Funding must be keyed on the epoch, because activation refuses an unfunded vault
+
+**Severity: was a design error that would have deadlocked the phase. Corrected.**
+
+The obvious design keys confidential funding on the quote id: consume the locks for quote Q, unwrap into
+Q's vault, allocate Q's claims. It cannot work, and the reason is one line of Phase 4 code.
+
+`QuoteActivator.activate` calls `KyrveSeriesVault.prepareQuote`, which requires
+`balance >= committedFunding + expectedBuyerAssets` and reverts `FundingShortfall` otherwise. So the
+vault must ALREADY hold the money at the moment the quote is activated — and the quote id does not
+exist until activation returns. Quote-keyed funding is therefore circular: funding waits for the id,
+and the id waits for the funding.
+
+Phase 4 never met this because it minted public USDC into the vault immediately before activating
+(delta S-6). Phase 5 has no such shortcut, and the failure is loud: `activate` reverts
+`FundingShortfall(600000509, 0)` on a run where every confidential step succeeded.
+
+**The correction.** Funding is keyed on the **epoch**; allocation is keyed on the **quote**.
+
+- `SeriesAllocator.consumeChunk(epochId, …)` and `unwrapFunding(epochId)` run before activation.
+  `KyrveCustodyVault`'s per-round state and `Lock.fundingKey` carry the epoch id, not a quote id.
+- `allocateChunk(quoteId, …)` runs after settlement, reads `provenance.epochId` from the quote itself,
+  and refuses any quote whose epoch is not the round it draws on. The first allocation writes the
+  quote id into the round, so a second quote can never reuse consumed capital.
+
+**Why that is not a weakening.** Activation is terminal and there is one quote per epoch: the registry
+refuses a second quote for an epoch id it has already seen, forever. So the epoch identifies the
+funding round uniquely. The unwrap recipient is also strictly *stronger* than before — it is
+`SeriesAllocator.VAULT`, an `immutable` checked against the series id at construction, rather than an
+address derived from a quote. Threat T-G.
+
+## T-10 · The wrapper must wrap the market's own loan token, or the unwrap moves the wrong asset
+
+**Severity: was a silent test-harness fault producing a correct-looking failure. Fixed.**
+
+Phase 5's funding path unwraps confidential capital back into a public ERC-20 and hands it to the
+series vault, which pays Midnight in the market's `loanToken`. The wrapper's underlying and that loan
+token must therefore be **the same ERC-20**.
+
+Phases 2 to 4 could keep them apart because nothing ever crossed back: `KyrveWrappedAsset` wrapped its
+own `TestUnderlyingERC20` and the vault was funded by minting `LocalMidnightFixture`'s USDC. The two
+tokens coexisted harmlessly for three phases.
+
+In Phase 5 they cannot. `finalizeUnwrap` moved the wrapper's underlying to the vault, the vault's
+balance in the token it actually pays in stayed zero, and `activate` reverted
+`FundingShortfall(600000509, 0)` — a message that names the shortfall but says nothing about the two
+tokens, on a run where every encrypted step had succeeded.
+
+`LocalMidnightFixture` hardcodes its own USDC as the loan token of every market it builds, so the fix
+is an ordering one: `deployCurveHarness({ substrate: true })` deploys the Midnight substrate **before**
+the wrapper and wraps its USDC, and `deploySettlement` reuses that substrate rather than deploying a
+second Midnight. In production the identity is obvious — providers wrap the same asset the market lends
+— which is exactly why a harness that quietly used two was worth catching.

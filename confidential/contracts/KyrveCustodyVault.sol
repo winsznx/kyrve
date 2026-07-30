@@ -73,7 +73,7 @@ import {KyrveWrappedAsset} from "./KyrveWrappedAsset.sol";
  * ════════════════════════════════════════════════════════════════════════════════════════════
  *
  *   PUBLIC     that a deposit, withdrawal, lock, release or consumption happened; whose lock it is;
- *              which quote consumed it; when. And — see {unwrapQuoteFunding} — the AGGREGATE amount
+ *              which funding round consumed it; when. And — see {unwrapQuoteFunding} — the AGGREGATE amount
  *              unwrapped to fund one quote, which was already public before this contract saw it.
  *   PRIVATE    every balance, every lock size, every provider's contribution to the aggregate, and
  *              whether any of them succeeded or silently contributed encrypted zero.
@@ -109,8 +109,8 @@ contract KyrveCustodyVault is KyrveCurveBase {
 
     /**
      * @dev A lock's whole life. `Consumed` and `Released` are both terminal for the LOCK; only
-     *      `Consumed` can be undone, and only by `restoreLock` after the quote it funded was
-     *      retired. There is no state a lock can occupy twice.
+     *      `Consumed` can be undone, and only by `restoreLock` after the quote its round funded was
+     *      retired without settling. There is no state a lock can occupy twice.
      */
     enum LockState {
         None,
@@ -124,14 +124,22 @@ contract KyrveCustodyVault is KyrveCurveBase {
         LockState state;
         address provider;
         bytes32 epochId;
-        /// @dev Set when the lock is consumed. Binds the capital to exactly one quote, so a
-        ///      restoration cannot be attributed to a quote that did not fund from it.
-        bytes32 quoteId;
+        /**
+         * @dev Set when the lock is consumed. Binds the capital to exactly one FUNDING ROUND, so a
+         *      restoration cannot be attributed to a round that did not draw on it.
+         *
+         *      It is the EPOCH id rather than a quote id, and the ordering forces that: activation
+         *      calls `KyrveSeriesVault.prepareQuote`, which refuses a vault that cannot already pay,
+         *      so the funding must land BEFORE a quote id exists. The quote binds later, at
+         *      allocation, where `SeriesAllocator` checks the quote's own provenance names this
+         *      epoch. Delta T-9.
+         */
+        bytes32 fundingKey;
         uint64 openedAt;
         uint64 changedAt;
     }
 
-    /// @dev Per-quote funding state. `Funded` means the aggregate was unwrapped and the public
+    /// @dev Per-funding-round state. `Funded` means the aggregate was unwrapped and the public
     ///      tokens are the series vault's problem from that point on.
     enum FundingState {
         None,
@@ -179,11 +187,11 @@ contract KyrveCustodyVault is KyrveCurveBase {
      * accumulator — because the funding unwrap needs exactly one handle, and it is safe only
      * because it is isolated under a quote-scoped domain before anything is granted or published.
      */
-    mapping(bytes32 quoteId => euint256) private _consumedTotal;
-    mapping(bytes32 quoteId => uint32) private _consumedCount;
-    mapping(bytes32 quoteId => FundingState) private _funding;
+    mapping(bytes32 fundingKey => euint256) private _consumedTotal;
+    mapping(bytes32 fundingKey => uint32) private _consumedCount;
+    mapping(bytes32 fundingKey => FundingState) private _funding;
     /// @dev The publicly-decryptable handle `asset.unwrap` returned. Public by construction.
-    mapping(bytes32 quoteId => euint256) private _unwrapRequest;
+    mapping(bytes32 fundingKey => euint256) private _unwrapRequest;
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
     // Events — one shape per operation, identical whatever the encrypted outcome was
@@ -195,10 +203,10 @@ contract KyrveCustodyVault is KyrveCurveBase {
     event Withdrawn(address indexed provider, uint256 indexed nonce);
     event LockOpened(bytes32 indexed epochId, address indexed provider, bytes32 indexed lockId);
     event LockReleased(bytes32 indexed epochId, address indexed provider, bytes32 indexed lockId);
-    event LockConsumed(bytes32 indexed quoteId, address indexed provider, bytes32 indexed lockId);
-    event LockRestored(bytes32 indexed quoteId, address indexed provider, bytes32 indexed lockId);
+    event LockConsumed(bytes32 indexed fundingKey, address indexed provider, bytes32 indexed lockId);
+    event LockRestored(bytes32 indexed fundingKey, address indexed provider, bytes32 indexed lockId);
     /// @notice The aggregate crossing the public boundary. `unwrapRequest` is publicly decryptable.
-    event QuoteFundingUnwrapped(bytes32 indexed quoteId, address indexed to, bytes32 unwrapRequest, uint32 lockCount);
+    event QuoteFundingUnwrapped(bytes32 indexed fundingKey, address indexed to, bytes32 unwrapRequest, uint32 lockCount);
 
     error AssetIsZero();
     error LockAlreadyOpen(bytes32 lockId);
@@ -207,14 +215,14 @@ contract KyrveCustodyVault is KyrveCurveBase {
     error NotDeployer(address caller, address expected);
     error NotReserver(address caller, address expected);
     error NotSettler(address caller, address expected);
-    error NothingConsumed(bytes32 quoteId);
-    error QuoteFundingNotConsumed(bytes32 quoteId, FundingState state);
-    error QuoteFundingNotFunded(bytes32 quoteId, FundingState state);
+    error NothingConsumed(bytes32 fundingKey);
+    error QuoteFundingNotConsumed(bytes32 fundingKey, FundingState state);
+    error QuoteFundingNotFunded(bytes32 fundingKey, FundingState state);
     error ReserverAlreadyBound(address existing);
     error ReserverNotBound();
     error SettlerAlreadyBound(address existing);
     error SettlerNotBound();
-    error WrongQuoteForLock(bytes32 lockId, bytes32 expected, bytes32 actual);
+    error WrongFundingForLock(bytes32 lockId, bytes32 expected, bytes32 actual);
     error ZeroAddress();
 
     constructor(KyrveWrappedAsset asset_, KyrveEmergencyController controller) KyrveCurveBase(controller) {
@@ -495,13 +503,13 @@ contract KyrveCustodyVault is KyrveCurveBase {
      *      handle, and it is safe only because it is isolated under a quote-scoped domain before
      *      anything is granted, transferred or published.
      */
-    function consumeLock(bytes32 lockId, bytes32 quoteId) external onlySettler returns (euint256 consumed) {
+    function consumeLock(bytes32 lockId, bytes32 fundingKey) external onlySettler returns (euint256 consumed) {
         Lock storage lock = _locks[lockId];
         if (lock.state != LockState.Locked) revert LockNotOpen(lockId, lock.state);
 
-        FundingState state = _funding[quoteId];
+        FundingState state = _funding[fundingKey];
         if (state != FundingState.None && state != FundingState.Consumed) {
-            revert QuoteFundingNotConsumed(quoteId, state);
+            revert QuoteFundingNotConsumed(fundingKey, state);
         }
 
         address provider = lock.provider;
@@ -529,22 +537,22 @@ contract KyrveCustodyVault is KyrveCurveBase {
         _locked[provider] = isolatedLocked;
         _grantOwnerOnly(isolatedLocked, provider);
 
-        uint32 count = _consumedCount[quoteId];
-        euint256 runningTotal = count == 0 ? amount : Nox.add(_consumedTotal[quoteId], amount);
+        uint32 count = _consumedCount[fundingKey];
+        euint256 runningTotal = count == 0 ? amount : Nox.add(_consumedTotal[fundingKey], amount);
         // Isolated on EVERY fold, not only the last, because the intermediate is written to storage
         // and read back next call — an unisolated intermediate that coincided with a provider
         // quantity would be indistinguishable from it for the rest of the quote's life.
         euint256 isolatedTotal = _isolate(
-            runningTotal, epochCondition, isolationDomain(quoteId, ROLE_CUSTODY_CONSUMED_TOTAL, uint256(count))
+            runningTotal, epochCondition, isolationDomain(fundingKey, ROLE_CUSTODY_CONSUMED_TOTAL, uint256(count))
         );
-        _consumedTotal[quoteId] = isolatedTotal;
-        _consumedCount[quoteId] = count + 1;
+        _consumedTotal[fundingKey] = isolatedTotal;
+        _consumedCount[fundingKey] = count + 1;
         Nox.allowThis(isolatedTotal);
 
         lock.state = LockState.Consumed;
-        lock.quoteId = quoteId;
+        lock.fundingKey = fundingKey;
         lock.changedAt = uint64(block.timestamp);
-        _funding[quoteId] = FundingState.Consumed;
+        _funding[fundingKey] = FundingState.Consumed;
 
         // The settler mints the provider's series claim from this exact handle. It gets a TRANSIENT
         // grant, and no persistent one: what it does with the transient grant — grant the series
@@ -553,7 +561,7 @@ contract KyrveCustodyVault is KyrveCurveBase {
         _assertReviewedTransientRecipient(msg.sender);
         Nox.allowTransient(amount, msg.sender);
 
-        emit LockConsumed(quoteId, provider, lockId);
+        emit LockConsumed(fundingKey, provider, lockId);
     }
 
     /**
@@ -582,23 +590,23 @@ contract KyrveCustodyVault is KyrveCurveBase {
      *      once a gateway proof exists. Anyone may finalise — the recipient is fixed here and cannot
      *      be redirected — so a stalled keeper cannot strand the funding.
      */
-    function unwrapQuoteFunding(bytes32 quoteId, address to) external onlySettler returns (euint256 unwrapRequest) {
-        FundingState state = _funding[quoteId];
-        if (state != FundingState.Consumed) revert QuoteFundingNotConsumed(quoteId, state);
+    function unwrapQuoteFunding(bytes32 fundingKey, address to) external onlySettler returns (euint256 unwrapRequest) {
+        FundingState state = _funding[fundingKey];
+        if (state != FundingState.Consumed) revert QuoteFundingNotConsumed(fundingKey, state);
         if (to == address(0)) revert ZeroAddress();
-        uint32 count = _consumedCount[quoteId];
-        if (count == 0) revert NothingConsumed(quoteId);
+        uint32 count = _consumedCount[fundingKey];
+        if (count == 0) revert NothingConsumed(fundingKey);
 
-        euint256 total = _consumedTotal[quoteId];
+        euint256 total = _consumedTotal[fundingKey];
 
         _assertReviewedTransientRecipient(address(asset));
         Nox.allowTransient(total, address(asset));
 
         unwrapRequest = asset.unwrap(address(this), to, total);
-        _unwrapRequest[quoteId] = unwrapRequest;
-        _funding[quoteId] = FundingState.Funded;
+        _unwrapRequest[fundingKey] = unwrapRequest;
+        _funding[fundingKey] = FundingState.Funded;
 
-        emit QuoteFundingUnwrapped(quoteId, to, euint256.unwrap(unwrapRequest), count);
+        emit QuoteFundingUnwrapped(fundingKey, to, euint256.unwrap(unwrapRequest), count);
     }
 
     /**
@@ -611,14 +619,14 @@ contract KyrveCustodyVault is KyrveCurveBase {
      *
      *      Not pausable, deliberately, for the same reason `releaseLock` is not.
      */
-    function restoreLock(bytes32 lockId, bytes32 quoteId) external onlySettler {
+    function restoreLock(bytes32 lockId, bytes32 fundingKey) external onlySettler {
         Lock storage lock = _locks[lockId];
         if (lock.state != LockState.Consumed) revert LockNotConsumed(lockId, lock.state);
-        if (lock.quoteId != quoteId) revert WrongQuoteForLock(lockId, lock.quoteId, quoteId);
+        if (lock.fundingKey != fundingKey) revert WrongFundingForLock(lockId, lock.fundingKey, fundingKey);
 
-        FundingState state = _funding[quoteId];
+        FundingState state = _funding[fundingKey];
         if (state != FundingState.Funded && state != FundingState.Restored) {
-            revert QuoteFundingNotFunded(quoteId, state);
+            revert QuoteFundingNotFunded(fundingKey, state);
         }
 
         address provider = lock.provider;
@@ -631,11 +639,11 @@ contract KyrveCustodyVault is KyrveCurveBase {
 
         lock.state = LockState.Restored;
         lock.changedAt = uint64(block.timestamp);
-        _funding[quoteId] = FundingState.Restored;
+        _funding[fundingKey] = FundingState.Restored;
 
         _grantOwnerOnly(isolatedAvailable, provider);
 
-        emit LockRestored(quoteId, provider, lockId);
+        emit LockRestored(fundingKey, provider, lockId);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -667,14 +675,14 @@ contract KyrveCustodyVault is KyrveCurveBase {
         return _lockAmount[lockId];
     }
 
-    /// @notice The sum of the locks one quote consumed. Granted to this contract only.
-    function confidentialConsumedTotal(bytes32 quoteId) external view returns (euint256) {
-        return _consumedTotal[quoteId];
+    /// @notice The sum of the locks one funding round consumed. Granted to this contract only.
+    function confidentialConsumedTotal(bytes32 fundingKey) external view returns (euint256) {
+        return _consumedTotal[fundingKey];
     }
 
-    /// @notice The publicly-decryptable handle whose plaintext is the quote's unwrapped funding.
-    function unwrapRequestOf(bytes32 quoteId) external view returns (euint256) {
-        return _unwrapRequest[quoteId];
+    /// @notice The publicly-decryptable handle whose plaintext is the round's unwrapped funding.
+    function unwrapRequestOf(bytes32 fundingKey) external view returns (euint256) {
+        return _unwrapRequest[fundingKey];
     }
 
     function lockOf(bytes32 lockId) external view returns (Lock memory) {
@@ -685,12 +693,12 @@ contract KyrveCustodyVault is KyrveCurveBase {
         return _locks[lockId].state;
     }
 
-    function fundingStateOf(bytes32 quoteId) external view returns (FundingState) {
-        return _funding[quoteId];
+    function fundingStateOf(bytes32 fundingKey) external view returns (FundingState) {
+        return _funding[fundingKey];
     }
 
-    function consumedCountOf(bytes32 quoteId) external view returns (uint32) {
-        return _consumedCount[quoteId];
+    function consumedCountOf(bytes32 fundingKey) external view returns (uint32) {
+        return _consumedCount[fundingKey];
     }
 
     /// @notice The lock id for one `(epochId, provider)` pair. Deterministic and collision-free.

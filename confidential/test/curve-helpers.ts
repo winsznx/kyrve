@@ -111,8 +111,10 @@ export interface CurveHarness extends Harness {
 }
 
 /** Deploys the Phase 2 layer, then the Phase 3 layer on top, and binds the engine once. */
-export async function deployCurveHarness(): Promise<CurveHarness> {
-  const base = await deployHarness();
+export async function deployCurveHarness(
+  options: { substrate?: boolean } = {},
+): Promise<CurveHarness> {
+  const base = await deployHarness(options);
   const curator = base.wallets[0];
 
   const universes = await base.connection.viem.deployContract("CurveUniverseRegistry", [

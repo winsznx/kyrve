@@ -1,0 +1,13 @@
+{
+  "$comment": "Measured on the local Nox node against real Midnight. Sepolia gas is UNVERIFIED (AS-1); this prices the sequence so the funding budget never totals a guess.",
+  "chainId": 31337,
+  "providerCount": 3,
+  "consumeChunk": "1006658",
+  "unwrapFunding": "320097",
+  "finalizeUnwrap": "76910",
+  "take": "332394",
+  "allocateChunk": "1412091",
+  "closeQuote": "137612",
+  "proveSolvency": "294636",
+  "seriesDeployment": "226408"
+}
