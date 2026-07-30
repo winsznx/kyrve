@@ -1,6 +1,6 @@
 # Phase 7 gate
 
-`pnpm verify:phase7`. Closing run: **24 passed, 0 failed, 0 skipped.**
+`pnpm verify:phase7`. Closing run: **25 passed, 0 failed, 0 skipped.**
 
 > **VERDICT: PASS** — every gate executed and passed.
 
@@ -37,8 +37,9 @@ otherwise widen by nobody noticing:
 | Journeys | the proof page disagrees with a record that lies | 10 passing |
 | Journeys | the Capsule and auditor flow, three browser contexts, live stack | 9 claims |
 | Journeys | the local stack, clean start, stop, and start again | two instances |
+| Journeys | every role reaches its first task by clicking, and only by clicking | 3 roles walked |
 | Hardening | a gate cannot report PASS over a failure, a skip or an empty run | 8 regression tests |
-| Hardening | every route in a real browser: refresh, metadata, keyboard, design rules, links | 19 routes, no finding |
+| Hardening | every route in a real browser: refresh, metadata, keyboard, design rules, links | 22 routes, no finding |
 | Hardening | no secret reaches the client bundle | 0 inlined |
 | Hardening | no decrypted value reaches a record, a log or a metric | pass |
 | Hardening | no secret, key or RPC credential in the tree | pass |

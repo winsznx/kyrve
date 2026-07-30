@@ -219,3 +219,88 @@ discarded child output, so the failure was `keeper exited (code 1)` and nothing 
 **Two fixes, and the second matters more.** Workers start one at a time, gated on health. And every
 child's last forty lines are kept, because a child whose failure is unattributable is worse than one
 that fails loudly: the operator's only move is to run it by hand and hope it fails again.
+
+---
+
+## X-1 · Navigation exposed nine contract surfaces as if they were tasks
+
+**Phase 7 shipped** Fund, Mandates, Request, Curve, Quotes, Series, Capsules, Roll and Proof across
+the top of the application. Every one is a real surface. Not one of them is a task, so a first-time
+reader had to model Kyrve's architecture before they could do anything at all.
+
+**Corrected to four destinations** — Home, Activity, Positions, Verify — with the actions under them
+chosen by role. **No route was removed**: every old path still resolves, still has a title, and is
+still addressable by a technical reader. `pnpm verify:journeys` walks each of the three roles from a
+browser that has never seen Kyrve, clicking only visible controls, and fails if any step can be
+reached solely by typing a route.
+
+---
+
+## X-2 · The stage a reader is at is derived, never stored
+
+A wizard that remembers "you are on step 3" is wrong the moment a keeper transaction lands, or
+another device acts, or a tab has been open since yesterday.
+
+Every step in Kyrve corresponds to a fact on chain, so `lib/journey.ts` READS the position instead:
+a provider with a confidential balance and no lending terms is at "set your terms" whether or not
+they have ever opened this screen.
+
+That also makes the required "refreshing restores public workflow state" property true by
+construction rather than by a restore path — reloading runs exactly the same reads as arriving for
+the first time, so there is nothing to restore and nothing to get wrong.
+
+---
+
+## X-3 · Two storage keys, and a Phase 2 assertion that got stronger
+
+A role has to survive a reload or every visit begins by asking who you are. `kyrve.role` and
+`kyrve.onboarded` are now persisted, which contradicts the Phase 2 browser assertion that **zero**
+keys are ever written.
+
+That assertion was easy to make and weaker than it looks: it would have passed on a build that stored
+a decrypted balance under a key it cleared on unload. What matters is not how many keys exist but
+whether any holds a value that was decrypted.
+
+**The assertion now names the permitted set and checks every stored VALUE** against the plaintext the
+flow revealed, and refuses anything that looks like an amount. The decryption path is untouched —
+`scripts/verify/privacy-scan.ts` still forbids every storage sink in `packages/nox/src/client.ts`,
+which is the only module in the workspace that ever holds a plaintext.
+
+---
+
+## X-4 · The landing page disclaimed itself before it explained itself
+
+A "What this is not" card sat in the narrative, between the mechanism and the call to action. Every
+sentence in it was true and every one is still on the page — in the footer, where legal and technical
+qualification belongs.
+
+A reader who has not yet been told what the thing does cannot evaluate a caveat about it, and a
+product that qualifies itself that early reads as unfinished. Nothing was softened or dropped.
+
+---
+
+## X-5 · One cobalt element per page survived contact with a strong closing CTA
+
+Section F of the landing brief asks for a strong final action. The hero already holds this page's one
+cobalt element, and `design.md` rations it to a single primary action per page — a rule `verify:web`
+counts and enforces.
+
+**Decision:** the closing call is a large ghost outline rather than a second cobalt fill. The rule
+wins, and it is the right outcome: the eye should land on the hero's resolved point, which is the
+whole visual argument the mark makes.
+
+---
+
+## X-6 · Three hardening checks were wrong about what counts as decided
+
+Added in this pass and immediately wrong, all three found by running them:
+
+- a page offering a **role choice** is not a dead end, but had no primary action;
+- `/app/start` is chromeless by design, so requiring `aria-current` on it failed a page that
+  deliberately has no navigation;
+- a page still **reading the chain** is pending, not undecided. The check failed on a capsule detail
+  caught mid-read, and "wait longer" would have made it slower without making it truer.
+
+The ratio is now familiar: a check written from a requirements list rather than from a run measures
+something adjacent to what was asked for. Run it, read every finding, and fix the check before the
+product.

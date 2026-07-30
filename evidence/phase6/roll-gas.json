@@ -1,11 +1,11 @@
 {
   "submitIntent": "495522",
-  "supplyTarget": "478702",
-  "netRoll": "871491",
-  "netRollTx": "0x7124f7b5dfae3f893cf16e557b3eef5a9194cae88109eb0003070beb31f758f5",
-  "declareResidual": "178139",
-  "settleResidual": "399220",
-  "cancelIntent": "227712",
+  "supplyTarget": "478714",
+  "netRoll": "871479",
+  "netRollTx": "0xb1e15668931f8f3caa20eea0e9a4c64b0148dcb93458f8cd8a0e49eadc7b5d66",
+  "declareResidual": "178127",
+  "settleResidual": "399208",
+  "cancelIntent": "227700",
   "proveSolvency:source": "294636",
   "proveSolvency:target": "294636"
 }
