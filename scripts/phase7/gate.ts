@@ -355,10 +355,18 @@ const GATES: readonly Gate[] = [
     section: "HARDENING",
     name: "a gate cannot report PASS over a failure, a skip or an empty run",
     execute: () => {
-      const output = run("pnpm", ["exec", "vitest", "run", "scripts/lib/tally.test.ts"]).stdout;
-      // `Tests  N passed`, not the first `N passed` in the output — vitest prints the FILE count
-      // first, so the naive match reported "1 regression tests" for a suite of eight. A gate that
-      // miscounts its own evidence is a smaller version of the defect this suite exists to prevent.
+      /*
+       * ANSI codes stripped BEFORE matching, and anchored on `Tests` rather than on the first count.
+       *
+       * Two ways this check got its own evidence wrong in one sitting: vitest prints the FILE count
+       * before the test count, so a naive `(\d+) passed` reported "1 regression tests" for a suite
+       * of eight; and its output is colourised, so `Tests\s+8 passed` does not match
+       * `Tests \x1b[22m \x1b[32m8 passed`. A gate that miscounts its own evidence is a smaller
+       * version of the defect this very suite exists to prevent.
+       */
+      const raw = run("pnpm", ["exec", "vitest", "run", "scripts/lib/tally.test.ts"]).stdout;
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI needs the escape.
+      const output = raw.replace(/\u001b\[[0-9;]*m/g, "");
       const passed = /Tests\s+(\d+) passed/.exec(output);
       const failed = /Tests\s+\d+ failed/.test(output);
       if (passed === null || failed) {

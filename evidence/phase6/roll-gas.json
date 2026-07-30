@@ -1,8 +1,8 @@
 {
   "submitIntent": "495522",
-  "supplyTarget": "478714",
+  "supplyTarget": "478726",
   "netRoll": "871491",
-  "netRollTx": "0xc41898f0849eb14362bfc727bc6bcc15c01f23cde345b1943e731210b738fca7",
+  "netRollTx": "0x41ddfea4dab6997523fd511ce62aaaae4b4362bc7eb9b910d5166e2fc0ba52ce",
   "declareResidual": "178139",
   "settleResidual": "399208",
   "cancelIntent": "227712",
