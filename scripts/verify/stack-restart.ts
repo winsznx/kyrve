@@ -154,7 +154,6 @@ async function checkKeeperCanWork(manifest: StackManifest): Promise<void> {
     return;
   }
 
-  const client = createPublicClient({ chain: hardhat, transport: http(manifest.rpcUrl) });
   const abi = [
     {
       type: "function",

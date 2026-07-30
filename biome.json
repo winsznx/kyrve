@@ -64,6 +64,14 @@
           "suspicious": { "noConsole": "off" }
         }
       }
+    },
+    {
+      "includes": ["confidential/stack/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "off", "noExplicitAny": "off" }
+        }
+      }
     }
   ]
 }
