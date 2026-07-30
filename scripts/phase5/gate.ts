@@ -330,19 +330,36 @@ const GATES: readonly Gate[] = [
     execute: () => summarise(run("pnpm", ["verify:privacy-scan"]).stdout, 2),
   },
   {
+    /**
+     * AN EXECUTING GATE, not a record reader.
+     *
+     * The evidence file is written by the demonstration itself, so a gate that only read it would
+     * pass on a stale file from a build that no longer exists. This runs the demonstration and then
+     * reads what that run wrote.
+     */
     section: "CONFIDENTIAL OWNERSHIP",
-    name: "the ownership view renders in real Chromium",
+    name: "the ownership view renders in real Chromium, and refuses a peer",
     skipIf: () =>
-      existsSync(repoPath("evidence/phase5/browser-ownership.json"))
+      dockerAvailable()
         ? null
-        : "NOT RUN. It needs Docker and a Chromium download. Run: " +
+        : "Docker is not reachable, so the real Nox stack cannot start. Run: " +
           "pnpm --dir confidential exec hardhat test test/101-series-browser.ts",
     execute: () => {
+      const output = run("bash", [
+        "-c",
+        "cd confidential && pnpm exec hardhat test test/101-series-browser.ts",
+      ]).stdout;
+      if (/\bfailing\b/.test(output) && !/0 failing/.test(output)) {
+        const line = output.split("\n").find((candidate) => /failing/.test(candidate)) ?? "";
+        throw new Error(`the browser demonstration reported failures: ${line.trim()}`);
+      }
       const evidence = readJson<{
         decryptedInBrowser: boolean;
         outsiderRefused: boolean;
         supplyMatchesAggregate: boolean;
         providerCount: number;
+        refusalKind?: string;
+        solvency?: string;
       }>(repoPath("evidence/phase5/browser-ownership.json"));
       if (!evidence.decryptedInBrowser)
         throw new Error("the browser did not decrypt a series balance");
@@ -350,7 +367,19 @@ const GATES: readonly Gate[] = [
       if (!evidence.supplyMatchesAggregate) {
         throw new Error("the browser's supply reading did not match the published aggregate");
       }
-      return `${evidence.providerCount} provider balance(s) decrypted in Chromium, outsider refused`;
+      if (evidence.refusalKind !== "not-authorised") {
+        throw new Error(
+          `the peer refusal was "${evidence.refusalKind}", not "not-authorised" — a refusal for the ` +
+            "wrong reason proves the wrong thing",
+        );
+      }
+      if (evidence.solvency !== "verified solvent") {
+        throw new Error(`the browser read solvency as "${evidence.solvency}"`);
+      }
+      return (
+        `${evidence.providerCount} provider balances decrypted in Chromium, peer refused ` +
+        `${evidence.refusalKind}, supply == aggregate, ${evidence.solvency}`
+      );
     },
   },
 
@@ -371,6 +400,24 @@ const GATES: readonly Gate[] = [
       run("pnpm", ["exec", "tsx", "scripts/verify/secrets.ts"]);
       return summarise(run("pnpm", ["exec", "tsx", "scripts/verify/licence.ts"]).stdout, 2);
     },
+  },
+  {
+    section: "QUALITY AND SECURITY",
+    name: "every Kyrve contract on chain matches the current build",
+    execute: () =>
+      summarise(run("pnpm", ["exec", "tsx", "scripts/verify/deployed-bytecode.ts"]).stdout, 2),
+  },
+  {
+    /**
+     * Regenerates every generated path and fails if a single byte moved.
+     *
+     * Delta R-13's shape: a generated file edited by hand, or left stale after a source change, makes
+     * the repository stop describing what it builds — and the ABI generator has silently dropped
+     * embedded deployment bindings before (commit ceb2de9).
+     */
+    section: "QUALITY AND SECURITY",
+    name: "generated files are byte-identical after regeneration",
+    execute: () => summarise(run("pnpm", ["exec", "tsx", "scripts/verify/generated.ts"]).stdout, 1),
   },
   {
     section: "QUALITY AND SECURITY",
@@ -410,6 +457,58 @@ const GATES: readonly Gate[] = [
   },
 
   // ── Sepolia ───────────────────────────────────────────────────────────────────────────────
+  {
+    /**
+     * THE FUNDING PREFLIGHT IS A GATE, AND IT RUNS.
+     *
+     * It is not a SKIP: the measurement executes against the live network every time, prices the whole
+     * sequence from real `eth_estimateGas` calls and real measured transaction gas, and appends the
+     * prediction to an append-only ledger. What it reports is a fact about the balance, not an
+     * environment that was unavailable.
+     *
+     * An under-funded result therefore FAILS rather than skipping. The brief is explicit: report the
+     * required balance, report the shortfall, stop before broadcasting, and do not downgrade the gate
+     * to PASS. A SKIP would read as "not attempted", and it was attempted and answered.
+     */
+    section: "SEPOLIA",
+    name: "the whole sequence is priced against the live network, and the balance covers it",
+    skipIf: () =>
+      existsSync(repoPath(".env"))
+        ? null
+        : "no .env, so there is no RPC and no deployer to price against",
+    execute: () => {
+      const result = run("pnpm", ["exec", "tsx", "scripts/test/sepolia-series-budget.ts"], {
+        allowFailure: true,
+      });
+      const ledger = readJson<{
+        samples: readonly {
+          estimatedGas: number;
+          predictedCostWithMarginEth: string;
+          deployerBalanceEth: string;
+          shortfallEth: string;
+          funded: boolean;
+          safetyMargin: number;
+        }[];
+      }>(repoPath("evidence/phase5/funding-budget.json"));
+      const latest = ledger.samples.at(-1);
+      if (latest === undefined) throw new Error("the funding ledger recorded no sample");
+
+      if (!latest.funded) {
+        throw new Error(
+          `NOT FUNDED — ${latest.estimatedGas.toLocaleString("en-GB")} gas needs ` +
+            `${latest.predictedCostWithMarginEth} ETH at a ${Math.round(latest.safetyMargin * 100)}% margin; ` +
+            `balance is ${latest.deployerBalanceEth} ETH, short by ${latest.shortfallEth} ETH`,
+        );
+      }
+      if (result.code !== 0) {
+        throw new Error("the preflight reported a problem other than funding; read its output");
+      }
+      return (
+        `${latest.estimatedGas.toLocaleString("en-GB")} gas, ${latest.predictedCostWithMarginEth} ETH ` +
+        `needed at ${Math.round(latest.safetyMargin * 100)}%, ${latest.deployerBalanceEth} held`
+      );
+    },
+  },
   {
     section: "SEPOLIA",
     name: "series layer deployed, bound and wired on Sepolia",
@@ -523,6 +622,15 @@ function main(): void {
   const passed = results.filter((result) => result.status === "PASS").length;
   const failed = results.filter((result) => result.status === "FAIL").length;
   const skipped = results.filter((result) => result.status === "SKIP").length;
+  /**
+   * A funding shortfall is a fact about a wallet, not a broken build — and it must still not be a
+   * PASS. It gets its own verdict so the summary cannot be read either way round: nothing is
+   * asserted to work that does not, and nothing is reported as broken that is not.
+   */
+  const fundingFailures = results.filter(
+    (result) => result.status === "FAIL" && result.detail.startsWith("NOT FUNDED"),
+  );
+  const otherFailures = failed - fundingFailures.length;
   const ownershipSkipped = results.some(
     (result) =>
       result.status === "SKIP" &&
@@ -532,8 +640,19 @@ function main(): void {
 
   console.log(`\n  ${passed} passed, ${failed} failed, ${skipped} skipped\n`);
 
-  if (failed > 0) {
-    console.log(`  VERDICT: FAIL — ${failed} gate(s) did not pass.\n`);
+  if (otherFailures > 0) {
+    console.log(`  VERDICT: FAIL — ${otherFailures} gate(s) did not pass.\n`);
+    process.exitCode = 1;
+    return;
+  }
+  if (fundingFailures.length > 0) {
+    for (const failure of fundingFailures) console.log(`  ${failure.detail}\n`);
+    console.log(
+      "  VERDICT: NOT FUNDED — every other executable gate passed. The Sepolia sequence is priced\n" +
+        "  against the live network and the deployer cannot cover it, so nothing was broadcast and\n" +
+        "  nothing will be. This is not a PASS and must not be recorded as one; fund the deployer by\n" +
+        "  the shortfall above and re-run.\n",
+    );
     process.exitCode = 1;
     return;
   }

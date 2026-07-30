@@ -3,10 +3,11 @@
 Phase 6 is Cross, Roll, Capsule and the Cloudflare application. None of it starts before this file is
 read.
 
-Phase 5 made a curve reservation into a real capital lock and turned a settled Midnight position into
-confidential ERC-7984 claims. What it did **not** do is finish on a public network: the series layer is not
-deployed on Sepolia and the ownership view has no browser. Those are P6-0, they are first, and they are
-open on purpose rather than half-built.
+Phase 5 made a curve reservation into a real capital lock, turned a settled Midnight position into
+confidential ERC-7984 claims, and proved the ownership journey in a real browser. What it did **not** do is
+finish on a public network: the series layer is not deployed on Sepolia, because the sequence is priced and
+the deployer cannot cover it. That is P6-0, it is first, and it is open on a measured number rather than
+half-built.
 
 Five entries below are constraints Phase 5 established by measurement or by failure. Each recurs at a point
 where the consequence is lost capital or a mispriced claim rather than a failed test.
@@ -15,36 +16,61 @@ where the consequence is lost capital or a mispriced claim rather than a failed 
 
 ## P6-0 · Phase 5 is not finished on a public network
 
-Two of the brief's PASS conditions did not execute, and `docs/phase5/GATE.md` records them as SKIP with the
-exact command rather than folding them into the pass count.
+One of the brief's PASS conditions is unmet, and `docs/phase5/GATE.md` records it as a distinct
+`NOT FUNDED` verdict — never as a PASS — with the exact shortfall rather than folding it into the pass
+count.
 
-**The ownership view in real Chromium.** `apps/web` has the Phase 4 settlement page and no ownership view,
-and `confidential/test/101-series-browser.ts` does not exist. Every value such a view would show is read
-back from chain state in `100-series-ownership.ts` — each provider's own balance decrypted by their own
-wallet, an outsider and another provider both refused, supply published and decrypting to the aggregate,
-the solvency verdict published and true. The browser adds a user-facing surface, not a new protocol claim.
+**The ownership view in real Chromium is DONE.** `apps/web` now carries an ownership band and
+`confidential/test/101-series-browser.ts` drives it: provider A decrypts a balance equal to the plaintext
+reference model and disconnecting removes it from the DOM; provider B, in a separate browser context with
+a separate injected key, is refused A's balance with `not-authorised`, decrypts their own, and reads supply
+equal to the published aggregate with a solvency verdict of true. A fourth test collects every origin the
+page contacted and compares it against exactly three legitimate ones. The gate RUNS that demonstration
+rather than reading its evidence file.
 
-**Sepolia.** `deploy:series`, `verify:etherscan:series` and the allocation flow are not written, so nothing
-was broadcast. The cost is arithmetic rather than an unknown, and it is the reason this is deferred rather
-than attempted:
+**Sepolia.** Nothing was broadcast, and no deploy, verify-on-chain or allocation script was written
+either. That is deliberate: carry-over 8 says *"a verification command that has never run is worse than a
+missing one"* (deltas R-11 and R-13), and a deploy script wired into a gate that cannot be executed against
+anything is exactly that. The path becomes writable — and testable — the moment the deployer is funded.
+
+The cost is **measured, not estimated**, and `pnpm test:sepolia-series-budget` runs on every gate
+invocation. It calls `eth_estimateGas` against the live network with the real creation bytecode and the
+real encoded constructor arguments for every contract, adds the transaction sequences from real measured
+runs, prices the total at the live base and priority fee, and appends the prediction to an append-only
+ledger.
 
 | | measured |
 |---|---|
-| deployer balance | 0.048735 ETH |
-| Phase 5's redeployment set | the whole curve and settlement stack plus five new contracts |
-| comparable Phase 4 cost | 0.01209 + 0.00787 ETH for the two layers |
-| one fresh Sepolia curve epoch | 0.029918 ETH |
+| total sequence | **58,546,501 gas** |
+| — the confidential epoch alone | 26,931,546 gas (46%) |
+| — every deployment | 26,610,154 gas |
+| effective gas price | 972,818,563 wei |
+| predicted cost | 0.056955122971498063 ETH |
+| required at a 35% margin | **0.076889416011522385 ETH** |
+| deployer balance | 0.048735012281547763 ETH |
+| **shortfall** | **0.028154403729974622 ETH** |
 
-The set is the whole stack because `bindEngine` is one-shot on `ReservationLedger`,
-`QuoteEpochController` and `CurveGraphRegistry`, and `NoxCurveEngine` holds the vault as an `immutable`.
-Decision §3 shows the rejected P5-1 option needed exactly the same set, so this is not a cost the choice
-introduced.
+**Required:** fund `0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2` by at least the shortfall and re-run the
+preflight. It reports FUNDED and names the deploy command, or it reports the new shortfall. The gate keeps
+the three Sepolia steps as SKIP until a deployment record exists, and none of them may be downgraded to
+PASS for a sequence nobody performed.
 
-**Required:** allocate against the **already-settled Phase 4 position**
-(`evidence/phase4/sepolia-settlement.json` — 300,000,599 units of real credit) rather than running a fresh
-epoch. It is both cheaper and a stronger claim: real credit created by a real `take`, not a fixture. If the
-balance proves insufficient for even that, the gate must keep reporting SKIP with the shortfall. It must
-never report PASS for something it did not run, and must never substitute a local result for a public one.
+**Two things about that total that are not negotiable.** Nearly half of it is one confidential epoch,
+dominated by 36 **permanent** ACL grants per provider that a new engine cannot inherit (deltas T-5 and
+T-8). The deployment half is the whole curve and settlement stack, because `bindEngine` is one-shot on
+`ReservationLedger`, `QuoteEpochController` and `CurveGraphRegistry` and `NoxCurveEngine` holds the vault
+as an `immutable` — and P5-1 §3 shows the rejected option needed exactly the same set, so it is not a cost
+the architecture choice introduced. `CurveUniverseRegistry`, `KyrveWrappedAsset`, `EncryptedMandateBook`,
+`ConfidentialRequestBook` and `KyrveEmergencyController` are all reused, which keeps registered universes
+and provider wrapper balances alive across the migration.
+
+**And the Phase 4 settled position cannot be reused, which was checked rather than assumed.** It was
+created by a quote in the Phase 4 `KyrveQuoteRegistry`, which a redeployed stack replaces.
+`SeriesAllocator.allocateChunk` reads the quote from the registry it was constructed against and requires
+`provenance.epochId` to name the epoch whose locks it consumed — and those locks live in the new custody
+vault, created by the new ledger, driven by the new engine. There is no arrangement in which the old quote
+and the new locks are the same funding round. So the sequence is a new connected epoch and a new exact
+settlement, which is what the 26.9M component prices, and which is the fallback the brief itself names.
 
 ## P6-1 · A funded round whose quote never settles needs public tokens back, and Kyrve cannot compel it
 

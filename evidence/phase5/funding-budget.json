@@ -1,0 +1,150 @@
+{
+  "$comment": "Append-only funding predictions for the Phase 5 Sepolia sequence. Each sample records what was estimated, the price seen, what was predicted and whether the balance covered it. Earlier samples are never edited: the point is to learn the safety multiplier from real public samples rather than to assert one.",
+  "samples": [
+    {
+      "actualCostEth": null,
+      "baseFeePerGasWei": "971318563",
+      "components": [
+        {
+          "gas": 2026766,
+          "name": "KyrveCustodyVault (Phase 2 revision)",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 1763153,
+          "name": "QuoteEpochController",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 749178,
+          "name": "CurveGraphRegistry",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 1018086,
+          "name": "ReservationLedger",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 5181946,
+          "name": "NoxCurveEngine",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 1213121,
+          "name": "CurveResultVerifier",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 954672,
+          "name": "KyrveQuoteRegistry",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 843649,
+          "name": "KyrveSettlementRatifier",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 1011152,
+          "name": "KyrvePublicResultVerifier",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 2146773,
+          "name": "QuoteActivator",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 379595,
+          "name": "KyrveQuoteExpiryController",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 1936085,
+          "name": "KyrveSeriesFactory",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 2709922,
+          "name": "KyrveSeriesToken",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 797094,
+          "name": "SeriesOwnershipRegistry",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 2436857,
+          "name": "SeriesAllocator",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 1025056,
+          "name": "AggregateSolvencyVerifier",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 417049,
+          "name": "SeriesResidueAccount",
+          "source": "eth_estimateGas against Sepolia, real bytecode and real constructor arguments"
+        },
+        {
+          "gas": 720000,
+          "name": "one-shot bindings and configuration (12 transactions)",
+          "source": "12 x 60,000 — one storage write and one event each, sized against the local receipts"
+        },
+        {
+          "gas": 26931546,
+          "name": "provider funding, mandates, ACL grants and one full confidential epoch",
+          "source": "evidence/phase3/sepolia-epoch.json — a REAL Sepolia epoch, 2 providers, 4 cells, aggregate exactly 299,999,999"
+        },
+        {
+          "gas": 1036709,
+          "name": "quote activation (creates the series vault) and one exact Midnight take",
+          "source": "evidence/phase4/settlement-gas.json — measured against real unmodified Midnight"
+        },
+        {
+          "gas": 3248092,
+          "name": "confidential funding, allocation, close and the solvency proof",
+          "source": "evidence/phase5/series-gas.json — measured LOCALLY against the real Nox stack and real unmodified Midnight; no public sample exists yet"
+        },
+        {
+          "gas": 0,
+          "name": "Etherscan V2 source verification",
+          "source": "zero — verification is an HTTP submission against the API and consumes no gas"
+        }
+      ],
+      "deployerBalanceEth": "0.048735012281547763",
+      "effectiveGasPriceWei": "972818563",
+      "estimatedGas": 58546501,
+      "funded": false,
+      "phase": "phase5",
+      "predictedCostEth": "0.056955122971498063",
+      "predictedCostWithMarginEth": "0.076889416011522385",
+      "predictionErrorPercent": null,
+      "priorityFeePerGasWei": "1500000",
+      "recordedAt": "2026-07-30T01:00:12.725Z",
+      "safetyMargin": 0.35,
+      "shortfallEth": "0.028154403729974622",
+      "standIns": [
+        "CurveGraphRegistry: the Phase 4 epoch controller stands in for the new one; creation gas does not depend on which",
+        "ReservationLedger: the Phase 2 asset vault stands in for the new custody vault",
+        "NoxCurveEngine: the Phase 4 curve contracts stand in for the new ones",
+        "CurveResultVerifier: the Phase 4 graph, engine and epoch controller stand in",
+        "KyrveSettlementRatifier: the Phase 4 quote registry stands in",
+        "KyrvePublicResultVerifier: the Phase 4 curve contracts stand in",
+        "QuoteActivator: the Phase 4 registry, verifier and ratifier stand in",
+        "KyrveQuoteExpiryController: the Phase 4 quote registry stands in",
+        "KyrveSeriesFactory: the Phase 4 settlement contracts stand in",
+        "KyrveSeriesToken: a placeholder series id and name; neither changes creation gas materially",
+        "SeriesOwnershipRegistry: a placeholder series id",
+        "SeriesAllocator: the Phase 4 series vault supplies the series id the constructor checks against",
+        "AggregateSolvencyVerifier: the Phase 4 series vault supplies the loan token the constructor reads",
+        "SeriesResidueAccount: the deployer stands in for the declared beneficiary and the recorder"
+      ]
+    }
+  ]
+}
+
