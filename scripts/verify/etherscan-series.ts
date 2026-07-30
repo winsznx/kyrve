@@ -73,6 +73,9 @@ const FOUNDRY_SOURCE: Readonly<Record<string, string>> = {
   KyrveQuoteExpiryController: "contracts/kyrve/KyrveQuoteExpiryController.sol",
   KyrveSeriesFactory: "contracts/kyrve/KyrveSeriesFactory.sol",
   KyrveSeriesVault: "contracts/kyrve/KyrveSeriesVault.sol",
+  // Phase 6. Foundry-built like the rest of the settlement layer: it imports nothing from Nox, so
+  // it compiles at the substrate's 0.8.34 alongside the contracts whose roles it declares.
+  KyrveRoleRegistry: "contracts/registry/KyrveRoleRegistry.sol",
 };
 
 interface DeployedContract {
@@ -137,7 +140,20 @@ function encodeConstructorArgs(abi: readonly unknown[], values: readonly string[
     );
   }
   if (types.length === 0) return "";
-  return run("cast", ["abi-encode", `f(${types.join(",")})`, ...values])
+  /**
+   * ARRAY ARGUMENTS NEED BRACKETS, and the record cannot carry them.
+   *
+   * `constructorArgs` is written as `args.map(String)`, so a fixed-size array arrives as a bare
+   * comma-joined list — `cast abi-encode` reads that as a malformed value and stops at the first
+   * comma with `expected [`. `KyrveRoleRegistry`'s seven role holders are the first array argument
+   * any Kyrve constructor has taken, so nothing had needed this before.
+   */
+  const bracketed = values.map((value, index) => {
+    const type = types[index] ?? "";
+    if (!type.endsWith("]")) return value;
+    return value.startsWith("[") ? value : `[${value}]`;
+  });
+  return run("cast", ["abi-encode", `f(${types.join(",")})`, ...bracketed])
     .stdout.trim()
     .replace(/^0x/, "");
 }

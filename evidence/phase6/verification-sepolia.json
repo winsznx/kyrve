@@ -1,5 +1,5 @@
 {
-  "blockNumber": "11380791",
+  "blockNumber": "11381281",
   "chainId": 11155111,
   "environment": "sepolia",
   "findings": [
@@ -7,8 +7,8 @@
       "detail": "deployment id, Midnight address and chain all agree with the chain",
       "evidence": {
         "chainId": "11155111",
-        "deploymentId (chain)": "0xb2f6707578cbdc981fcf9a32bd1353a6391831fb831222c00358cb90041b013f",
-        "deploymentId (record)": "0xb2f6707578cbdc981fcf9a32bd1353a6391831fb831222c00358cb90041b013f",
+        "deploymentId (chain)": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+        "deploymentId (record)": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
         "midnight (chain)": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7"
       },
       "id": "deployment-identity",
@@ -16,124 +16,128 @@
       "title": "the layer on chain is the layer the record describes"
     },
     {
-      "detail": "18 contracts hold runtime code hashing to exactly what the record states",
+      "detail": "19 contracts hold runtime code hashing to exactly what the record states",
       "evidence": {
-        "contracts compared": "18"
+        "contracts compared": "19"
       },
       "id": "source-and-bytecode",
       "status": "pass",
       "title": "every deployed contract still holds the code the record recorded"
     },
     {
-      "detail": "10 role pair(s) are the same address — one key holds both authorities",
+      "detail": "5 enforced roles are pairwise distinct on chain",
       "evidence": {
-        "collapsed pairs": "keeper == operator, keeper == curator, keeper == residueBeneficiary, keeper == deployer, operator == curator, operator == residueBeneficiary, operator == deployer, curator == residueBeneficiary, curator == deployer, residueBeneficiary == deployer",
-        "curator": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+        "KyrveRoleRegistry": "0xe3c19460afc9d37d1e322a1862dc0241cbde3765",
+        "curator": "0x417e9cD3ed81EFEDFdd79b30A1971967f72b711c",
+        "declared holders": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2, 0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af, 0x981bB416b875Ea3Fb68Bb68C0A2aF004F4C1CaBE, 0x417e9cD3ed81EFEDFdd79b30A1971967f72b711c, 0x253645C32B15bF4bb17C457ac8E45d8536aC570D, 0x120477983Fa87F42cB7103172aC62662e015efDF, 0xdE252d52b31EeA91836F4CE6F22f413871d386Ec",
         "deployer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
-        "keeper": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
-        "operator": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
-        "residueBeneficiary": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2"
+        "keeper": "0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af",
+        "operator": "0x981bB416b875Ea3Fb68Bb68C0A2aF004F4C1CaBE",
+        "residueBeneficiary": "0x120477983Fa87F42cB7103172aC62662e015efDF"
       },
       "id": "roles",
-      "status": "fail",
+      "status": "pass",
       "title": "the operational roles are separate addresses, on chain"
     },
     {
-      "detail": "the graph is sealed, its root matches, and all five published handles are bound to their roles",
+      "detail": "the epoch's operation graph is not sealed",
       "evidence": {
-        "aggregateFill": "0x0000aa36a72301524be7263e50a1fe647a20535325ca0e623bded7fed9fcd7a7",
         "epochId": "0x760d32611ed96e975f1555808f7f49a4d3c418054de646d85f64f2504571ea42",
-        "floorPassed": "0x0000aa36a705010325df1423fc7d4fa8fc536828520dc8dceb9973763906fe1c",
-        "graph sealed": "true",
-        "graphRoot (chain)": "0x035c03234b4714a673d03d7554d84a10f5d781d70fdfe60f0dbcbd1f10885cb3",
-        "graphRoot (record)": "0x035c03234b4714a673d03d7554d84a10f5d781d70fdfe60f0dbcbd1f10885cb3",
-        "marketIndex": "0x0000aa36a7050185185631dce7ca308fc2c01568321f3dfdefc75cb48238ac70",
-        "quoteReady": "0x0000aa36a70501418f32ca312d6acd85ec2e43ba931dd02f7c45541b2b7e4533",
-        "rateIndex": "0x0000aa36a7050103e4b8c3908f0eefe05bf1409ec85a5ba3305947b1bfb0d4f5"
+        "graph sealed": "false"
       },
       "id": "public-result-proof",
-      "status": "pass",
+      "status": "fail",
       "title": "every published handle is the one the sealed graph registered for its role"
     },
     {
-      "detail": "the quote is Consumed, against this series' vault, at the recorded size",
+      "detail": "the registry has never heard of this quote",
       "evidence": {
-        "exactUnits": "300000599",
-        "expectedBuyerAssets": "299999998",
+        "exactUnits": "0",
+        "expectedBuyerAssets": "0",
         "quoteId": "0xf05e7d39495491c591595e71ec2df81336a65c925b759ec0aa1c94ea1dc5b869",
-        "status": "2",
-        "vault": "0xA910E1E263338bE447ab24922693bc5c63BEC539"
+        "status": "0",
+        "vault": "0x0000000000000000000000000000000000000000"
       },
       "id": "quote-activation",
-      "status": "pass",
+      "status": "fail",
       "title": "the quote exists in the registry and is bound to this deployment"
     },
     {
-      "detail": "Midnight's own group accounting agrees with the quote's exact units, to the unit",
+      "detail": "the registry has never heard of this quote — nothing to compare",
       "evidence": {
-        "consumed (Midnight)": "300000599",
-        "exactUnits (Kyrve)": "300000599",
-        "quoteId": "0xf05e7d39495491c591595e71ec2df81336a65c925b759ec0aa1c94ea1dc5b869"
+        "consumed (Midnight)": "0",
+        "exactUnits (Kyrve)": "0",
+        "quoteId": "0xf05e7d39495491c591595e71ec2df81336a65c925b759ec0aa1c94ea1dc5b869",
+        "status": "0"
       },
       "id": "exact-settlement",
-      "status": "pass",
+      "status": "fail",
       "title": "Midnight consumed exactly the quoted units, and no more"
     },
     {
-      "detail": "supply is bound to the published aggregate 299999999, over 2 sealed claims",
+      "detail": "the series has never published its aggregate supply",
       "evidence": {
-        "aggregate (ownership binding)": "299999999",
-        "allocatedCount": "2",
-        "buyer assets": "unknown",
-        "closed": "true",
-        "publishedSupply handle": "0x0000aa36a72301ff34de023855409ad08da0b7592cc9effb312a372550e19aeb",
-        "units settled": "300000599"
+        "aggregate (ownership binding)": "0",
+        "allocatedCount": "0",
+        "closed": "false",
+        "publishedSupply handle": "0x0000000000000000000000000000000000000000000000000000000000000000"
       },
       "id": "confidential-supply",
-      "status": "pass",
+      "status": "fail",
       "title": "the series' confidential supply is the published aggregate, not the units"
     },
     {
-      "detail": "public coverage is 300000594, entirely from public terms, over 1 published verdict(s)",
+      "detail": "the series reports zero public coverage",
       "evidence": {
-        "midnight credit": "300000599",
-        "pending fee": "6",
+        "midnight credit": "0",
+        "pending fee": "0",
         "residue reserves": "0",
-        "solvency snapshots": "1",
-        "total coverage": "300000594",
-        "vault reserves": "1"
+        "solvency snapshots": "0",
+        "total coverage": "0",
+        "vault reserves": "0"
       },
       "id": "vault-coverage",
-      "status": "pass",
+      "status": "fail",
       "title": "the vault's public Midnight credit covers the confidential claims"
     },
     {
       "detail": "the destination is an immutable declared address and distribute() takes no parameters",
       "evidence": {
-        "declared beneficiary": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+        "declared beneficiary": "0x120477983Fa87F42cB7103172aC62662e015efDF",
         "held": "0",
         "loan token": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
-        "recorder": "0x4A5092e1ca49044E4Be2755873C116fa199b7428",
+        "recorder": "0xd19a781eAb8FEcF90E5589192eA8FED7e926A2AA",
         "total distributed": "0",
-        "total recorded": "1",
-        "unsettled": "1"
+        "total recorded": "0",
+        "unsettled": "0"
       },
       "id": "residue-policy",
       "status": "pass",
       "title": "the residue has one declared destination and it cannot be changed"
     },
     {
-      "detail": "no KyrveCapsuleVault is deployed for this layer yet",
-      "evidence": {},
+      "detail": "every capsule here is bound to this series and this deployment",
+      "evidence": {
+        "capsuleVault": "0x488d9d4348e6de9aad8750eda035968f09bfd896",
+        "capsules issued": "0",
+        "deployment": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+        "series": "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce"
+      },
       "id": "capsule",
-      "status": "unavailable",
+      "status": "pass",
       "title": "capsules are bound to this chain, deployment and series"
     },
     {
-      "detail": "no KyrveCrossBook is deployed for this layer yet",
-      "evidence": {},
+      "detail": "price, fee and beneficiary are immutables readable by anyone",
+      "evidence": {
+        "crossBook": "0xbfae69cee2c1a26e213041475bdfcdcb9ca827ad",
+        "fee (bps)": "25",
+        "fee beneficiary": "0x120477983Fa87F42cB7103172aC62662e015efDF",
+        "orders": "0",
+        "price (wad)": "970000000000000000"
+      },
       "id": "cross",
-      "status": "unavailable",
+      "status": "pass",
       "title": "the Cross book's price, fee and beneficiary are immutable and declared"
     },
     {
@@ -147,13 +151,13 @@
   "proofSemantics": "A Nox decryption proof is an EIP-712 signature by the Nox KMS attesting that a handle decrypts to a value. It is NOT a zero-knowledge proof. validateDecryptionProof is a pure signature check with no ACL, no nonce, no expiry and no caller binding, so a proof is replayable by anyone forever; what binds a value to a computation is the handle registered in CurveGraphRegistry, a capsule, or a Cross or Roll order — checked here BEFORE any signature is considered.",
   "summary": {
     "exitCode": 1,
-    "failed": 1,
-    "passed": 8,
-    "unavailable": 3,
+    "failed": 5,
+    "passed": 6,
+    "unavailable": 1,
     "verdict": "FAIL"
   },
   "tool": "kyrve-verify",
-  "verifiedAt": "2026-07-30T06:39:15.887Z",
+  "verifiedAt": "2026-07-30T08:19:27.334Z",
   "version": 1
 }
 

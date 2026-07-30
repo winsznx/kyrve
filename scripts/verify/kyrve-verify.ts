@@ -120,10 +120,10 @@ interface SeriesRecord {
   readonly midnight: Address;
   readonly loanToken: Address;
   readonly contracts: Record<string, { readonly address: Address; readonly runtimeHash: Hex }>;
-  readonly roleRegistry?: Address;
-  readonly capsuleVault?: Address;
-  readonly crossBook?: Address;
-  readonly rollBook?: Address;
+  readonly roleRegistry?: Address | undefined;
+  readonly capsuleVault?: Address | undefined;
+  readonly crossBook?: Address | undefined;
+  readonly rollBook?: Address | undefined;
 }
 
 function pass(
@@ -185,6 +185,27 @@ async function main(): Promise<void> {
     process.exit(EXIT.UNAVAILABLE);
   }
   const record = readJson<SeriesRecord>(recordPath);
+
+  /**
+   * The Phase 6 market layer is its own record, because `KyrveRollBook` cannot exist until a second
+   * layer does and a series that deployed with no market layer is a coherent state. Merged here so
+   * the checks read one shape, and absent rather than fabricated when the file is not there.
+   */
+  const marketPath = repoPath(`deployments/${environment}/market.json`);
+  const market = existsSync(marketPath)
+    ? readJson<{
+        contracts: Record<string, { readonly address: Address }>;
+      }>(marketPath)
+    : null;
+  const marketAt = (name: string): Address | undefined => market?.contracts[name]?.address;
+  const layer: SeriesRecord = {
+    ...record,
+    ...(marketAt("KyrveCapsuleVault") === undefined
+      ? {}
+      : { capsuleVault: marketAt("KyrveCapsuleVault") }),
+    ...(marketAt("KyrveCrossBook") === undefined ? {} : { crossBook: marketAt("KyrveCrossBook") }),
+    ...(marketAt("KyrveRollBook") === undefined ? {} : { rollBook: marketAt("KyrveRollBook") }),
+  };
 
   const rpc = environment === "sepolia" ? sepoliaRpc() : { url: LOCAL_RPC, redacted: LOCAL_RPC };
   const client = createPublicClient({
@@ -253,9 +274,9 @@ async function main(): Promise<void> {
   }
 
   // ── 10-12. the Phase 6 surfaces ───────────────────────────────────────────────────────────
-  if (wanted.has("capsule")) findings.push(await checkCapsule(client, record));
-  if (wanted.has("cross")) findings.push(await checkCross(client, record));
-  if (wanted.has("roll")) findings.push(await checkRoll(client, record));
+  if (wanted.has("capsule")) findings.push(await checkCapsule(client, layer));
+  if (wanted.has("cross")) findings.push(await checkCross(client, layer));
+  if (wanted.has("roll")) findings.push(await checkRoll(client, layer));
 
   // ── Report ────────────────────────────────────────────────────────────────────────────────
   const passed = findings.filter((f) => f.status === "pass").length;
@@ -727,9 +748,26 @@ async function checkSettlement(
       args: [record.seriesVault, activation.quoteId],
     })) as bigint;
 
+    evidence["status"] = String(execution["status"]);
     evidence["exactUnits (Kyrve)"] = String(execution["exactUnits"]);
     evidence["consumed (Midnight)"] = String(consumed);
 
+    /**
+     * A QUOTE THE REGISTRY HAS NEVER HEARD OF MUST NOT PASS THIS CHECK.
+     *
+     * `executionOf` returns a zeroed struct for an unknown id and Midnight's `consumed` returns 0
+     * for a group that never existed, so `0 == 0` and the check reported PASS against a freshly
+     * deployed layer carrying no quote at all. Caught by running it — a test that cannot fail
+     * proves nothing, and this one was passing for the wrong reason on its first real use.
+     */
+    if (Number(execution["status"]) === 0) {
+      return fail(
+        id,
+        title,
+        "the registry has never heard of this quote — nothing to compare",
+        evidence,
+      );
+    }
     if (consumed !== BigInt(String(execution["exactUnits"]))) {
       return fail(
         id,
