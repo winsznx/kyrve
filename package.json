@@ -39,7 +39,6 @@
     "roles:reconcile": "tsx scripts/roles/reconcile.ts",
     "roles:refund": "tsx scripts/roles/refund.ts",
     "roles:status": "tsx scripts/roles/status.ts",
-    "stack:local": "tsx scripts/stack/local.ts",
     "test": "pnpm test:contracts && pnpm test:unit && pnpm test:workers",
     "test:confidential": "pnpm --filter @kyrve/confidential test",
     "test:contracts": "forge test -vv",

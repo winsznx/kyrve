@@ -226,3 +226,49 @@ The Slither gate for the confidential layer can only ever SKIP — `crytic-compi
 
 Run `pnpm verify:phase6`. Read `docs/phase6/PHASE-7-PREREQUISITES.md` before starting Cloudflare or final
 web work — P7-2 and P7-3 are the two that bite.
+
+## Phase 7 — the web product
+
+Nineteen routes, three journeys, and a verification surface that recomputes rather than displays.
+**Nothing was deployed to Cloudflare**, and `pnpm verify:phase7` proves it every run by checking that
+every Worker binding still carries the placeholder id.
+
+The router is hand-written (delta V-1): the route table is fixed, the matcher is a segment comparison
+that fits on one screen, and a router dependency would have meant a `source-lock.json` entry for
+twenty lines of behaviour. What it must get right is that a **typed** route renders what a clicked one
+does — the failure there is the server's history fallback, not the router, and it is invisible from
+inside the application because clicking never exercises it.
+
+Six things that are easy to violate and hard to notice:
+
+- **A gate can hide a failing test in its own output.** `testTally` returned the node:test tally as a
+  detail string and let the gate report PASS beside `8 passing, 1 failing`. Found by reading the first
+  real run, not by a test. Phase 6's gate has the same shape and the same latent hole — recorded in
+  F7-1 rather than silently changed, because altering a closed phase's gate is a decision.
+- **A hardening check written from a requirements list measures something adjacent.** `verify:web`
+  found eight things on its first run and **four were the check's fault**: it failed on the word
+  "placeholder" in prose that exists to say the product ships none, and it counted Chromium's own
+  `Failed to load resource` as an application error — so it failed precisely when the interface
+  correctly reported the chain unavailable. Run a new check and read every finding before trusting it.
+- **"Loading" is not a state.** `apps/web/src/lib/lifecycle.ts` is a closed union, so a fourteenth
+  ad-hoc state fails to compile. The four terminal states are not interchangeable and `unavailable`
+  is the one that collapses by accident: a page reporting a timed-out node as "failed" has told the
+  reader the protocol refused them.
+- **A verification verdict has FOUR values.** `reported-not-verified` is what a record asserts and no
+  browser checked — the Etherscan counts, the compiler pins, the Slither gap. Dropping them hides a
+  claim; listing them as verified misstates who checked. Delta V-4.
+- **viem serialises the request URL into every transport error**, and in a browser that reaches the
+  DOM and from there a screenshot. `apps/web/src/lib/redact.ts` is a deliberate second implementation
+  of `scripts/lib/env.ts`'s rule, because that module reads `process.env` and cannot enter a bundle.
+- **A `page.evaluate` closure carries esbuild's `__name` helper into the browser** and throws
+  `__name is not defined` — a build-tool artefact that looks exactly like a product defect. Every
+  `evaluate` in `scripts/verify/web.ts` passes a string. Delta V-8.
+
+The dark header renders the lowercase `kyrve` wordmark **as text** in Ivory: the approved symbol
+master is a light-surface asset at 1.30:1 on Onyx and `brand.json` forbids recolouring or plating it.
+The positive master still ships as the favicon, the OG card and the CTA panel, served from the
+repository's `public/` where `brand:verify` checks their hashes.
+
+Run `pnpm verify:phase7`. Read `docs/phase7/PHASE-8-PREREQUISITES.md` before starting Cloudflare —
+**P8-0 names the two things Phase 7 was asked for and did not deliver**, and it is the first section
+for that reason.
