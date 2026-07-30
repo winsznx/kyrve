@@ -21,6 +21,7 @@
 import { existsSync, readFileSync } from "node:fs";
 
 import { readJson, repoPath, run } from "../lib/shell.js";
+import { requirePassingTally } from "../lib/tally.js";
 
 type Status = "PASS" | "FAIL" | "SKIP";
 type Section =
@@ -46,14 +47,20 @@ interface Gate {
   readonly execute: () => string;
 }
 
-/** The node:test tally, which is the only line of a Hardhat run that says what happened. */
+/**
+ * The node:test tally, read rather than echoed.
+ *
+ * This function used to return the tally as a DISPLAY STRING and let the gate report PASS beside it,
+ * so a run printing `8 passing, 1 failing` was recorded as a passing gate. Phase 7 hit that and the
+ * shared implementation now lives in `scripts/lib/tally.ts` with regression tests.
+ *
+ * NOTHING ABOUT PHASE 6's RECORDED EVIDENCE CHANGES. `docs/phase6/GATE.md` stands as written: this
+ * repairs the instrument, and re-running a closed phase to see whether the repaired instrument still
+ * agrees is a Phase 6 decision rather than a Phase 7 side effect. The exposure is recorded in
+ * `docs/phase7/PRD-DELTA.md` W-1.
+ */
 function testTally(output: string): string {
-  const tally = output
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => /^\d+ (passing|failing)/.test(line));
-  if (tally.length === 0) throw new Error("the test run printed no pass/fail tally");
-  return tally.join(", ");
+  return requirePassingTally(output);
 }
 
 function summarise(output: string, lines = 1): string {

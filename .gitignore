@@ -41,3 +41,6 @@ __pycache__/
 deployments/local/confidential.json
 apps/web/public/deployment.json
 evidence/phase2/confidential-suite.log
+
+# The local stack writes its runtime manifest here. Machine-specific, never committed.
+.runtime/

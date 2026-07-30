@@ -1,0 +1,18 @@
+{
+  "$comment": "The connected Capsule and auditor flow, measured in a real Chromium against the real Nox stack and real unmodified Midnight, in three browser contexts with three separate signing identities. NO AMOUNT APPEARS HERE, for the same reason none appears in the served record: every value was decrypted in a browser by the wallet that held a grant.",
+  "chainId": 31337,
+  "stackInstance": "07985b7a-9f37-4eec-b021-67f2a2d3cabf",
+  "snapshotDistinctFromLive": true,
+  "liveBalanceChangedAfterSealing": true,
+  "auditorDecryptedSnapshot": true,
+  "snapshotUnchangedByLiveChange": true,
+  "auditorRefusedLiveBalance": true,
+  "outsiderRefusedCapsule": true,
+  "originVerifiedFromChain": true,
+  "refreshKeptPublicAndDroppedPrivate": true,
+  "disconnectClearedPlaintext": true,
+  "refusalKinds": {
+    "auditor-live-balance": "not-authorised"
+  },
+  "capsuleId": "0xcd9de3a3e780d714d042a71276ec4a6b5afcc3ac5a5d83afda9d4d82dfc304ad"
+}

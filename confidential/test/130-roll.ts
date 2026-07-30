@@ -73,6 +73,7 @@ import {
   deploySeriesLayer,
   fundQuoteFromCustody,
   readSeriesBalance,
+  runIssuanceLifecycle,
   type SeriesLayer,
 } from "./series-helpers.js";
 import {
@@ -309,6 +310,14 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
   });
 
   /** One complete Phase 3-5 lifecycle: epoch, funding, settlement, allocation. */
+  /**
+   * One issuance lifecycle, from the shared helper.
+   *
+   * This used to be a closure here. It moved to `series-helpers.ts` unchanged so the local stack
+   * host builds its series exactly the way this suite does — two copies of the most expensive
+   * fixture in the repository drift, and the drift shows up as a stack whose series was built
+   * differently from the series every assertion was written against.
+   */
   async function runLifecycle(
     layer: CurveHarness,
     settlement: SettlementHarness,
@@ -318,69 +327,16 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
     markets: { market: any; marketId: `0x${string}` }[],
     created: Awaited<ReturnType<typeof createSettlementUniverse>>,
   ): Promise<SeriesLayer & { quoteId: `0x${string}`; epoch: EpochState }> {
-    const borrower = await setupBorrower(layer, created.universeId, borrowerIndex, {
-      desiredAssets: 400n * UNIT,
-      minimumAssets: 50n * UNIT,
-      maxRateIndexes: [1, 1],
-      preferredMaturityIndex,
-    });
-
-    const epoch = await openAndSeal(
+    return runIssuanceLifecycle(
       layer,
-      created.universeId,
-      created.universe,
+      settlement,
       providers,
-      borrower,
+      borrowerIndex,
+      preferredMaturityIndex,
+      markets,
+      created,
+      { desiredAssets: 400n * UNIT, minimumAssets: 50n * UNIT, maxRateIndexes: [1, 1] },
     );
-    await runEpoch(layer, epoch);
-    const result = await collectPublicResult(layer, epoch.epochId);
-
-    const winning = markets[result.marketIndex];
-    assert.ok(winning !== undefined, "the published market index must name a deployed market");
-    const seriesId = (await settlement.factory.read.seriesIdFor([
-      winning.marketId,
-    ])) as `0x${string}`;
-    await mine(
-      layer,
-      await settlement.factory.write.createSeries(
-        [winning.marketId, settlement.usdc.address, settlement.operator],
-        { account: settlement.curator.account },
-      ),
-    );
-    const vaultAddress = (await settlement.factory.read.vaultOf([seriesId])) as `0x${string}`;
-
-    const series = await deploySeriesLayer(layer, settlement, {
-      seriesId,
-      marketId: winning.marketId,
-      vaultAddress,
-      loanToken: settlement.usdc.address as `0x${string}`,
-    });
-
-    await fundQuoteFromCustody(layer, series, epoch.epochId, providers.length);
-    const quote = await activateQuote(layer, settlement, epoch, created.universe, result, markets, {
-      fund: false,
-    });
-
-    const borrowerWallet = layer.wallets[borrowerIndex];
-    await supplyCollateral(layer, settlement, quote.market, borrowerWallet, quote.exactUnits);
-    await mine(
-      layer,
-      await settlement.midnight.write.take(
-        [
-          quote.offer,
-          "0x",
-          quote.exactUnits,
-          borrowerWallet.account.address,
-          borrowerWallet.account.address,
-          "0x0000000000000000000000000000000000000000",
-          "0x",
-        ],
-        { account: borrowerWallet.account, gas: 15_000_000n },
-      ),
-    );
-    await allocateSeries(layer, series, quote.quoteId, providers.length);
-
-    return { ...series, quoteId: quote.quoteId, epoch };
   }
 
   /**

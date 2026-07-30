@@ -1,0 +1,10 @@
+{
+  "$comment": "The local stack, started from a clean machine state, exercised, stopped, and started again with no manual cleanup. The SECOND start is the assertion: teardown defects are invisible on a first run and fail the next one with an error whose cause is one process ago. Public local runtime metadata only.",
+  "cleanStart": true,
+  "firstInstance": "ed2ddc84-92f0-4bc0-aed0-79a81b8fc10c",
+  "secondInstance": "c877bb7d-f408-49eb-9da9-1643d25dabd5",
+  "instancesDiffer": true,
+  "noOrphanContainers": true,
+  "manifestRemovedOnShutdown": true,
+  "findings": 0
+}

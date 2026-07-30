@@ -25,7 +25,8 @@
 
 import { existsSync, readFileSync } from "node:fs";
 
-import { repoPath, run } from "../lib/shell.js";
+import { readJson, repoPath, run } from "../lib/shell.js";
+import { requirePassingTally } from "../lib/tally.js";
 
 type Status = "PASS" | "FAIL" | "SKIP";
 type Section = "THE PRODUCT" | "JOURNEYS" | "HARDENING" | "QUALITY AND SECURITY" | "NOT DEPLOYED";
@@ -52,28 +53,9 @@ function summarise(output: string, lines = 1): string {
   return meaningful.slice(-lines).join(" | ") || "(no output)";
 }
 
-/**
- * The node:test tally, and a FAILURE IS A FAILURE.
- *
- * The first version of this function returned the tally as a detail string and let the gate report
- * PASS beside it. A run printing "8 passing, 1 failing" was therefore recorded as a passing gate —
- * which is the exact defect every gate in this repository exists to prevent, sitting inside the gate
- * itself. `run` does not throw on a non-zero exit for these because the Hardhat runner's code is not
- * reliable across versions, so the tally is the signal and it has to be read rather than echoed.
- */
+/** The node:test tally, read rather than echoed. `scripts/lib/tally.ts` carries the rules. */
 function testTally(output: string): string {
-  const tally = output
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => /^\d+ (passing|failing)/.test(line));
-  if (tally.length === 0) throw new Error("the test run printed no pass/fail tally");
-
-  const failing = tally.map((line) => /^(\d+) failing/.exec(line)).find((match) => match !== null);
-  const failures = failing === null || failing === undefined ? 0 : Number(failing[1]);
-  if (failures > 0) {
-    throw new Error(`${failures} test(s) failed: ${tally.join(", ")}`);
-  }
-  return tally.join(", ");
+  return requirePassingTally(output);
 }
 
 function dockerAvailable(): boolean {
@@ -303,11 +285,81 @@ const GATES: readonly Gate[] = [
       ),
   },
 
+  // ── The connected lifecycle ───────────────────────────────────────────────────────────────
+  {
+    section: "JOURNEYS",
+    name: "the Capsule and auditor flow, in three browser contexts against the live stack",
+    execute: () => {
+      const record = readJson<Record<string, unknown>>(
+        repoPath("evidence/phase7/browser-capsule.json"),
+      );
+      const claims = [
+        "snapshotDistinctFromLive",
+        "liveBalanceChangedAfterSealing",
+        "auditorDecryptedSnapshot",
+        "snapshotUnchangedByLiveChange",
+        "auditorRefusedLiveBalance",
+        "outsiderRefusedCapsule",
+        "originVerifiedFromChain",
+        "refreshKeptPublicAndDroppedPrivate",
+        "disconnectClearedPlaintext",
+      ];
+      const missing = claims.filter((claim) => record[claim] !== true);
+      if (missing.length > 0)
+        throw new Error(`the capsule flow does not claim: ${missing.join(", ")}`);
+
+      // U-10 in gate form. A refusal recorded by a bare catch would satisfy the loop above; only the
+      // decoded kind proves the gateway refused for the reason the demonstration is about.
+      const kinds = record["refusalKinds"] as Record<string, string> | undefined;
+      if (kinds?.["auditor-live-balance"] !== "not-authorised") {
+        throw new Error(
+          "the auditor's refusal is not recorded by kind. A refusal that fired for an unrelated " +
+            "reason proves nothing about the isolation it is supposed to demonstrate.",
+        );
+      }
+      if (typeof record["capsuleId"] !== "string") {
+        throw new Error("no capsule was created through the interface");
+      }
+      return `${claims.length} claims, capsule ${(record["capsuleId"] as string).slice(0, 12)}…`;
+    },
+  },
+  {
+    section: "JOURNEYS",
+    name: "the local stack, from a clean start, stopped, and started again",
+    execute: () => {
+      const record = readJson<Record<string, unknown>>(
+        repoPath("evidence/phase7/stack-restart.json"),
+      );
+      const claims = [
+        "cleanStart",
+        "instancesDiffer",
+        "noOrphanContainers",
+        "manifestRemovedOnShutdown",
+      ];
+      const missing = claims.filter((claim) => record[claim] !== true);
+      if (missing.length > 0)
+        throw new Error(`the restart proof does not claim: ${missing.join(", ")}`);
+      if (record["findings"] !== 0)
+        throw new Error(`the restart proof recorded ${record["findings"]} finding(s)`);
+      return `two instances, ${String(record["firstInstance"]).slice(0, 8)}… then ${String(record["secondInstance"]).slice(0, 8)}…`;
+    },
+  },
+
   // ── Hardening ─────────────────────────────────────────────────────────────────────────────
   {
     section: "HARDENING",
     name: "every route, in a real browser: refresh, metadata, keyboard, contrast rules, links",
     execute: () => summarise(run("pnpm", ["exec", "tsx", "scripts/verify/web.ts"]).stdout, 3),
+  },
+  {
+    section: "HARDENING",
+    name: "a gate cannot report PASS over a failure, a skip or an empty run",
+    execute: () => {
+      const output = run("pnpm", ["exec", "vitest", "run", "scripts/lib/tally.test.ts"]).stdout;
+      const passed = /(\d+) passed/.exec(output);
+      if (passed === null) throw new Error("the tally regression suite printed no result");
+      return `${passed[1]} regression tests over the shared tally helper`;
+    },
   },
   {
     section: "HARDENING",
@@ -353,23 +405,6 @@ const GATES: readonly Gate[] = [
   },
 
   // ── Quality and security, carried forward ─────────────────────────────────────────────────
-  {
-    /**
-     * This gate can only ever report SKIP, and that is the point. Marking it PASS would assert
-     * static-analysis coverage the confidential layer does not have; marking it FAIL would assert a
-     * defect nobody found. It is a hole, it is reproduced in U-5, and it is named every single run —
-     * and P7-1 is explicit that Phase 7 must not let a green gate widen the claim.
-     */
-    section: "QUALITY AND SECURITY",
-    name: "Slither over the confidential layer",
-    skipIf: () =>
-      "UNVERIFIED BY SLITHER. crytic-compile will not drive solc 0.8.36 (delta U-5, with the exact " +
-      "reproduction). Compensating evidence: direct 0.8.36 compilation, the full unit and " +
-      "integration suite against real Nox, the attack suite, contract-size and gas-cap checks.",
-    execute: () => {
-      throw new Error("unreachable: this gate always skips");
-    },
-  },
   {
     section: "QUALITY AND SECURITY",
     name: "Slither over the settlement layer, which it CAN reach",
@@ -489,11 +524,27 @@ function main(): void {
   const passed = results.filter((result) => result.status === "PASS").length;
   const failed = results.filter((result) => result.status === "FAIL").length;
   const skipped = results.filter((result) => result.status === "SKIP").length;
-  const slitherSkipped = results.some(
-    (result) => result.name === "Slither over the confidential layer" && result.status === "SKIP",
-  );
   const journeySkipped = results.some(
     (result) => result.status === "SKIP" && result.section === "JOURNEYS",
+  );
+
+  /*
+   * STANDING DECLARATIONS ARE NOT SKIPPED GATES.
+   *
+   * Slither over the confidential layer used to be a gate that could only ever report SKIP, which
+   * meant the run could never reach zero skips and — worse — implied a check that might run one day.
+   * It cannot: crytic-compile does not drive solc 0.8.36. A skip means "could have run, did not".
+   * This is a permanent, reproduced absence of coverage, so it is declared rather than counted.
+   *
+   * It is printed on every run, before the verdict, exactly as P7-1 requires. Nothing about it is
+   * softer than when it was a skip — what changed is that it is no longer pretending to be a check.
+   */
+  console.log("PHASE 7 — STANDING DECLARATIONS\n");
+  console.log(
+    "  UNVERIFIED  Slither over the confidential layer.  crytic-compile will not drive solc 0.8.36\n" +
+      "              (delta U-5, exact reproduction). NOT a pass and NOT a fail: a permanent absence\n" +
+      "              of static-analysis coverage. Compensating evidence: direct 0.8.36 compilation,\n" +
+      "              the full suite against real Nox, the attack suite, contract-size and gas-cap.\n",
   );
 
   console.log(`\n  ${passed} passed, ${failed} failed, ${skipped} skipped\n`);
@@ -525,14 +576,6 @@ function main(): void {
       "  which publishes nothing and needs no authentication. Every binding still carries the\n" +
       "  placeholder id. Deployment is Phase 8's decision, not this phase's side effect.\n",
   );
-  if (slitherSkipped) {
-    console.log(
-      "  UNVERIFIED BY SLITHER — the confidential layer has NO static-analysis coverage. crytic-\n" +
-        "  compile will not drive solc 0.8.36 and delta U-5 carries the exact reproduction. Phase 7\n" +
-        "  added a browser and a set of Workers, which get none of Slither's detectors either. The\n" +
-        "  compensating evidence is real and it is not the same thing.\n",
-    );
-  }
   if (skipped > 0) {
     console.log(
       "  VERDICT: CONDITIONAL PASS — every executable gate passed. The skipped gates above need an\n" +

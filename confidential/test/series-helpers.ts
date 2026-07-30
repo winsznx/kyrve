@@ -20,9 +20,24 @@ import assert from "node:assert/strict";
 import type { Handle } from "@kyrve/nox";
 import { getContract } from "viem";
 
-import type { CurveHarness, PollOptions } from "./curve-helpers.js";
+import {
+  type CurveHarness,
+  type EpochState,
+  openAndSeal,
+  type PollOptions,
+  runEpoch,
+  type SealedProviderState,
+  setupBorrower,
+} from "./curve-helpers.js";
 import { clientFor, mine, ROLE_INDEX, SUITE_POLL } from "./helpers.js";
-import { foundryArtifactAbi, type SettlementHarness } from "./settlement-helpers.js";
+import {
+  activateQuote,
+  collectPublicResult,
+  type createSettlementUniverse,
+  foundryArtifactAbi,
+  type SettlementHarness,
+  supplyCollateral,
+} from "./settlement-helpers.js";
 
 export interface SeriesLayer {
   readonly token: any;
@@ -324,4 +339,92 @@ export async function readSeriesBalance(
   assert.notEqual(handle, `0x${"00".repeat(32)}`, `${holder} has no series balance handle`);
   const client = await clientFor(h, walletIndex);
   return client.decrypt(handle, poll);
+}
+
+/**
+ * One complete issuance lifecycle: request, epoch, series, funding, activation, settlement, allocation.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * EXTRACTED, NOT WRITTEN
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * This is the closure `130-roll.ts` used to carry inline, moved here verbatim so the Roll suite and
+ * the local stack host share ONE implementation. The extraction is checked by the Roll suite still
+ * passing: two copies of a fixture this expensive drift, and the drift shows up as a stack whose
+ * series was built differently from the series every assertion was written against.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * THE ORDER IS NOT ARBITRARY
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * The series is created and funded BEFORE activation, because `QuoteActivator.activate` calls
+ * `prepareQuote`, which refuses a vault that cannot already pay. Funding keyed on the quote would
+ * deadlock: the money has to land before a quote id exists (delta T-9).
+ *
+ * `fund: false` throughout. The vault's balance arrives from `fundQuoteFromCustody` — real locked
+ * confidential capital, unwrapped through the real wrapper — rather than from a mint.
+ */
+export async function runIssuanceLifecycle(
+  layer: CurveHarness,
+  settlement: SettlementHarness,
+  providers: readonly SealedProviderState[],
+  borrowerIndex: number,
+  preferredMaturityIndex: number,
+  markets: { market: any; marketId: `0x${string}` }[],
+  created: Awaited<ReturnType<typeof createSettlementUniverse>>,
+  request: { desiredAssets: bigint; minimumAssets: bigint; maxRateIndexes: number[] },
+): Promise<SeriesLayer & { quoteId: `0x${string}`; epoch: EpochState; exactUnits: bigint }> {
+  const borrower = await setupBorrower(layer, created.universeId, borrowerIndex, {
+    ...request,
+    preferredMaturityIndex,
+  });
+
+  const epoch = await openAndSeal(layer, created.universeId, created.universe, providers, borrower);
+  await runEpoch(layer, epoch);
+  const result = await collectPublicResult(layer, epoch.epochId);
+
+  const winning = markets[result.marketIndex];
+  assert.ok(winning !== undefined, "the published market index must name a deployed market");
+  const seriesId = (await settlement.factory.read.seriesIdFor([winning.marketId])) as `0x${string}`;
+  await mine(
+    layer,
+    await settlement.factory.write.createSeries(
+      [winning.marketId, settlement.usdc.address, settlement.operator],
+      { account: settlement.curator.account },
+    ),
+  );
+  const vaultAddress = (await settlement.factory.read.vaultOf([seriesId])) as `0x${string}`;
+
+  const series = await deploySeriesLayer(layer, settlement, {
+    seriesId,
+    marketId: winning.marketId,
+    vaultAddress,
+    loanToken: settlement.usdc.address as `0x${string}`,
+  });
+
+  await fundQuoteFromCustody(layer, series, epoch.epochId, providers.length);
+  const quote = await activateQuote(layer, settlement, epoch, created.universe, result, markets, {
+    fund: false,
+  });
+
+  const borrowerWallet = layer.wallets[borrowerIndex];
+  await supplyCollateral(layer, settlement, quote.market, borrowerWallet, quote.exactUnits);
+  await mine(
+    layer,
+    await settlement.midnight.write.take(
+      [
+        quote.offer,
+        "0x",
+        quote.exactUnits,
+        borrowerWallet.account.address,
+        borrowerWallet.account.address,
+        "0x0000000000000000000000000000000000000000",
+        "0x",
+      ],
+      { account: borrowerWallet.account, gas: 15_000_000n },
+    ),
+  );
+  await allocateSeries(layer, series, quote.quoteId, providers.length);
+
+  return { ...series, quoteId: quote.quoteId, epoch, exactUnits: quote.exactUnits };
 }
