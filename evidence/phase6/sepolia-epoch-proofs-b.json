@@ -1,0 +1,25 @@
+{
+  "$comment": "A real confidential curve epoch on Ethereum Sepolia over a SETTLEMENT-GRADE universe — one whose market is a deployed Midnight market and whose grid prices are TickLib.tickToPrice. Carries the five gateway proofs so the quote can be activated without re-running the epoch. Every value is public; no private value is recorded here or anywhere else.",
+  "chainId": 11155111,
+  "epochId": "0x85771a10b8e599c80f12de842886e7c4582ff96200fc38900ecdb2399bd15e28",
+  "graphRoot": "0xd5186321f675f3babf72fec60e1c3dcd30df202fd93d0102cee265bd3b7f546c",
+  "matchesPlaintextReferenceModel": true,
+  "measuredAt": "2026-07-30T10:40:50.173Z",
+  "proofs": {
+    "aggregate": "0x4c40b41a68b1c0526f5bc095784fed62aba2cbc9a22ee0973d5843b9de217a1348b1f3989c90abd8fc728b135673ec2735d3b6448f5be338ec0137f12715fd701b0000000000000000000000000000000000000000000000000000000011e1a2ff",
+    "floor": "0x537d6d4370d23fe043ec3ef87c4e63391b813e05ae6a5d46410b1c1516493a84732bca2c8ab6c6eaf9e9411fe858f2c0f6adba9a2201364533f9ea512d1cef311c0001",
+    "market": "0x3affa961aa6de79b551c4c6ce8509f249d75b95ff07101c16064bcf46f1cbd7a1632d941adbb9cc30602ec23cc02dea45f55e551d928380437cdf039edcad0a01c0000",
+    "rate": "0x8d45f045426f2123bbe11f7fe702eda3b9a1cece2494559ce4c0be86ce298af551af44c6876901e0fd12ac864fb2336ab65004ac46260b6b429e65c4b0cba8671b0000",
+    "ready": "0x5f98082ad5f393b80d8a4d9c7de74f2766af6e917b7470d7ebdc4a7ea5b93051067c1562ddb8e34228fa4cfe912a0530fe70bd288acaa8132d6e1e78104ae3bd1b0001"
+  },
+  "published": {
+    "aggregateFillAmount": "299999999",
+    "privacyFloorPassed": true,
+    "quoteReady": true,
+    "selectedMarketIndex": 0,
+    "selectedRateIndex": 0
+  },
+  "requestId": "0xe50baf085f24c6e5342c444ce62900d006b84885bb64b993635a3ca488d3f767",
+  "universeId": "0xa9745859e36877df99459ace62b6c00c316f50a182d05895c1497ca396714f63"
+}
+
