@@ -55,6 +55,7 @@ import { sepolia } from "viem/chains";
 
 import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
 import { layerPaths } from "../lib/layer.js";
+import { resolveRoles, signingKey } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const EXPLORER = "https://sepolia.etherscan.io";
@@ -250,13 +251,28 @@ async function main(): Promise<void> {
   assertBroadcastArmed();
 
   const account = privateKeyToAccount(deployer().privateKey);
+  /**
+   * THE KEEPER AND THE CURATOR ARE DIFFERENT KEYS FROM PHASE 6.
+   *
+   * This script predates the separation and sent everything as the deployer. `consumeChunk`,
+   * `unwrapFunding` and `activate` are `onlyKeeper`; `createSeries` is `onlyCurator`. Against the
+   * separated layer the first of those reverted `NotKeeper(0x36C3…, 0x5Ab3…)` — the separation
+   * working, and the script not having caught up. Nothing was lost: the revert changed no state.
+   */
+  const phase6Roles = resolveRoles("sepolia", { requireKeys: ["deployer", "keeper", "curator"] });
+  const keeperAccount = privateKeyToAccount(signingKey(phase6Roles, "keeper"));
+  const curatorAccount = privateKeyToAccount(signingKey(phase6Roles, "curator"));
   const transport = http(rpc.url);
   const publicClient = createPublicClient({ chain: sepolia, transport, cacheTime: 0 });
   const wallet = createWalletClient({ account, chain: sepolia, transport });
+  const keeperWallet = createWalletClient({ account: keeperAccount, chain: sepolia, transport });
+  const curatorWallet = createWalletClient({ account: curatorAccount, chain: sepolia, transport });
 
   console.log("Kyrve Phase 4 — one real quote, activated and settled on Ethereum Sepolia\n");
   console.log(`  RPC        ${rpc.redacted}`);
-  console.log(`  keeper     ${account.address}`);
+  console.log(`  deployer   ${account.address}`);
+  console.log(`  keeper     ${keeperAccount.address}`);
+  console.log(`  curator    ${curatorAccount.address}`);
   console.log(`  epoch      ${epoch.epochId}`);
 
   const balanceBefore = await publicClient.getBalance({ address: account.address });
@@ -413,12 +429,12 @@ async function main(): Promise<void> {
   if (vault === "0x0000000000000000000000000000000000000000") {
     await send(
       "createSeries",
-      await wallet.writeContract({
+      await curatorWallet.writeContract({
         address: factory,
         abi: artifact("KyrveSeriesFactory").abi as never,
         functionName: "createSeries",
-        args: [spec.marketId, settlement.loanToken, account.address],
-        account,
+        args: [spec.marketId, settlement.loanToken, phase6Roles.accounts.operator.address],
+        account: curatorAccount,
         chain: sepolia,
       }),
     );
@@ -517,12 +533,12 @@ async function main(): Promise<void> {
       if (fundingState === 0) {
         await send(
           "consumeChunk",
-          await wallet.writeContract({
+          await keeperWallet.writeContract({
             address: allocator,
             abi: confidentialArtifact("SeriesAllocator").abi as never,
             functionName: "consumeChunk",
             args: [epoch.epochId, 0, providerCount],
-            account,
+            account: keeperAccount,
             chain: sepolia,
           }),
         );
@@ -530,12 +546,12 @@ async function main(): Promise<void> {
       if (fundingState <= 1) {
         await send(
           "unwrapFunding",
-          await wallet.writeContract({
+          await keeperWallet.writeContract({
             address: allocator,
             abi: confidentialArtifact("SeriesAllocator").abi as never,
             functionName: "unwrapFunding",
             args: [epoch.epochId],
-            account,
+            account: keeperAccount,
             chain: sepolia,
           }),
         );
@@ -674,7 +690,7 @@ async function main(): Promise<void> {
     }
     offerBytes = recovered.args.offer;
   } else {
-    const activationHash = await wallet.writeContract({
+    const activationHash = await keeperWallet.writeContract({
       address: activator,
       abi: artifact("QuoteActivator").abi as never,
       functionName: "activate",
@@ -697,7 +713,7 @@ async function main(): Promise<void> {
           aggregateProof: epoch.proofs.aggregate,
         },
       ],
-      account,
+      account: keeperAccount,
       chain: sepolia,
     });
     console.log("\n  activating:");

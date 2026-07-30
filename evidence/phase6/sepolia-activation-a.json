@@ -1,0 +1,10 @@
+{
+  "$comment": "The activation transaction for this epoch's one quote. The offer is recoverable ONLY from its OfferPublished log — `offer.start` is the activation block's timestamp, so no client can rebuild the offer the ratifier hashed.",
+  "activationTxHash": "0xa13a35445048cb2fa2a9fa7e10a756407a51d44931d1ead50ccd01d64e94db79",
+  "epochId": "0xe514e64950c0074cd42bcf7302355fe00ee04c9c92c0f0f4a0f825ddc0d74428",
+  "partialFillRejection": "The contract function \"take\" reverted with the following signature:",
+  "partialFillRollbackObserved": true,
+  "quoteId": "0x89a5a9748966fa8cfc4a0e25e5cbc73e620fcb57f5f9912d6884d07b516f3649",
+  "settlementTxHash": "0xfa8ef1a14438f1361f1cd3bfc221f1dad2e3636e18032790fac478a4085aa684"
+}
+

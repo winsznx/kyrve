@@ -67,6 +67,7 @@ import { sepolia } from "viem/chains";
 
 import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
 import { layerPaths, requireLayerFile } from "../lib/layer.js";
+import { resolveRoles, signingKey } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const CHAIN_ID = 11_155_111;
@@ -153,10 +154,21 @@ async function main(): Promise<void> {
   }
   assertBroadcastArmed();
 
-  const keeper = privateKeyToAccount(deployer().privateKey);
+  /**
+   * THE KEEPER IS ITS OWN KEY FROM PHASE 6, AND THE CURATOR IS ANOTHER.
+   *
+   * This script called the deployer "keeper" because through Phase 5 they were the same address.
+   * `allocateChunk`, `closeQuote` and `proveSolvency` belong to the keeper; `publishAggregateSupply`
+   * is `onlyCurator` and IRREVERSIBLE. Sending either from the wrong key now reverts, which is the
+   * separation working — but it reverts after the run has already paid for everything before it.
+   */
+  const phase6Roles = resolveRoles("sepolia", { requireKeys: ["keeper", "curator"] });
+  const keeper = privateKeyToAccount(signingKey(phase6Roles, "keeper"));
+  const curator = privateKeyToAccount(signingKey(phase6Roles, "curator"));
   const transport = http(rpc.url);
   const publicClient = createPublicClient({ chain: sepolia, transport, cacheTime: 0 });
   const wallet = createWalletClient({ account: keeper, chain: sepolia, transport });
+  const curatorWallet = createWalletClient({ account: curator, chain: sepolia, transport });
 
   const observed = await publicClient.getChainId();
   if (observed !== CHAIN_ID)
@@ -407,11 +419,11 @@ async function main(): Promise<void> {
     // already published as this epoch's aggregate, so it discloses nothing new.
     await send(
       "publishAggregateSupply",
-      await wallet.writeContract({
+      await curatorWallet.writeContract({
         address: token,
         abi: abiOf("KyrveSeriesToken") as never,
         functionName: "publishAggregateSupply",
-        account: keeper,
+        account: curator,
         chain: sepolia,
       }),
     );
