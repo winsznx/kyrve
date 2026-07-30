@@ -227,3 +227,63 @@ here and none needed correction:
   choose to publish it, and returned in full by cancellation.
 - **T-8** — a real lock rewrites the balance handle. Cross and Roll escrows are rewritten on every
   match, which is why `_writeEscrow` re-isolates and re-grants rather than assuming one grant lasts.
+
+---
+
+## U-9 · `SupplyState.Open` is public and says nothing about remaining inventory
+
+**Status:** understood; drivers adapted. **Severity:** a keeper that reads public state alone nets
+nothing and reports success.
+
+`KyrveRollBook.supplyStatusOf` returns `SupplyState.Open` for a supply whose encrypted escrow has
+already been drained to zero by an earlier netting. This is not an oversight — the escrow is an
+`euint256` and the contract cannot publish "this supply is empty" without publishing a balance. The
+public lifecycle and the private inventory are deliberately different things.
+
+The consequence is operational. A keeper cannot decide from public state whether `netRoll` will move
+anything; a supply that looks live may be spent. Worse, netting leaves floor-division **dust**, so
+even "the escrow decrypts above zero" is not sufficient — the second netting against the residual
+dust of the first moved nothing while every public check still passed.
+
+The Sepolia driver therefore opens a fresh intent and a fresh supply on every run and never adopts
+either. Only the supplier can read their own escrow, and the honest reading of the public state is
+"this supply has not been cancelled and has not expired" — nothing more.
+
+## U-10 · A bare `try/catch` around a simulation proved the wrong defence
+
+**Status:** fixed. **Severity:** a passing test that demonstrated nothing.
+
+The first complete Sepolia roll reported *"unwinding beyond the published residual is REFUSED"*. It
+was refused. It was refused because the check ran **after** the residual was fully unwound and the
+intent had reached `Completed`, so `settleResidual` reverted `IntentNotOpen(intentId, 3)` at the
+state guard and never reached the ceiling at all. Decoding the revert data by hand is what surfaced
+it: selector `0x25782cf8`, not `ResidualExceeded`'s `0x0c334f0f`.
+
+Both refusals in the driver now assert the error **by name** through viem's
+`ContractFunctionRevertedError`, and the over-unwind attempt was moved into the only window where the
+ceiling can bind — while the intent is still `ResidualDeclared`. The stale-netting refusal has the
+same hazard in mirror image and is asserted the same way.
+
+This is `.claude/rules/testing.md` exactly: *"when asserting a revert, confirm you asserted the right
+revert — a test passing for the wrong reason is worse than no test."* The rule was already written
+down and the test was written anyway.
+
+## U-11 · The Roll's conversion opens redemption before maturity, and says so
+
+**Status:** recorded, not hidden. **Severity:** none if stated; a false claim if not.
+
+`KyrveRollBook.conversionWad` is `sourceRedemptionFactorWad * WAD / TARGET_PRICE_WAD` and reverts
+`SourceRedemptionNotOpen` rather than defaulting to par, because a roll accidentally priced at par
+moves value between holder and supplier on every netting, silently and in one direction.
+
+But `KyrveSeriesToken.setRedemptionFactor` documents `unitsWithdrawn` as *the loan assets the series
+vault actually received from Midnight*, and no withdrawal has happened: the source series has not
+matured and `MaturityRedemptionQueue` is out of scope by owner decision. The Sepolia roll therefore
+opens redemption **early**, against the credit Midnight has already recorded for the series —
+`VAULT.positionOf(MARKET_ID)`, 300,000,599 — over the published aggregate, 299,999,999.
+
+Both operands are read live from chain by the driver rather than copied from an evidence file, the
+contract emits `RedemptionFactorSet(factor, unitsWithdrawn, supplyReference)` so the derivation is
+reproducible by anyone from public data, and `evidence/phase6/sepolia-roll.json` carries the caveat
+in `sourceRedemptionOpenedEarly`. A factor derived from recorded credit is not the same statement as
+a factor derived from a completed withdrawal, and the record must not blur them.

@@ -1,0 +1,101 @@
+{
+  "$comment": "The smallest real coherent Roll on Ethereum Sepolia, between two series that share NO contract. NO PRIVATE QUANTITY APPEARS HERE. Conservation was evaluated in memory from balances each party decrypted for themselves; only verdicts are recorded. The residual is public by the holder's own irreversible choice and is the only amount here.",
+  "atomicity": "NONE CLAIMED. A full roll is escrow, netting and a publicly declared unwind — separate transactions. This run PROVES the consequence rather than asserting it: the residual was unwound halfway, stopped, and finished from chain state alone with nothing carried over in memory. netRoll refuses a stale index so a retry cannot net twice, and settleResidual refuses to pay past the published total even though its proof is replayable forever.",
+  "chainId": 11155111,
+  "conservesUnderConversion": true,
+  "conversionReproducible": true,
+  "conversionWad": "1063831914893624112",
+  "explorer": "https://sepolia.etherscan.io/address/0x3c1e083c538ecaba5cd449e4393755dcc8bdfc8e",
+  "factorReproducible": true,
+  "holder": "0x2442854c750C88168BE342C771827566c071F7a2",
+  "intentId": "0x860202e02ab5bd43732dadbe8c315c44dae96c4519dc6383bc52a2d33357058f",
+  "intentState": 3,
+  "interruptedAt": {
+    "next": 3,
+    "unwound": "3381454"
+  },
+  "keeper": "0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af",
+  "measuredAt": "2026-07-30T11:02:40.795Z",
+  "netCount": 1,
+  "overUnwindRefused": true,
+  "refusalsAssertedByName": {
+    "overUnwind": "ResidualExceeded",
+    "staleNetIndex": "StaleNetIndex"
+  },
+  "residualHandle": "0x0000aa36a723014d5b3bb37efe8208324fd9e1e4788ce3e5275705a2091db65b",
+  "residualPublished": "6762909",
+  "residualUnwound": "6762909",
+  "resumedFromChainState": true,
+  "rollBook": "0x3c1e083c538ecaba5cd449e4393755dcc8bdfc8e",
+  "scope": "One intent against one supply, at the smallest size exercising every path. NO PRODUCTION-SCALE THROUGHPUT IS CLAIMED. The expensive part of a larger roll is repeating the whole confidential issuance stack per maturity (delta U-1), not an unimplemented feature.",
+  "seriesAreDistinct": true,
+  "sourceRecordedCredit": "300000599",
+  "sourceRedemptionFactorWad": "1000002000000006666",
+  "sourceRedemptionOpenedEarly": "The source series has NOT matured and has NOT withdrawn from Midnight. MaturityRedemptionQueue is out of scope by owner decision (Phase 5). The factor is derived from the credit Midnight has ALREADY recorded for the series (VAULT.positionOf) over the published aggregate — both read live from chain by this driver, not copied from a record.",
+  "sourceSeriesId": "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+  "sourceSolvent": true,
+  "sourceSupplyReference": "299999999",
+  "sourceSupplyUnchanged": true,
+  "sourceToken": "0x61fcb2a7623bb15622b1303d0bf819247078f178",
+  "staleNetIndexRefused": true,
+  "steps": [
+    {
+      "gas": "46969",
+      "name": "setOperator",
+      "tx": "0x82a937ae02c4d0c4570e213ed9f3480fd4bcd7911bf8f3487595d9511b5fde71"
+    },
+    {
+      "gas": "401020",
+      "name": "submitIntent",
+      "tx": "0x97b1f80f9872c8b82dcb5ac20f2c0e937d9b6cf74e7787154de36ea974a771d9"
+    },
+    {
+      "gas": "24915",
+      "name": "setOperator",
+      "tx": "0x01bc4b1b312c319924936a99d88fcf8438a4bbabb74d9dbeca565c96ae4d56f9"
+    },
+    {
+      "gas": "46969",
+      "name": "setOperator",
+      "tx": "0xcae095e93cc05d23876f808b3c12deff36cae309faf6c7fe81f38cda1494b0c0"
+    },
+    {
+      "gas": "401324",
+      "name": "supplyTarget",
+      "tx": "0x69483f48f24713d9d7e1ffd96ab62cc7a56d009e3cb2062cc81d3ce7b0150458"
+    },
+    {
+      "gas": "24915",
+      "name": "setOperator",
+      "tx": "0x70a4db4cf1dd6f03aa1feda3b6a46465cb640c544d5ebf0865971919d271540b"
+    },
+    {
+      "gas": "718570",
+      "name": "netRoll",
+      "tx": "0x5b222bb69fef13157725b746f463b1bb30ca5b2d9f0522318a8f6c229f701d85"
+    },
+    {
+      "gas": "167731",
+      "name": "declareResidual",
+      "tx": "0xe4f1a34a23d81642db9950957a19b402693388237ffeea51d31d61ea2143d370"
+    },
+    {
+      "gas": "356598",
+      "name": "settleResidual",
+      "tx": "0xf0c8d8002399911937acc9e8b35391ad5b1bdf29a96b849f676e39df44489280"
+    },
+    {
+      "gas": "343573",
+      "name": "settleResidual",
+      "tx": "0x40b1408bddfc8d4f3fd5183bafed3dc1f3de3bed4afb2304291926c5e92c6951"
+    }
+  ],
+  "supplier": "0xaCdcFB704ac3321eD80efBBfc304C18801a36Bee",
+  "supplyId": "0x7ee961ace6b768794a432c9cbcc24351fcaf694733ce55914798e85291998368",
+  "targetPriceWad": "940000000000000000",
+  "targetSeriesId": "0x4066880587d179263083aaac040d30a3fbe26a358a212b6baec2e22c2bf8fdef",
+  "targetSolvent": true,
+  "targetSupplyUnchanged": true,
+  "targetToken": "0xd085176a07a3764fad5b872f2b05cb34f931d314"
+}
+
