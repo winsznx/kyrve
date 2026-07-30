@@ -1,0 +1,462 @@
+{
+  "$comment": "The Encrypted Field. Generated deterministically by scripts/design/build-dither-assets.py from one seed and from the same curve geometry the live RedactedCurve component draws. No rate, no capacity, no provider count and no allocation is derived from data of any kind \u2014 the density function is geometric. The single Cobalt quote point is NEVER baked into a raster; it is drawn at runtime, only when a quote is genuinely public.",
+  "seed": "0x4B59525645",
+  "generator": "scripts/design/build-dither-assets.py",
+  "fields": [
+    {
+      "name": "hero",
+      "purpose": "Landing hero. The whole book, unreadable.",
+      "width": 2400,
+      "height": 1200,
+      "resolution": 0.0,
+      "assets": [
+        {
+          "file": "public/brand/field/hero.avif",
+          "bytes": 187456,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 300000,
+          "sha256": "ddee8eac918f6f97bc9562d534358e3e97645640c1723de6a0cfae1b1bad76dc"
+        },
+        {
+          "file": "public/brand/field/hero.webp",
+          "bytes": 285964,
+          "quality": 48,
+          "withinBudget": true,
+          "budget": 300000,
+          "sha256": "7f33e8c7986759b1328341861f836cd6a043b2aa28954d0bfbdbb23650564a38"
+        },
+        {
+          "file": "public/brand/field/hero.png",
+          "bytes": 541033,
+          "quality": null,
+          "withinBudget": null,
+          "budget": null,
+          "note": "last-resort fallback only; never referenced first",
+          "sha256": "f29ec758c5a43c283935fe9a49926e354b6fb52b87e5d40f056419220403dc12"
+        }
+      ],
+      "mobile": {
+        "width": 900,
+        "height": 450,
+        "assets": [
+          {
+            "file": "public/brand/field/hero-900.avif",
+            "bytes": 34751,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 100000,
+            "sha256": "0a054ca98e08bbe255a1294493819d82643ee0e352b89e1a6da20b2dd4757adb"
+          },
+          {
+            "file": "public/brand/field/hero-900.webp",
+            "bytes": 17698,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 100000,
+            "sha256": "4480391470930ae9088d0aaa4ffe172813e3623be489f1187754990c7b24fdf6"
+          },
+          {
+            "file": "public/brand/field/hero-900.png",
+            "bytes": 303432,
+            "quality": null,
+            "withinBudget": null,
+            "budget": null,
+            "note": "last-resort fallback only; never referenced first",
+            "sha256": "b71c1230fe327bf5763197bacac6187c3bb5ada4663be135d5e9f1a738e52838"
+          }
+        ]
+      }
+    },
+    {
+      "name": "mechanism-1",
+      "purpose": "Set terms privately: maximum density.",
+      "width": 1200,
+      "height": 700,
+      "resolution": 0.0,
+      "assets": [
+        {
+          "file": "public/brand/field/mechanism-1.avif",
+          "bytes": 66008,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "1cc4a6255ad046cca366c25cbda3e0a9796837c7aae53abaded3e2832a6d910f"
+        },
+        {
+          "file": "public/brand/field/mechanism-1.webp",
+          "bytes": 112670,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "03801230f1b7a4a22317a67fd8f88da6957fc21e0ece3c04cec1773e6cec1d30"
+        },
+        {
+          "file": "public/brand/field/mechanism-1.png",
+          "bytes": 203228,
+          "quality": null,
+          "withinBudget": null,
+          "budget": null,
+          "note": "last-resort fallback only; never referenced first",
+          "sha256": "c6bed2fa7b4f78beeb81db988b12d92a4ace012ccb8e70c09fa549cf22549436"
+        }
+      ],
+      "mobile": {
+        "width": 900,
+        "height": 525,
+        "assets": [
+          {
+            "file": "public/brand/field/mechanism-1-900.avif",
+            "bytes": 47730,
+            "quality": 55,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "b8730e1d2f987c9e2085403555ce002f3022db941223832ad0a5364a5caca3df"
+          },
+          {
+            "file": "public/brand/field/mechanism-1-900.webp",
+            "bytes": 49876,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "5161366f2379ee3274a1e77e1a2ce70a41e13aa1f384a01b1fc8e93d592b207f"
+          },
+          {
+            "file": "public/brand/field/mechanism-1-900.png",
+            "bytes": 430018,
+            "quality": null,
+            "withinBudget": null,
+            "budget": null,
+            "note": "last-resort fallback only; never referenced first",
+            "sha256": "70141dab75844af719f0fb303c68aeab78327d5f271c7e58e5da9fdc0eb8c103"
+          }
+        ]
+      }
+    },
+    {
+      "name": "mechanism-2",
+      "purpose": "Compute the market: density beginning to order.",
+      "width": 1200,
+      "height": 700,
+      "resolution": 0.45,
+      "assets": [
+        {
+          "file": "public/brand/field/mechanism-2.avif",
+          "bytes": 49140,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "e34eb66d6dae6e4f67dd8467b6ba4b1648ea87a3efe28e46bf91661ae32aeca8"
+        },
+        {
+          "file": "public/brand/field/mechanism-2.webp",
+          "bytes": 73118,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "3515a7b1015ed2988af338620301f446a5ae64de21234f8cb726db9aaf36cd8b"
+        },
+        {
+          "file": "public/brand/field/mechanism-2.png",
+          "bytes": 172324,
+          "quality": null,
+          "withinBudget": null,
+          "budget": null,
+          "note": "last-resort fallback only; never referenced first",
+          "sha256": "0ff29ccf36583ab1b8ee58c131a9c00b17f080454b4d10b703ee5ecb054ac456"
+        }
+      ],
+      "mobile": {
+        "width": 900,
+        "height": 525,
+        "assets": [
+          {
+            "file": "public/brand/field/mechanism-2-900.avif",
+            "bytes": 43136,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "ffd9b2eae3f353e8a4dbf17480a35d6ca7d9c7ae8257b928c151343f0401d8b7"
+          },
+          {
+            "file": "public/brand/field/mechanism-2-900.webp",
+            "bytes": 30750,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "46e7632da7f3c59bec6fe38727ccde1c3cd4c1d207b04552c6c885e8a799ad3e"
+          },
+          {
+            "file": "public/brand/field/mechanism-2-900.png",
+            "bytes": 310505,
+            "quality": null,
+            "withinBudget": null,
+            "budget": null,
+            "note": "last-resort fallback only; never referenced first",
+            "sha256": "627cbfcec411436201de9e678440dff737373c2c92217b84c8765320e10b412e"
+          }
+        ]
+      }
+    },
+    {
+      "name": "mechanism-3",
+      "purpose": "Settle one quote: the field resolving to a line.",
+      "width": 1200,
+      "height": 700,
+      "resolution": 0.92,
+      "assets": [
+        {
+          "file": "public/brand/field/mechanism-3.avif",
+          "bytes": 36075,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "6a79846ba7ea0644b7c4e8e71d749678d641bbe3ad076f6abba3ee81b9d2e634"
+        },
+        {
+          "file": "public/brand/field/mechanism-3.webp",
+          "bytes": 40194,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "6c895dc9a6e95956bc7a4da9b58c3c39e27d2dc68756f2f0ac4e73782a75321c"
+        },
+        {
+          "file": "public/brand/field/mechanism-3.png",
+          "bytes": 129824,
+          "quality": null,
+          "withinBudget": null,
+          "budget": null,
+          "note": "last-resort fallback only; never referenced first",
+          "sha256": "93ae592f7f922e91befd788d10dc37b6bb85fc6b0c612e6252a87cc8d0bcf4eb"
+        }
+      ],
+      "mobile": {
+        "width": 900,
+        "height": 525,
+        "assets": [
+          {
+            "file": "public/brand/field/mechanism-3-900.avif",
+            "bytes": 24965,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "7ace921cfe6c271605ad20c1fc9ceddc88598158a23c8789d5f9d3161f84c370"
+          },
+          {
+            "file": "public/brand/field/mechanism-3-900.webp",
+            "bytes": 16346,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "73649dececfcafbf073ae036ba1c9a14d8c95e518114cd650466d74d2bc2a0cb"
+          },
+          {
+            "file": "public/brand/field/mechanism-3-900.png",
+            "bytes": 198640,
+            "quality": null,
+            "withinBudget": null,
+            "budget": null,
+            "note": "last-resort fallback only; never referenced first",
+            "sha256": "90f5a7e028067de8bd0b63d8996eeed0a43730be1ca120c314a29b56f6e87562"
+          }
+        ]
+      }
+    },
+    {
+      "name": "close",
+      "purpose": "Final call to action. Resolved, awaiting its point.",
+      "width": 2400,
+      "height": 1000,
+      "resolution": 0.85,
+      "assets": [
+        {
+          "file": "public/brand/field/close.avif",
+          "bytes": 92098,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 300000,
+          "sha256": "7027367a94f7374b882e2cfcffb838dd2eaf67257c1fbb45f05ff89455cb01e6"
+        },
+        {
+          "file": "public/brand/field/close.webp",
+          "bytes": 109698,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 300000,
+          "sha256": "d862ce07461c2156037210e2c398ab7b0f9fb4dacd300fd93f3a1bc0db99f336"
+        },
+        {
+          "file": "public/brand/field/close.png",
+          "bytes": 323077,
+          "quality": null,
+          "withinBudget": null,
+          "budget": null,
+          "note": "last-resort fallback only; never referenced first",
+          "sha256": "958d4f436c533c32c841870511180921d042c5d2c616463a58721ce5eafd708e"
+        }
+      ],
+      "mobile": {
+        "width": 900,
+        "height": 375,
+        "assets": [
+          {
+            "file": "public/brand/field/close-900.avif",
+            "bytes": 11227,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 100000,
+            "sha256": "f5257ca86700808dfacd19f147802d7e2b34f3ce1f12a44fff5e6ac07e17701e"
+          },
+          {
+            "file": "public/brand/field/close-900.webp",
+            "bytes": 4670,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 100000,
+            "sha256": "95377c1d003baaaef581a3116225129301e8cb089bf9cf0e0e3601574a9a4d38"
+          },
+          {
+            "file": "public/brand/field/close-900.png",
+            "bytes": 132479,
+            "quality": null,
+            "withinBudget": null,
+            "budget": null,
+            "note": "last-resort fallback only; never referenced first",
+            "sha256": "c57eebe96c5805674965e4d946aa3a06346750b97e5a17b3dd3777d0d4fe9570"
+          }
+        ]
+      }
+    },
+    {
+      "name": "matching",
+      "purpose": "Private matching page, while an epoch runs.",
+      "width": 1600,
+      "height": 800,
+      "resolution": 0.35,
+      "assets": [
+        {
+          "file": "public/brand/field/matching.avif",
+          "bytes": 74265,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "3132dfc2c267865dcb9683805f4d118966d621c87894c9aca2c1b5314a49323a"
+        },
+        {
+          "file": "public/brand/field/matching.webp",
+          "bytes": 118846,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "165baaf28de5113d54ad12190329067e7e284cf1f750f361599ca5ae47b42bf0"
+        },
+        {
+          "file": "public/brand/field/matching.png",
+          "bytes": 245957,
+          "quality": null,
+          "withinBudget": null,
+          "budget": null,
+          "note": "last-resort fallback only; never referenced first",
+          "sha256": "45550918b414723f190b82958ca606acb8a89cc7ab98b0c57d3f28ee8ebd379d"
+        }
+      ],
+      "mobile": {
+        "width": 900,
+        "height": 450,
+        "assets": [
+          {
+            "file": "public/brand/field/matching-900.avif",
+            "bytes": 34718,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "61b3506856ca6a177a56bb7ec718d260b0a65b62af7199b7be612f579dcbb9ee"
+          },
+          {
+            "file": "public/brand/field/matching-900.webp",
+            "bytes": 22598,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "abcdf8836669264a4c6bce9a64eed25ac8821f17e3e59d26973c09e79f45cdc9"
+          },
+          {
+            "file": "public/brand/field/matching-900.png",
+            "bytes": 271665,
+            "quality": null,
+            "withinBudget": null,
+            "budget": null,
+            "note": "last-resort fallback only; never referenced first",
+            "sha256": "54be3e0d70332f7127702ce18ac23844b92f87d5daf51353e42a536a6d408e1c"
+          }
+        ]
+      }
+    },
+    {
+      "name": "empty",
+      "purpose": "Empty states that need a meaningful visual.",
+      "width": 1200,
+      "height": 600,
+      "resolution": 0.0,
+      "assets": [
+        {
+          "file": "public/brand/field/empty.avif",
+          "bytes": 51200,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "287514e772dc44ef7ee4445ea577d2d63135957e597723ff22981c15a1d052ee"
+        },
+        {
+          "file": "public/brand/field/empty.webp",
+          "bytes": 90692,
+          "quality": 62,
+          "withinBudget": true,
+          "budget": 180000,
+          "sha256": "a048016aba658386c8a1795fd88bb70067af288a43b124ac11642cc43b599b97"
+        },
+        {
+          "file": "public/brand/field/empty.png",
+          "bytes": 151923,
+          "quality": null,
+          "withinBudget": null,
+          "budget": null,
+          "note": "last-resort fallback only; never referenced first",
+          "sha256": "7e46190ac0bc40b8d8c6c1b91c691542b6035c6e14f6a7626d343ac48e05d6c3"
+        }
+      ],
+      "mobile": {
+        "width": 900,
+        "height": 450,
+        "assets": [
+          {
+            "file": "public/brand/field/empty-900.avif",
+            "bytes": 53012,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "3c082de60c2ef1c4df19b754165d5c8586a4c9ab10d6e3efb7f7596c54820369"
+          },
+          {
+            "file": "public/brand/field/empty-900.webp",
+            "bytes": 39610,
+            "quality": 62,
+            "withinBudget": true,
+            "budget": 60000,
+            "sha256": "6a02a79df0e77daa609c8f53e70da6b33321ebaaef76c132454a17861ea74eed"
+          },
+          {
+            "file": "public/brand/field/empty-900.png",
+            "bytes": 349010,
+            "quality": null,
+            "withinBudget": null,
+            "budget": null,
+            "note": "last-resort fallback only; never referenced first",
+            "sha256": "0090c42422f1434cccd85bb0db27a1904af74f1d1a6a78c0ffa9dc9c7db722b0"
+          }
+        ]
+      }
+    }
+  ]
+}

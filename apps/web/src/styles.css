@@ -1691,3 +1691,629 @@ th {
     left: 0;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   Final refinement: the Encrypted Field, the landing narrative, and the mobile shell.
+
+   The rules are unchanged — no shadows, one Cobalt element per page, pill radius on controls,
+   12px cards, 72px rhythm, Ivory never white. What is added is WEIGHT and MOTION, both of which
+   were missing and neither of which needs a new colour.
+
+   Motion uses one easing curve everywhere. A product with four easings reads as four products.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /*
+    One curve, for everything.
+
+    Heavy in, soft out — it reads as mass settling rather than as a UI animation, which is the
+    register an instrument should be in. Every transition in this file uses it.
+  */
+  --ease-settle: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-settle: 700ms;
+}
+
+/* ── The Encrypted Field ────────────────────────────────────────────────────────────────────── */
+
+/*
+  The field is a raster with an SVG overlay for the one live point.
+
+  `object-fit: cover` with a fixed intrinsic size in the markup, so the browser reserves the box
+  before the image lands and nothing shifts. The overlay is `pointer-events: none` so it can never
+  intercept a click meant for the copy sitting above it.
+*/
+.field-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /*
+    A one-pixel scale-up hides the resampling seam at the edges of a dithered raster. Without it a
+    faint lighter hairline appears where the image meets Onyx — the transparent-edge halo the brief
+    asks to prevent, arriving here as a compression artefact rather than as an alpha channel.
+  */
+  transform: scale(1.005);
+}
+
+.field-point {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────────────────────────────── */
+
+.hero-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.hero-inner {
+  max-width: 720px;
+  text-align: left;
+}
+
+.hero h1 {
+  /*
+    `text-wrap: balance` on the heading and `pretty` on the body: no single word is ever left alone
+    on a last line. The manual break in the markup sits where the thought breaks, and balance keeps
+    the two halves even at every width between the breakpoints.
+  */
+  text-wrap: balance;
+}
+
+.hero p {
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--card-padding);
+  flex-wrap: wrap;
+}
+
+.hero-proof {
+  margin: var(--card-padding) 0 0;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  letter-spacing: 0.07px;
+  max-width: 68ch;
+}
+
+/* ── Tagline reveal ─────────────────────────────────────────────────────────────────────────── */
+
+.tagline-section {
+  padding-top: 128px;
+  padding-bottom: 128px;
+}
+
+.tagline-reveal {
+  max-width: 20ch;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-heading-lg);
+  font-weight: var(--weight-w480);
+  line-height: 1.15;
+  letter-spacing: 0.42px;
+  text-wrap: balance;
+}
+
+/*
+  Each word starts muted and resolves once.
+
+  Ash at reduced opacity to Ivory — not a fade from transparent, which would make the line jump as
+  it fills. The word occupies its space from the start; only its value changes.
+*/
+.tagline-reveal [data-word] {
+  color: var(--color-ash-text);
+  opacity: 0.3;
+  transition:
+    opacity var(--duration-settle) var(--ease-settle),
+    color var(--duration-settle) var(--ease-settle);
+}
+
+.tagline-reveal [data-word][data-lit="true"] {
+  color: var(--color-ivory-text);
+  opacity: 1;
+}
+
+/* ── The problem ────────────────────────────────────────────────────────────────────────────── */
+
+/*
+  Asymmetric on purpose: the heading holds the left third and the argument runs down the right.
+  A centred card would give the problem the same weight as the solution, and the problem is the
+  part the reader already knows — it is there to be recognised, not studied.
+*/
+.problem {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) minmax(320px, 3fr);
+  gap: var(--section-gap);
+  align-items: start;
+}
+
+.problem h2 {
+  font-size: var(--text-heading-lg);
+  text-wrap: balance;
+}
+
+.problem-body p {
+  color: var(--color-ash-text);
+  font-size: var(--text-body-lg);
+  line-height: 1.5;
+  max-width: 60ch;
+  text-wrap: pretty;
+}
+
+/* ── The mechanism sequence ─────────────────────────────────────────────────────────────────── */
+
+/*
+  A sequence, not three cards.
+
+  Each step is wider than it is tall and they stack vertically with the field bleeding to the full
+  width — so the eye travels down through decreasing density and lands on the one Cobalt point. Three
+  equal boxes in a row would have made it a feature list, which is the one thing it must not read as.
+*/
+.sequence {
+  list-style: none;
+  margin: var(--section-gap) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.sequence > li {
+  position: relative;
+  min-height: 260px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+}
+
+.sequence-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.sequence-copy {
+  position: relative;
+  z-index: 1;
+  padding: var(--card-padding);
+  max-width: 56ch;
+}
+
+.sequence-step {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+  margin-bottom: 8px;
+}
+
+.sequence-copy p {
+  margin: 0;
+  font-size: var(--text-body-lg);
+  line-height: 1.4;
+  color: var(--color-ivory-text);
+  text-wrap: pretty;
+}
+
+/* ── Two systems ────────────────────────────────────────────────────────────────────────────── */
+
+.split-three {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 1px;
+  margin-top: var(--card-padding);
+  background: var(--hairline);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.split-three > div {
+  background: var(--color-graphite-card);
+  padding: var(--card-padding);
+}
+
+/* The binding step is the one that is Kyrve. Marked by value, not by colour. */
+.split-bind {
+  background: var(--color-obsidian-button) !important;
+}
+
+.split-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  color: var(--color-ivory-text);
+}
+
+.split-three p {
+  margin: 8px 0 0;
+  color: var(--color-ash-text);
+  text-wrap: pretty;
+}
+
+/* ── The boundary ───────────────────────────────────────────────────────────────────────────── */
+
+.boundary-columns h3 .glyph {
+  font-family: var(--font-mono);
+  color: var(--color-ash-text);
+}
+
+.boundary-columns li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--element-gap);
+}
+
+.boundary-columns .redacted {
+  height: 14px;
+}
+
+.boundary-columns .redacted span {
+  width: 10px;
+  height: 12px;
+}
+
+/* ── Outcomes ───────────────────────────────────────────────────────────────────────────────── */
+
+/*
+  Asymmetric: the provider panel spans both columns above the other two.
+  Three identical tiles would say these are three features of one thing; they are three people.
+*/
+.outcomes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--element-gap);
+  margin-top: var(--card-padding);
+}
+
+.outcome {
+  display: block;
+  padding: var(--card-padding);
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: border-color var(--duration-settle) var(--ease-settle);
+}
+
+.outcome:hover {
+  border-color: var(--color-slate-border);
+}
+
+.outcome-wide {
+  grid-column: 1 / -1;
+}
+
+.outcome-role {
+  display: block;
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+  margin-bottom: var(--element-gap);
+}
+
+.outcome strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  color: var(--color-ivory-text);
+  text-wrap: balance;
+}
+
+.outcome-wide strong {
+  font-size: var(--text-heading-sm);
+  max-width: 24ch;
+}
+
+.outcome-go {
+  display: block;
+  margin-top: var(--card-padding);
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── The product in use ─────────────────────────────────────────────────────────────────────── */
+
+.product-frame {
+  margin: var(--card-padding) 0 0;
+}
+
+.product-frame img,
+.product-details img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--hairline);
+}
+
+.product-frame figcaption,
+.product-details figcaption {
+  margin-top: var(--element-gap);
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+/* One large frame, then supporting detail. Never a grid of equal screenshots. */
+.product-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: var(--card-padding);
+  margin-top: var(--section-gap);
+}
+
+.product-details figure {
+  margin: 0;
+}
+
+/* ── Evidence ───────────────────────────────────────────────────────────────────────────────── */
+
+.evidence > li {
+  grid-template-columns: minmax(220px, 2fr) minmax(140px, 1fr) 3fr;
+}
+
+.evidence-verdict {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+}
+
+.evidence > li[data-verdict="verified"] .evidence-verdict {
+  color: var(--color-ivory-text);
+}
+
+.evidence-detail {
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+/* ── FAQ ────────────────────────────────────────────────────────────────────────────────────── */
+
+/*
+  Editorial, not an accordion.
+
+  Every answer is visible. An accordion hides objections behind a click, and the whole point of
+  putting objections on the page is that somebody sceptical reads them without having to ask.
+*/
+.faq {
+  margin: var(--card-padding) 0 0;
+  display: grid;
+  gap: 0;
+}
+
+.faq > div {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) 3fr;
+  gap: var(--card-padding);
+  padding: var(--card-padding) 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.faq dt {
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+  text-wrap: balance;
+}
+
+.faq dd {
+  margin: 0;
+  color: var(--color-ash-text);
+  line-height: 1.5;
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
+/* ── Final call ─────────────────────────────────────────────────────────────────────────────── */
+
+.landing-close {
+  position: relative;
+  padding: 160px 24px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.close-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.close-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.close-inner h2 {
+  font-size: var(--text-heading-lg);
+  margin-bottom: var(--section-gap);
+  text-wrap: balance;
+}
+
+.close-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--card-padding);
+  flex-wrap: wrap;
+}
+
+.landing-legal {
+  padding-top: 0;
+}
+
+/* ── Motion: staggered section entry ────────────────────────────────────────────────────────── */
+
+/*
+  Sections settle in as they enter the viewport. One curve, one distance, no blur, no parallax.
+
+  The default state is VISIBLE and the observer removes the offset — so a browser without the
+  observer, or a reader with reduced motion, sees the finished page rather than a blank one. An
+  animation that hides content until JavaScript proves itself is a content-blocking animation.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  [data-enter] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity var(--duration-settle) var(--ease-settle),
+      transform var(--duration-settle) var(--ease-settle);
+  }
+
+  [data-enter][data-entered="true"] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+button,
+.nav-pill,
+.action-row,
+.role-card,
+.journey-card {
+  transition:
+    background-color var(--duration-settle) var(--ease-settle),
+    border-color var(--duration-settle) var(--ease-settle);
+}
+
+button:active:not(:disabled),
+.primary:active {
+  transform: translateY(1px);
+}
+
+/* ── Mobile application shell ───────────────────────────────────────────────────────────────── */
+
+/*
+  Bottom navigation, below 720px only.
+
+  Four destinations at the thumb, the top bar reduced to identity and account. A desktop nav shrunk
+  down is reachable but wrong: on a handset the top of the screen is the furthest point from the
+  hand, and every one of these is a destination somebody switches between constantly.
+*/
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .masthead .nav {
+    display: none;
+  }
+
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: rgba(23, 23, 33, 0.96);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--hairline);
+    /* The home indicator on a modern handset sits under the last 34 points. */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    /* 56px, comfortably over the 44px minimum target. */
+    min-height: 56px;
+    color: var(--color-ash-text);
+    font-size: var(--text-caption);
+    text-decoration: none;
+  }
+
+  .bottom-nav a[aria-current="page"] {
+    color: var(--color-ivory-text);
+  }
+
+  .bottom-nav .bottom-mark {
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+  }
+
+  /* The page must not end underneath the bar. */
+  .page {
+    padding-bottom: 112px;
+  }
+
+  .site-footer {
+    padding-bottom: 72px;
+  }
+
+  /*
+    The account controls become a sheet rather than a dropdown.
+    A 320px popover anchored to a corner is unusable on a 360px screen.
+  */
+  .account-menu {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: 100%;
+    margin: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-bottom: none;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding-bottom: calc(var(--card-padding) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .problem,
+  .faq > div {
+    grid-template-columns: 1fr;
+    gap: var(--element-gap);
+  }
+
+  .outcomes {
+    grid-template-columns: 1fr;
+  }
+
+  .tagline-reveal {
+    font-size: var(--text-heading-sm);
+    max-width: none;
+  }
+
+  .hero-inner {
+    max-width: none;
+  }
+
+  .landing-close {
+    padding: 96px 16px;
+  }
+
+  .sequence > li {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .problem {
+    gap: var(--card-padding);
+  }
+}

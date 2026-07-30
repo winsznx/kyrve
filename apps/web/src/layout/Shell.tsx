@@ -37,6 +37,7 @@ import type { ReactElement, ReactNode } from "react";
 import { RoleBadge } from "../components/RoleBadge.js";
 import { useKyrve } from "../lib/context.js";
 import { Link, type Match, useLocation } from "../router/router.js";
+import { BottomNav } from "./BottomNav.js";
 
 interface NavItem {
   readonly to: string;
@@ -134,6 +135,16 @@ export function Shell({ match, children }: ShellProps): ReactElement {
       <main id="main" className={chromeless ? "page page-full" : "page"}>
         {children}
       </main>
+
+      {/*
+        Rendered always, shown by CSS below 720px.
+
+        Swapping navigations in JavaScript at a breakpoint means rendering the wrong one first and a
+        bar that flickers on every load. The media query decides, and both are in the DOM — which is
+        also why the desktop bar carries `aria-label="Kyrve"` and this one carries
+        `aria-label="Kyrve sections"`: two navigations need two names.
+      */}
+      {chromeless ? null : <BottomNav />}
 
       <footer className="site-footer">
         <div className="footer-inner">
