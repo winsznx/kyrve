@@ -39,6 +39,19 @@
  * infer which figures involved one.
  *
  * ════════════════════════════════════════════════════════════════════════════════════════════
+ * ONCE THE SEQUENCE HAS RUN, THE QUESTION CHANGES
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * A forecast is not a receipt. When the deployment record, the settled quote and the allocation all
+ * exist, the sequence has been executed and asking "can the wallet afford it" is asking the wrong
+ * question — the wallet paid for it, so of course the balance is lower than the forecast.
+ *
+ * So this reports ALREADY EXECUTED in that case, and closes the loop the ledger was built for: the new
+ * sample carries `actualCostEth` and `predictionErrorPercent` measured against the last funded
+ * prediction. Those two fields have been `null` in every sample until now precisely because nothing had
+ * run yet.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
  * IT NEVER REWRITES A PREDICTION AFTER THE FACT
  * ════════════════════════════════════════════════════════════════════════════════════════════
  *
@@ -53,7 +66,7 @@
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 
-import { createPublicClient, encodeDeployData, formatEther, http } from "viem";
+import { createPublicClient, encodeDeployData, formatEther, http, parseEther } from "viem";
 import { sepolia } from "viem/chains";
 
 import { assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
@@ -100,6 +113,12 @@ interface Ledger {
 }
 
 const LEDGER_PATH = repoPath("evidence/phase5/funding-budget.json");
+
+/** Every sample recorded so far, or none. Read before the new one is appended. */
+function ledgerSamples(): readonly Sample[] {
+  if (!existsSync(LEDGER_PATH)) return [];
+  return readJson<Ledger>(LEDGER_PATH).samples;
+}
 
 function safetyMargin(): number {
   const raw = process.env["KYRVE_FUNDING_SAFETY_MARGIN"];
@@ -547,11 +566,48 @@ async function main(): Promise<void> {
   const balance = await client.getBalance({ address: identity.address });
   const margin = safetyMargin();
 
+  /**
+   * Has the sequence already run?
+   *
+   * All three records must exist. A deployment without an allocation is a half-executed sequence and
+   * must still be priced — the remaining half is what needs funding, and reporting "already executed"
+   * over it would be the exact false PASS this file exists to prevent.
+   */
+  const executed = [
+    "deployments/sepolia/series.json",
+    "evidence/phase5/sepolia-settlement.json",
+    "evidence/phase5/sepolia-allocation.json",
+  ].every((path) => existsSync(repoPath(path)));
+
   const estimatedGas = components.reduce((sum, component) => sum + component.gas, 0);
   const predicted = BigInt(estimatedGas) * effective;
   const withMargin = (predicted * BigInt(Math.round((1 + margin) * 1000))) / 1000n;
-  const funded = missing.length === 0 && balance >= withMargin;
-  const shortfall = withMargin > balance ? withMargin - balance : 0n;
+  const funded = executed || (missing.length === 0 && balance >= withMargin);
+  const shortfall = !executed && withMargin > balance ? withMargin - balance : 0n;
+
+  /**
+   * The measured cost, against the last prediction that reported FUNDED.
+   *
+   * That sample's balance is the baseline: it is the last moment before the sequence began. The delta
+   * includes the ETH still sitting in the provider wallets as float — recoverable with `pnpm dust:sweep`
+   * — and saying so is the difference between a cost and a spend.
+   */
+  const baseline = [...ledgerSamples()]
+    .reverse()
+    .find((sample) => sample.funded && sample.actualCostEth === null);
+  let actualCostEth: string | null = null;
+  let predictionErrorPercent: number | null = null;
+  if (executed && baseline !== undefined) {
+    const spent = parseEther(baseline.deployerBalanceEth) - balance;
+    if (spent > 0n) {
+      actualCostEth = formatEther(spent);
+      const predicted = parseEther(baseline.predictedCostEth);
+      predictionErrorPercent =
+        predicted > 0n
+          ? Math.round(Number((spent - predicted) * 10_000n) / Number(predicted) / 100)
+          : null;
+    }
+  }
 
   const sample: Sample = {
     recordedAt: new Date().toISOString(),
@@ -568,8 +624,8 @@ async function main(): Promise<void> {
     deployerBalanceEth: formatEther(balance),
     funded,
     shortfallEth: formatEther(shortfall),
-    actualCostEth: null,
-    predictionErrorPercent: null,
+    actualCostEth,
+    predictionErrorPercent,
   };
 
   // APPEND. An earlier sample is never edited, so a prediction cannot be corrected after the fact.
@@ -631,6 +687,27 @@ async function main(): Promise<void> {
       "  strands halfway, and a half-executed epoch holds provider capital until cancelled.\n",
     );
     process.exitCode = 1;
+    return;
+  }
+
+  if (executed) {
+    console.log(
+      "\n  VERDICT: ALREADY EXECUTED. The deployment, the settled quote and the allocation",
+    );
+    console.log(
+      "  all exist on Sepolia, so the forecast above is a record rather than a requirement.",
+    );
+    if (actualCostEth !== null) {
+      console.log(`\n  measured cost       ${actualCostEth} ETH`);
+      console.log(`  predicted           ${baseline?.predictedCostEth ?? "?"} ETH`);
+      console.log(
+        `  prediction error    ${predictionErrorPercent !== null && predictionErrorPercent >= 0 ? "+" : ""}${predictionErrorPercent}%`,
+      );
+      console.log("  The measured figure includes provider float still in the dust wallets,");
+      console.log("  recoverable with `pnpm dust:sweep`. It is a spend, not a cost.\n");
+    } else {
+      console.log("");
+    }
     return;
   }
 

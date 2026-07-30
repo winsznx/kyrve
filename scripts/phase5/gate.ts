@@ -471,7 +471,7 @@ const GATES: readonly Gate[] = [
      * to PASS. A SKIP would read as "not attempted", and it was attempted and answered.
      */
     section: "SEPOLIA",
-    name: "the whole sequence is priced against the live network, and the balance covers it",
+    name: "the sequence is priced against the live network, and either funded or executed",
     skipIf: () =>
       existsSync(repoPath(".env"))
         ? null
@@ -488,6 +488,8 @@ const GATES: readonly Gate[] = [
           shortfallEth: string;
           funded: boolean;
           safetyMargin: number;
+          actualCostEth: string | null;
+          predictionErrorPercent: number | null;
         }[];
       }>(repoPath("evidence/phase5/funding-budget.json"));
       const latest = ledger.samples.at(-1);
@@ -502,6 +504,23 @@ const GATES: readonly Gate[] = [
       }
       if (result.code !== 0) {
         throw new Error("the preflight reported a problem other than funding; read its output");
+      }
+
+      /**
+       * A FORECAST IS NOT A RECEIPT, and an earlier version of this gate confused the two.
+       *
+       * Once the sequence has executed the wallet has paid for it, so of course the balance is below
+       * the forecast — and failing on that would fail the phase for having completed it. The preflight
+       * reports `ALREADY EXECUTED` in that case and fills in the measured cost, which is what the
+       * ledger's `actualCostEth` field was reserved for.
+       */
+      if (latest.actualCostEth !== null) {
+        const error = latest.predictionErrorPercent;
+        return (
+          `already executed — ${latest.estimatedGas.toLocaleString("en-GB")} gas forecast, ` +
+          `${latest.actualCostEth} ETH measured` +
+          (error === null ? "" : ` (${error >= 0 ? "+" : ""}${error}% against the prediction)`)
+        );
       }
       return (
         `${latest.estimatedGas.toLocaleString("en-GB")} gas, ${latest.predictedCostWithMarginEth} ETH ` +

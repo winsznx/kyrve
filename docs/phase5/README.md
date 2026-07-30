@@ -5,9 +5,9 @@ series claims**, funded by capital a curve reservation really locked.
 
 > One quote. The curve stays private. And now the ownership does too.
 
-Run `pnpm verify:phase5`. Current verdict: **NOT FUNDED** — every executable gate passes and the Sepolia
-sequence is priced at 58,546,501 gas against a deployer short by roughly 0.0285 ETH. See
-[`GATE.md`](GATE.md); nothing was broadcast and the shortfall is not rounded up to a pass.
+Run `pnpm verify:phase5`. Current verdict: **PASS** — 32 gates, 0 failed, 0 skipped, including 18
+contracts deployed and Etherscan-verified on Ethereum Sepolia and one real confidential allocation against
+credit a real Midnight `take` created. See [`GATE.md`](GATE.md).
 
 ---
 
@@ -131,9 +131,6 @@ prerequisite P5-3 forbids adding work there and nothing here does. Testnet gas i
 
 - No Cross, no Roll, no Capsule. No secondary order book, no residual settlement adapter.
 - No Cloudflare resource of any kind. Nothing was created.
-- No Sepolia deployment. The sequence is measured against the live network on every gate run and the
-  deployer cannot cover it; no deploy script exists either, because a command that has never run is worse
-  than a missing one (carry-over 8, deltas R-11 and R-13).
 - No maturity redemption *payout*. `redeem` burns the claim and accrues a confidential entitlement;
   batching, the Midnight `withdraw` and the confidential distribution are `MaturityRedemptionQueue`
   (PRD §13.19) and are out of scope by owner decision. The entitlement is carried on the claim side of
