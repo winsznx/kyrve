@@ -269,6 +269,18 @@ master is a light-surface asset at 1.30:1 on Onyx and `brand.json` forbids recol
 The positive master still ships as the favicon, the OG card and the CTA panel, served from the
 repository's `public/` where `brand:verify` checks their hashes.
 
-Run `pnpm verify:phase7`. Read `docs/phase7/PHASE-8-PREREQUISITES.md` before starting Cloudflare —
-**P8-0 names the two things Phase 7 was asked for and did not deliver**, and it is the first section
-for that reason.
+`pnpm stack:local` starts the whole local product from one command — chain, NoxCompute, KMS, gateway,
+ingestor, runner, the Midnight substrate, two complete issuance stacks, four Workers and the built web
+app — and does not report READY until every health check answers. It owns the gateway port, which
+Docker assigns and only the Hardhat process can see: the chain host publishes it on one
+sentinel-prefixed JSON line into `.runtime/local-stack.json` and nothing else rediscovers it. IPC was
+tried first and measured not to survive `npx` (delta W-3).
+
+Three teardown defects are worth knowing before touching that orchestrator, because each was invisible
+until the run AFTER the one that caused it (delta W-4): `npx` is an intermediate process so SIGTERM
+leaves grandchildren orphaned; group-killing the chain host skips the plugin's `finally` and leaves six
+containers up; and `wrangler dev` is a supervisor that respawns a killed `workerd`. `pnpm verify:stack`
+starts the stack twice for exactly this reason — the second start is the assertion.
+
+Run `pnpm verify:phase7` (24 passed, 0 failed, 0 skipped) and `pnpm demo:phase7`. Read
+`docs/phase7/PHASE-8-PREREQUISITES.md` before starting Cloudflare.
