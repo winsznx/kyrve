@@ -74,6 +74,13 @@ struct SettlementQuoteProvenance {
 interface IKyrveQuoteRegistry {
     function executionOf(bytes32 quoteId) external view returns (SettlementQuoteExecution memory);
     function provenanceOf(bytes32 quoteId) external view returns (SettlementQuoteProvenance memory);
+    /**
+     * @notice The one quote an epoch produced, or zero if it never produced one.
+     * @dev `KyrveQuoteRegistry` refuses a second quote for an epoch id it has already seen, forever,
+     *      so this is total rather than a best guess. It is the ONLY way the confidential layer can
+     *      discover whether a funded round has a quote it must not reclaim capital from under.
+     */
+    function quoteOfEpoch(bytes32 epochId) external view returns (bytes32);
     function DEPLOYMENT_ID() external view returns (bytes32);
 }
 

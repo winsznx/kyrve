@@ -150,6 +150,14 @@ contract SeriesAllocator is KyrveConfidentialBase {
     address public immutable KEEPER;
     address public immutable DEPLOYER;
 
+    /**
+     * @notice How long a funded round with NO activated quote must wait before it can be unwound.
+     * @dev Seven days, against `QuoteActivator.MAX_QUOTE_LIFETIME` of one day. Long enough that an
+     *      activation inside it is an operational fact rather than a race, short enough that capital is
+     *      not stuck behind a keeper that stopped. See {unwindChunk}.
+     */
+    uint256 public constant UNWIND_GRACE = 7 days;
+
     /// @notice The declared public destination for the funding residue. Bound once, never again.
     SeriesResidueAccount public residueAccount;
 
@@ -180,6 +188,7 @@ contract SeriesAllocator is KyrveConfidentialBase {
     error NothingConsumedYet(bytes32 epochId);
     error ProviderNotReserved(bytes32 epochId, address provider);
     error QuoteNotRetired(bytes32 quoteId, uint8 status);
+    error UnwindTooEarly(bytes32 epochId, uint64 fundedAt, uint64 nowTimestamp);
     error ResidueAccountAlreadyBound(address existing);
     error ResidueAccountNotBound();
     error ResidueBelowZero(uint256 aggregate, uint256 buyerAssets);
@@ -551,12 +560,43 @@ contract SeriesAllocator is KyrveConfidentialBase {
             revert RoundNotFunded(epochId, allocation.state);
         }
 
-        bytes32 quoteId = allocation.quoteId;
+        /**
+         * THE QUOTE IS DISCOVERED, NOT SUPPLIED, AND AN EARLIER DRAFT GOT THIS WRONG.
+         *
+         * That draft read the quote id from `allocation.quoteId`, which is only written at the FIRST
+         * allocation — so a round that was funded and activated but not yet allocated had a zero there,
+         * the retirement check was skipped entirely, and the capital could be reclaimed from under a
+         * quote a borrower could still settle. A test caught it, not a review.
+         *
+         * `quoteOfEpoch` is the registry's own index and is total: it refuses a second quote for an
+         * epoch id it has already seen, forever. So a live quote can always be found, and cannot be
+         * hidden by passing a different id.
+         */
+        bytes32 quoteId = QUOTES.quoteOfEpoch(epochId);
         if (quoteId != bytes32(0)) {
             SettlementQuoteExecution memory execution = QUOTES.executionOf(quoteId);
             if (execution.status != KyrveQuoteStatus.CANCELLED && execution.status != KyrveQuoteStatus.EXPIRED) {
                 revert QuoteNotRetired(quoteId, execution.status);
             }
+        } else if (block.timestamp < uint256(allocation.fundedAt) + UNWIND_GRACE) {
+            /**
+             * NO QUOTE WAS EVER ACTIVATED, so nothing can settle from this funding today — but the
+             * keeper could still activate one tomorrow, and reclaiming first would let a settlement be
+             * paid for by capital the providers already took back.
+             *
+             * The grace is a bounded wait rather than a permanent block, because the alternative is
+             * capital stuck behind a keeper that simply stopped. `QuoteActivator.MAX_QUOTE_LIFETIME` is
+             * one day, so an activation a week after funding is already far outside any operational
+             * window — and if one happens before anyone unwinds, `quoteOfEpoch` becomes non-zero and
+             * the retirement rule above applies again from that moment.
+             *
+             * THE RESIDUAL RISK, stated rather than argued away: an unwind after the grace followed by
+             * an activation and a settlement would create credit no claim owns, funded by tokens meant
+             * to go back. It needs the keeper to act adversarially after a week of silence, and the
+             * keeper is an immutable, non-open role in this release for exactly that reason
+             * (`docs/phase4/SECURITY.md`). Delta T-11.
+             */
+            revert UnwindTooEarly(epochId, allocation.fundedAt, uint64(block.timestamp));
         }
 
         allocation.state = AllocationState.Unwound;

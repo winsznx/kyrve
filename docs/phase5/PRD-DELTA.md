@@ -314,3 +314,30 @@ is an ordering one: `deployCurveHarness({ substrate: true })` deploys the Midnig
 the wrapper and wraps its USDC, and `deploySettlement` reuses that substrate rather than deploying a
 second Midnight. In production the identity is obvious — providers wrap the same asset the market lends
 — which is exactly why a harness that quietly used two was worth catching.
+
+## T-11 · A funded round with no minted claims could be unwound from under a live quote
+
+**Severity: was a real hole. Found by a test, closed, with the residual risk recorded.**
+
+The first `unwindChunk` read the quote id from `SeriesAllocator.Allocation.quoteId`, which is written at
+the FIRST allocation. So a round that had been funded and activated but not yet allocated carried a zero
+there, the retirement check was skipped entirely, and a keeper could reclaim provider capital from under
+a quote a borrower could still settle. `102-series-attacks.ts` A7 caught it: *"unwinding a live quote:
+expected a revert, but the call succeeded"*.
+
+**The fix.** The quote is now DISCOVERED rather than supplied: `IKyrveQuoteRegistry.quoteOfEpoch` is the
+registry's own index, and it is total because the registry refuses a second quote for an epoch id it has
+already seen, forever. A live quote can therefore always be found, and cannot be hidden by passing a
+different id.
+
+**The case with no quote at all.** A round can be funded and never activated, and providers must not be
+stuck behind a keeper that simply stopped. So `unwindChunk` permits it after `UNWIND_GRACE` — seven days
+against `QuoteActivator.MAX_QUOTE_LIFETIME` of one day, long enough that an activation inside the window
+is an operational fact rather than a race.
+
+**The residual risk, stated rather than argued away.** An unwind after the grace, followed by an
+activation and a settlement, would create credit no claim owns, paid for by tokens meant to go back. It
+requires the keeper to act adversarially after a week of silence, and the keeper is an immutable,
+non-open role in this release for exactly that reason (`docs/phase4/SECURITY.md`). Closing it fully needs
+the activator to consult the allocator, which would make activation depend on the confidential layer —
+a coupling Phase 4 deliberately does not have.
