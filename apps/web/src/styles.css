@@ -1022,3 +1022,672 @@ th {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   Phase 7 information architecture.
+
+   Everything below serves the role-based navigation, the onboarding flow, the guided workflow and
+   the redesigned landing narrative. The rules do not change: no shadows, one cobalt element per
+   page, pill radius on controls, 12px cards, 72px between major sections.
+
+   What DOES change is weight. The first version gave every element the same visual mass, so a
+   reader could not tell a page's one action from its supporting detail. Hierarchy here comes from
+   size and negative space rather than from new colour, because there is no second colour to spend.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Account and role ───────────────────────────────────────────────────────────────────────── */
+
+.account {
+  position: relative;
+  flex: 0 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--text-caption);
+}
+
+.account-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.account-trigger {
+  padding: 4px 14px;
+  font-size: var(--text-caption);
+  border-radius: var(--radius-pill);
+}
+
+.account-wallet {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+}
+
+.account-note {
+  display: block;
+  margin: 0;
+  color: var(--color-ash-text);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+}
+
+.account button {
+  padding: 4px 14px;
+  font-size: var(--text-caption);
+}
+
+/*
+  The role menu. Absolutely positioned so opening it does not reflow the masthead — a header that
+  changes height when a menu opens pushes the page content down under the reader's cursor.
+*/
+.account-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 30;
+  width: min(360px, 90vw);
+  margin-top: 8px;
+  padding: 20px;
+  background: var(--color-graphite-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+}
+
+.account-roles {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.role-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  border-radius: var(--radius-xl);
+  background: transparent;
+  border: 1px solid var(--hairline);
+}
+
+.role-option strong {
+  display: block;
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+}
+
+.role-option span {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-ash-text);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+}
+
+.role-option-active {
+  border-color: var(--color-ivory-text);
+}
+
+/* ── Onboarding ─────────────────────────────────────────────────────────────────────────────── */
+
+.start {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.start-field {
+  position: absolute;
+  inset: 0;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.start-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 24px 112px;
+}
+
+.start-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: var(--section-gap);
+}
+
+.start h1 {
+  font-size: var(--text-heading-lg);
+  margin-bottom: 16px;
+}
+
+/* The four steps. A list, numbered, with the current one carrying weight rather than colour. */
+.steps {
+  list-style: none;
+  margin: 0 0 var(--section-gap);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 20px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hairline);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.step-current {
+  color: var(--color-ivory-text);
+}
+
+.step-current .step-number {
+  border-color: var(--color-ivory-text);
+}
+
+.step-done .step-number {
+  border-color: var(--color-ivory-text);
+  color: var(--color-ivory-text);
+}
+
+.role-cards {
+  display: grid;
+  gap: var(--element-gap);
+  margin-top: var(--card-padding);
+}
+
+.role-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--card-padding);
+  border-radius: var(--radius-xl);
+  background: var(--color-graphite-card);
+  border: 1px solid transparent;
+}
+
+.role-card:hover:not(:disabled) {
+  border-color: var(--color-slate-border);
+}
+
+.role-card strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  color: var(--color-ivory-text);
+}
+
+.role-card span {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-ash-text);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
+/*
+  Readiness. Five lines a non-engineer can act on — deliberately not a diagnostics table, and
+  deliberately non-blocking: a check that refuses to let anybody past is a check nobody reads.
+*/
+.readiness {
+  list-style: none;
+  margin: var(--card-padding) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--element-gap);
+}
+
+.readiness > li {
+  display: grid;
+  grid-template-columns: 24px 160px 1fr;
+  gap: var(--element-gap);
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.readiness-mark {
+  font-family: var(--font-mono);
+  color: var(--color-ash-text);
+}
+
+.readiness > li[data-ok="true"] .readiness-mark {
+  color: var(--color-ivory-text);
+}
+
+.readiness-label {
+  color: var(--color-ivory-text);
+}
+
+.readiness-detail {
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+/* ── The dominant next action ───────────────────────────────────────────────────────────────── */
+
+/*
+  One panel, and it is the heaviest thing on the page.
+
+  The previous home screen gave the next action the same weight as four explanatory paragraphs, so
+  there was nothing for the eye to land on. Size and space do the work here; the cobalt is on the
+  action itself and nowhere else in the panel.
+*/
+.next-action {
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: 56px var(--card-padding);
+}
+
+.next-action h2 {
+  font-size: var(--text-heading-lg);
+  margin: 8px 0 var(--element-gap);
+}
+
+.next-action p {
+  color: var(--color-ash-text);
+  max-width: 62ch;
+  margin: 0 0 var(--card-padding);
+  font-size: var(--text-body-lg);
+  line-height: 1.5;
+}
+
+.next-action-complete h2 {
+  font-size: var(--text-heading-sm);
+}
+
+/* ── The workflow timeline ──────────────────────────────────────────────────────────────────── */
+
+.workflow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--card-padding);
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+.workflow-mark {
+  font-family: var(--font-mono);
+}
+
+.workflow-done,
+.workflow-current {
+  color: var(--color-ivory-text);
+}
+
+.workflow-current .workflow-label {
+  font-weight: var(--weight-w480);
+}
+
+/* ── Action rows ────────────────────────────────────────────────────────────────────────────── */
+
+.action-rows > li {
+  padding: 0;
+}
+
+.action-row {
+  display: block;
+  padding: 20px var(--card-padding);
+  text-decoration: none;
+  border-radius: var(--radius-xl);
+}
+
+.action-row strong {
+  display: block;
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+  font-size: var(--text-body-lg);
+}
+
+.action-row span {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+}
+
+.action-row:hover {
+  background: var(--color-obsidian-button);
+}
+
+/* ── Progressive disclosure ─────────────────────────────────────────────────────────────────── */
+
+/*
+  Everything a judge or an engineer needs, one interaction away from everything a user needs.
+
+  `details` rather than a custom toggle: it is keyboard-operable, announces its own state, and works
+  before JavaScript. The summary is the promise — "how this was computed", "transaction details" —
+  never a bare chevron.
+*/
+.advanced {
+  border-top: 1px solid var(--hairline);
+  padding-top: var(--element-gap);
+}
+
+.advanced > summary {
+  cursor: pointer;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  padding: 8px 0;
+  list-style-position: inside;
+}
+
+.advanced > summary:hover {
+  color: var(--color-ivory-text);
+}
+
+/* ── Landing narrative ──────────────────────────────────────────────────────────────────────── */
+
+.mechanism {
+  list-style: none;
+  margin: var(--card-padding) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--card-padding);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+}
+
+.mechanism > li {
+  position: relative;
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+  overflow: hidden;
+}
+
+/*
+  The curve field inside each step, at three states of the same drawing: many, resolving, resolved.
+  It is the argument the mark makes, told across three panels — not decoration repeated three times.
+*/
+.mechanism-figure {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.mechanism-figure svg {
+  width: 100%;
+  height: 100%;
+}
+
+.mechanism-number,
+.mechanism h3,
+.mechanism p {
+  position: relative;
+  z-index: 1;
+}
+
+.mechanism-number {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+  margin-bottom: 8px;
+}
+
+.mechanism p {
+  color: var(--color-ash-text);
+  margin: 0;
+}
+
+.systems {
+  display: flex;
+  align-items: stretch;
+  gap: var(--element-gap);
+  flex-wrap: wrap;
+  margin-top: var(--card-padding);
+}
+
+.system {
+  flex: 1 1 200px;
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+}
+
+.system-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  color: var(--color-ivory-text);
+}
+
+.system p {
+  margin: 8px 0 0;
+  color: var(--color-ash-text);
+}
+
+.system-join {
+  display: flex;
+  align-items: center;
+  color: var(--color-ash-text);
+  font-size: var(--text-subheading);
+}
+
+.system-bind {
+  border: 1px solid var(--color-slate-border);
+}
+
+.boundary-columns {
+  display: grid;
+  gap: var(--card-padding);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  margin-top: var(--card-padding);
+}
+
+.boundary-columns ul {
+  list-style: none;
+  margin: var(--element-gap) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.boundary-columns li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+  color: var(--color-ash-text);
+}
+
+.boundary-columns > div:last-child li {
+  color: var(--color-ivory-text);
+}
+
+.journey-cards {
+  display: grid;
+  gap: var(--element-gap);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  margin-top: var(--card-padding);
+}
+
+.journey-card {
+  display: block;
+  padding: var(--card-padding);
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.journey-card:hover {
+  border-color: var(--color-slate-border);
+}
+
+.journey-card strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  color: var(--color-ivory-text);
+}
+
+.journey-card span {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-ash-text);
+  line-height: 1.5;
+}
+
+.evidence {
+  list-style: none;
+  margin: var(--card-padding) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.evidence > li {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) 2fr;
+  gap: var(--card-padding);
+  padding: 20px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.evidence strong {
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+}
+
+.evidence span {
+  color: var(--color-ash-text);
+}
+
+.landing-close {
+  text-align: center;
+  padding-top: var(--section-gap);
+  padding-bottom: 128px;
+}
+
+.landing-close h2 {
+  font-size: var(--text-heading-lg);
+  margin-bottom: var(--card-padding);
+}
+
+.actions-close {
+  justify-content: center;
+  align-items: center;
+  gap: var(--card-padding);
+}
+
+.ghost-strong {
+  font-size: var(--text-body-lg);
+  padding: 16px 40px;
+}
+
+/* ── Demo mode ──────────────────────────────────────────────────────────────────────────────── */
+
+.demo-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--element-gap);
+}
+
+.demo-stage {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: var(--element-gap);
+  padding: 20px var(--card-padding);
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  border-left: 2px solid var(--color-slate-border);
+}
+
+.demo-stage-done {
+  border-left-color: var(--color-ivory-text);
+}
+
+.demo-number {
+  font-family: var(--font-mono);
+  font-size: var(--text-subheading);
+  color: var(--color-ash-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-stage h2 {
+  font-size: var(--text-body-lg);
+  margin: 0 0 4px;
+}
+
+.demo-state {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--text-caption);
+}
+
+/* ── Responsive additions ───────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .evidence > li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .systems {
+    flex-direction: column;
+  }
+
+  .system-join {
+    justify-content: center;
+    transform: rotate(90deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .next-action {
+    padding: var(--card-padding) 20px;
+  }
+
+  .next-action h2 {
+    font-size: var(--text-heading-sm);
+  }
+
+  .readiness > li {
+    grid-template-columns: 20px 1fr;
+  }
+
+  .readiness-detail {
+    grid-column: 2;
+  }
+
+  .account-menu {
+    right: auto;
+    left: 0;
+  }
+}

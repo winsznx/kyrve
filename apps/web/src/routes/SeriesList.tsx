@@ -62,6 +62,22 @@ export function SeriesList(): ReactElement {
         </section>
       ) : (
         <section className="band">
+          {/*
+            A list page still owes the reader one dominant action.
+
+            Opening the first position is it — not "verify", which is a different intent, and not a
+            row of equally weighted links, which is the flat surface this pass is correcting. The
+            cobalt lives here and nowhere else on the page.
+          */}
+          <div className="actions" style={{ marginTop: 0, marginBottom: 24 }}>
+            <Link
+              to={`/app/series/${layers[0]?.series.seriesId ?? ""}`}
+              className="primary"
+              data-testid="open-first-position"
+            >
+              Open {layers.length === 1 ? "your position" : "the first position"}
+            </Link>
+          </div>
           <ul className="rows" data-testid="series-list">
             {layers.map((layer) => (
               <li key={layer.tag} data-testid={`series-row-${layer.tag}`}>

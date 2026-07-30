@@ -35,10 +35,12 @@ import type { ReactElement } from "react";
 import { Shell } from "./layout/Shell.js";
 import { type BootState, KyrveProvider } from "./lib/context.js";
 import { type RouteDefinition, Router } from "./router/router.js";
+import { Activity } from "./routes/Activity.js";
 import { CapsuleDetail } from "./routes/CapsuleDetail.js";
 import { Capsules } from "./routes/Capsules.js";
 import { Cross } from "./routes/Cross.js";
 import { Curve } from "./routes/Curve.js";
+import { Demo } from "./routes/Demo.js";
 import { Fund } from "./routes/Fund.js";
 import { Landing } from "./routes/Landing.js";
 import { Mandates } from "./routes/Mandates.js";
@@ -55,6 +57,7 @@ import { RequestPage } from "./routes/Request.js";
 import { Roll } from "./routes/Roll.js";
 import { SeriesDetail } from "./routes/SeriesDetail.js";
 import { SeriesList } from "./routes/SeriesList.js";
+import { Start } from "./routes/Start.js";
 
 export const ROUTES: readonly RouteDefinition[] = [
   {
@@ -75,30 +78,45 @@ export const ROUTES: readonly RouteDefinition[] = [
     render: () => <Overview />,
   },
   {
+    path: "/app/start",
+    title: "Get started",
+    description:
+      "Choose how you will use Kyrve, connect a wallet, check that everything is running, and begin.",
+    render: () => <Start />,
+  },
+  {
+    path: "/app/activity",
+    title: "Activity",
+    description: "What has happened on this wallet and this deployment, read from chain state.",
+    render: () => <Activity />,
+  },
+  {
     path: "/app/fund",
-    title: "Fund a confidential balance",
+    title: "Add capital",
     description:
       "Wrap a public ERC-20 balance into a confidential ERC-7984 one, and read your own balance.",
     render: () => <Fund />,
   },
   {
     path: "/app/mandates",
-    title: "Lending mandate",
+    title: "Lending terms",
     description:
-      "Submit, replace, pause or retire an encrypted lending mandate, and track epoch participation.",
+      "Set privately what you will lend, into which markets and at what floor. Replace, pause or " +
+      "retire terms you have already set.",
     render: () => <Mandates />,
   },
   {
     path: "/app/request",
-    title: "Borrower request",
-    description: "Submit an encrypted borrower request with a public bond, or cancel it.",
+    title: "Request a quote",
+    description:
+      "State privately how much you need and the most you will pay. Only the bond is public.",
     render: () => <RequestPage />,
   },
   {
     path: "/app/curve",
-    title: "Confidential curve",
+    title: "Private matching",
     description:
-      "The epoch's confidential computation, stage by stage, and the single leaf it publishes.",
+      "The confidential computation, stage by stage, and the single result it makes public.",
     render: () => <Curve />,
   },
   {
@@ -118,27 +136,27 @@ export const ROUTES: readonly RouteDefinition[] = [
   },
   {
     path: "/app/series",
-    title: "Series",
-    description: "Every confidential series this deployment holds, per issuance stack.",
+    title: "Positions",
+    description: "What you own of settled credit, and every position this deployment holds.",
     render: () => <SeriesList />,
   },
   {
     path: "/app/series/:seriesId",
-    title: "Series",
+    title: "Position",
     description:
       "One series: confidential ownership, aggregate supply, public coverage and the solvency verdict.",
     render: (params) => <SeriesDetail seriesId={params["seriesId"] as `0x${string}`} />,
   },
   {
     path: "/app/cross/:seriesId",
-    title: "Cross",
+    title: "Transfer a position",
     description:
       "Submit a confidential exit or entry order against one series, and read your own escrow.",
     render: (params) => <Cross seriesId={params["seriesId"] as `0x${string}`} />,
   },
   {
     path: "/app/roll",
-    title: "Roll",
+    title: "Move maturity",
     description:
       "One confidential migration between two maturities. Minimal by construction: one intent " +
       "against one supply between two series.",
@@ -146,13 +164,13 @@ export const ROUTES: readonly RouteDefinition[] = [
   },
   {
     path: "/app/capsules",
-    title: "Capsules",
-    description: "Frozen selective disclosure: the capsules you issue and the capsules you hold.",
+    title: "Disclosures",
+    description: "Grant one reviewer one frozen value, and open the disclosures granted to you.",
     render: () => <Capsules />,
   },
   {
     path: "/app/capsules/:capsuleId",
-    title: "Capsule",
+    title: "Disclosure",
     description:
       "One capsule: its origin, its scope, its frozen snapshot, and what its expiry does and does " +
       "not do.",
@@ -160,6 +178,21 @@ export const ROUTES: readonly RouteDefinition[] = [
   },
 
   // ── Verification ──────────────────────────────────────────────────────────────────────────
+  {
+    /**
+     * The presenter's walkthrough.
+     *
+     * Declared before `/proof` only because the table is read in order and this keeps the
+     * application surfaces together. It renders a refusal on any chain but the local one — the demo
+     * drives real actions, and a walkthrough that could not perform them would be a slideshow.
+     */
+    path: "/demo",
+    title: "Demonstration",
+    description:
+      "A presenter's map of the real local lifecycle. Every stage links to the page it happens on " +
+      "and is marked complete only when the chain agrees.",
+    render: () => <Demo />,
+  },
   {
     path: "/proof",
     title: "Verify",

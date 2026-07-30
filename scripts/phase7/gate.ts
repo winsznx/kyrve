@@ -352,6 +352,26 @@ const GATES: readonly Gate[] = [
     execute: () => summarise(run("pnpm", ["exec", "tsx", "scripts/verify/web.ts"]).stdout, 3),
   },
   {
+    section: "JOURNEYS",
+    name: "every role reaches its first task by clicking, and only by clicking",
+    execute: () => {
+      run("pnpm", ["exec", "tsx", "scripts/verify/journeys.ts"]);
+      const record = readJson<Record<string, unknown>>(repoPath("evidence/phase7/journeys.json"));
+      if (record["oldProtocolNounsInNavigation"] !== 0) {
+        throw new Error("a protocol noun is back in the top-level navigation");
+      }
+      for (const claim of [
+        "roleSwitchingWorks",
+        "refreshRestoresPublicState",
+        "mobileNavigationUsable",
+      ]) {
+        if (record[claim] !== true) throw new Error(`the journey walk does not claim ${claim}`);
+      }
+      const roles = record["rolesWalked"] as string[] | undefined;
+      return `${roles?.length ?? 0} roles walked, navigation is ${(record["navigationLabels"] as string[]).join(" · ")}`;
+    },
+  },
+  {
     section: "HARDENING",
     name: "a gate cannot report PASS over a failure, a skip or an empty run",
     execute: () => {

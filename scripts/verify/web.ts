@@ -48,29 +48,32 @@ const PREVIEW_URL = "http://127.0.0.1:4173";
 const ROUTES: readonly { readonly path: string; readonly title: string }[] = [
   { path: "/", title: "One quote. The curve stays private" },
   { path: "/app", title: "Overview" },
-  { path: "/app/fund", title: "Fund a confidential balance" },
-  { path: "/app/mandates", title: "Lending mandate" },
-  { path: "/app/request", title: "Borrower request" },
-  { path: "/app/curve", title: "Confidential curve" },
+  { path: "/app/start", title: "Get started" },
+  { path: "/app/activity", title: "Activity" },
+  { path: "/demo", title: "Demonstration" },
+  { path: "/app/fund", title: "Add capital" },
+  { path: "/app/mandates", title: "Lending terms" },
+  { path: "/app/request", title: "Request a quote" },
+  { path: "/app/curve", title: "Private matching" },
   { path: "/app/quotes", title: "Quotes" },
   {
     path: "/app/quotes/0x1111111111111111111111111111111111111111111111111111111111111111",
     title: "Quote",
   },
-  { path: "/app/series", title: "Series" },
+  { path: "/app/series", title: "Positions" },
   {
     path: "/app/series/0x1111111111111111111111111111111111111111111111111111111111111111",
-    title: "Series",
+    title: "Position",
   },
   {
     path: "/app/cross/0x1111111111111111111111111111111111111111111111111111111111111111",
-    title: "Cross",
+    title: "Transfer a position",
   },
-  { path: "/app/roll", title: "Roll" },
-  { path: "/app/capsules", title: "Capsules" },
+  { path: "/app/roll", title: "Move maturity" },
+  { path: "/app/capsules", title: "Disclosures" },
   {
     path: "/app/capsules/0x1111111111111111111111111111111111111111111111111111111111111111",
-    title: "Capsule",
+    title: "Disclosure",
   },
   { path: "/proof", title: "Verify" },
   { path: "/proof/deployment", title: "Deployment proof" },
@@ -337,8 +340,31 @@ async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>):
       );
     }
 
+    /*
+     * 9b. THE NAVIGATION IS ROLE-SHAPED, NOT CONTRACT-SHAPED.
+     *
+     * Four destinations. The old nine — Fund, Mandates, Curve, Quotes, Capsules, Roll — were every
+     * one a real surface and not one of them a task. They are all still reachable; what must not
+     * come back is asking a first-time reader to pick between them before they have done anything.
+     */
+    // `/app/start` is chromeless by design — the onboarding flow has no application navigation,
+    // because a four-item operations bar across a screen asking "who are you" describes a product
+    // the reader has not been introduced to yet.
+    if (route.path.startsWith("/app") && route.path !== "/app/start") {
+      const navLabels = await page.evaluate<string>(
+        `[...document.querySelectorAll("header nav a")].map(a => (a.textContent || "").trim()).join("|")`,
+      );
+      const expected = "Home|Activity|Positions|Verify";
+      if (navLabels !== expected) {
+        fail("navigation", route.path, `navigation reads "${navLabels}", expected "${expected}"`);
+      }
+    }
+
     // ── 10. the active nav item is marked for assistive technology ──────────────────────────
-    if (route.path.startsWith("/app") || route.path.startsWith("/proof")) {
+    if (
+      (route.path.startsWith("/app") || route.path.startsWith("/proof")) &&
+      route.path !== "/app/start"
+    ) {
       const current = await page.locator('[aria-current="page"]').count();
       if (current === 0) {
         fail("navigation", route.path, "no navigation item is marked aria-current=page");
@@ -361,6 +387,71 @@ async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>):
       if (href.startsWith("/brand/") || href === "/site.webmanifest") continue;
       const probe = await fetch(`${PREVIEW_URL}${href}`);
       if (!probe.ok) fail("links", route.path, `internal link ${href} returned ${probe.status}`);
+    }
+
+    /*
+     * 11b. NO UNEXPLAINED INTERNAL TERM ABOVE THE FOLD.
+     *
+     * The correction this whole pass exists for. A first-time reader must not meet `graphRoot`,
+     * `universeId` or `ratifier` before they meet a sentence telling them what the page is for — so
+     * the check is positional rather than global: these words are entirely legitimate inside
+     * "Transaction details" and "How this was computed", and the technical proof pages are exempt
+     * because a reader who navigated to `/proof/...` asked for exactly this.
+     */
+    if (!route.path.startsWith("/proof")) {
+      const aboveFold = await page.evaluate<string>(
+        `(() => {
+           const out = [];
+           const walk = document.querySelectorAll("main h1, main h2, main p, main li, main strong, main span");
+           for (const node of walk) {
+             if (node.closest("details") !== null) continue;
+             const box = node.getBoundingClientRect();
+             if (box.top < 900) out.push(node.textContent || "");
+           }
+           return out.join(" ");
+         })()`,
+      );
+      const jargon = [
+        "graph root",
+        "graphRoot",
+        "universeId",
+        "universe hash",
+        "deployment id",
+        "allocation chunk",
+        "ratifier",
+        "callback",
+        "handle 0x",
+      ].filter((term) => aboveFold.toLowerCase().includes(term.toLowerCase()));
+      if (jargon.length > 0) {
+        fail(
+          "jargon above the fold",
+          route.path,
+          `${jargon.join(", ")} appears before any explanation, and outside a disclosure`,
+        );
+      }
+    }
+
+    /*
+     * 11c. ONE DOMINANT NEXT ACTION, OR A CLEAR COMPLETED STATE.
+     *
+     * Every application page must give the reader somewhere to go. A page with no cobalt action and
+     * no completion marker is a dead end, and a dashboard made of dead ends is the flat, equal-weight
+     * surface this correction is fixing.
+     */
+    if (route.path.startsWith("/app")) {
+      const decided = await page.evaluate<number>(
+        `document.querySelectorAll(
+           "main .primary, main [data-complete='true'], main .empty, " +
+           "main [data-testid='requires-wallet'], main .role-cards"
+         ).length`,
+      );
+      if (decided === 0) {
+        fail(
+          "next action",
+          route.path,
+          "no primary action, no completion state and no explained empty state — the page is a dead end",
+        );
+      }
     }
 
     // ── 12. forbidden copy ──────────────────────────────────────────────────────────────────

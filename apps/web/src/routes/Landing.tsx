@@ -1,39 +1,107 @@
 /**
- * `/` — the thesis, stated to someone who has connected nothing.
+ * `/` — the thesis, then the mechanism, then the proof, then the way in.
  *
  * ════════════════════════════════════════════════════════════════════════════════════════════
- * WHAT IS ON THIS PAGE AND WHAT IS DELIBERATELY NOT
+ * THE PAGE SELLS BEFORE IT DISCLAIMS
  * ════════════════════════════════════════════════════════════════════════════════════════════
  *
- * No metrics. Not total value locked, not a provider count, not a spread, not an uptime figure.
- * `.claude/rules/frontend.md` forbids a fabricated metric and this is where one would be tempting —
- * a landing page with no number on it looks unfinished until you remember that every number Kyrve
- * could show here is either private or would have to be read from a chain the reader has not chosen.
+ * The previous version put a "What this is not" card in the narrative, between the mechanism and the
+ * call to action. Every sentence in it was true and every one of them is still on this page — in the
+ * footer, where legal and technical qualification belongs. A product that qualifies itself before it
+ * has explained itself reads as unfinished, and a reader who has not yet been told what the thing
+ * does cannot evaluate a caveat about it.
  *
- * No photography, no gradients, no network art, no token bubbles. The only image is the redacted
- * curve field, which carries no data, and the approved CTA raster, which is a light-surface asset
- * used unmodified as `design.md` specifies.
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * THE CURVE MOTIF IS RATIONED
+ * ════════════════════════════════════════════════════════════════════════════════════════════
  *
- * ONE COBALT ELEMENT. The single primary action is "Open the terminal", and nothing else on the page
- * may be cobalt — including the navigation, which is why the landing header is monochrome text.
+ * It appears in the hero and once more, in the mechanism, where it carries meaning: three states of
+ * the same field — many curves, one resolving, one resolved. Using it as a background everywhere
+ * would make it wallpaper, and the one thing it has to communicate is that exactly one point becomes
+ * public.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * THE EVIDENCE SECTION IS NOT A METRICS ROW
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * No counters, no "total value", no uptime. Each line names a stage of the lifecycle and says that it
+ * has been executed on a public network — which is a claim a reader can go and check, and is the only
+ * kind of number worth putting on a landing page for a product like this.
  */
 
 import type { ReactElement } from "react";
 
 import { RedactedCurve } from "../components/RedactedCurve.js";
 import { useKyrve } from "../lib/context.js";
+import { layersOf } from "../lib/records.js";
 import { Link } from "../router/router.js";
+
+/** What stays private and what becomes public. Two columns, deliberately the same length. */
+const PRIVATE = [
+  "Lender rate curves",
+  "Provider allocations",
+  "Borrower limits",
+  "Exposure constraints",
+  "Rejected alternatives",
+  "Beneficial ownership",
+] as const;
+
+const PUBLIC = [
+  "Selected market",
+  "Executable rate",
+  "Exact amount",
+  "Settlement",
+  "Public credit position",
+  "Proof record",
+] as const;
+
+/**
+ * What has actually been executed on a public network.
+ *
+ * Each line is a stage, not a count. "43 contracts verified" as a number is a vanity metric; "the
+ * contracts behind this are source-verified" is a claim with a link behind it.
+ */
+const EVIDENCE = [
+  {
+    stage: "Confidential curve epoch",
+    what: "A full epoch computed on ciphertext, stage by stage, against a real confidential runtime.",
+  },
+  {
+    stage: "Exact-fill settlement",
+    what: "One quote taken through unmodified Morpho Midnight at exactly its size, with a partial fill refused.",
+  },
+  {
+    stage: "Confidential series ownership",
+    what: "Providers hold encrypted claims on a public credit position. One provider cannot read another's.",
+  },
+  {
+    stage: "Capsule",
+    what: "A frozen snapshot granted to one reviewer, who can read that value and nothing else.",
+  },
+  {
+    stage: "Cross",
+    what: "A confidential claim moved between two parties without either balance becoming public.",
+  },
+  {
+    stage: "Roll",
+    what: "A position migrated between two maturities, across two complete issuance stacks.",
+  },
+  {
+    stage: "Source-verified contracts",
+    what: "Every deployed contract published and verified on Etherscan, across two compiler pins.",
+  },
+] as const;
 
 export function Landing(): ReactElement {
   const { record } = useKyrve();
+  const layers = layersOf(record);
 
   return (
     <>
       <header className="landing-nav">
         {/*
           Text in Ivory, not the navy symbol. The approved master is authored for light surfaces and
-          measures 1.30:1 against Onyx; `brand.json` forbids recolouring it or plating it, and the
-          interim is the lowercase wordmark set as text until the reversed master is delivered.
+          measures 1.30:1 against Onyx; `brand.json` forbids recolouring it or plating it.
         */}
         <span className="wordmark">kyrve</span>
         <nav aria-label="Kyrve">
@@ -46,6 +114,7 @@ export function Landing(): ReactElement {
         </nav>
       </header>
 
+      {/* ── The hero, unchanged. ─────────────────────────────────────────────────────────── */}
       <section className="hero">
         <RedactedCurve className="hero-field" resolved at={0.68} testId="hero-field" />
         <div className="hero-inner">
@@ -56,115 +125,178 @@ export function Landing(): ReactElement {
             limits, rejected alternatives and beneficial ownership never become public.
           </p>
           <Link to="/app" className="primary" data-testid="open-terminal">
-            Open the terminal
+            Enter the terminal
           </Link>
         </div>
       </section>
 
-      <section className="landing-section">
-        <div className="split">
+      {/* ── A. Three-step mechanism, as one progression. ─────────────────────────────────── */}
+      <section className="landing-section" data-testid="mechanism">
+        <span className="eyebrow">How it works</span>
+        <h2>Three steps, and only the last one is public</h2>
+
+        <ol className="mechanism">
+          <li>
+            <div className="mechanism-figure" aria-hidden="true">
+              <RedactedCurve resolved={false} />
+            </div>
+            <span className="mechanism-number">1</span>
+            <h3>Submit privately</h3>
+            <p>
+              Lenders define encrypted mandates and borrowers define encrypted requirements. Nothing
+              about either is readable — not the size, not the limits, not the shape.
+            </p>
+          </li>
+          <li>
+            <div className="mechanism-figure" aria-hidden="true">
+              <RedactedCurve resolved={false} at={0.5} />
+            </div>
+            <span className="mechanism-number">2</span>
+            <h3>Compute the curve</h3>
+            <p>
+              Nox evaluates rate, maturity, collateral, capacity and exposure without publishing the
+              alternatives. A rejection produces no public reason, because a reason would be an
+              oracle.
+            </p>
+          </li>
+          <li>
+            <div className="mechanism-figure" aria-hidden="true">
+              <RedactedCurve resolved at={0.68} />
+            </div>
+            <span className="mechanism-number">3</span>
+            <h3>Settle one quote</h3>
+            <p>
+              Kyrve reveals one executable result and Morpho Midnight settles it exactly. That
+              single cobalt point is everything that becomes public.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      {/* ── B. Two systems, one market. ──────────────────────────────────────────────────── */}
+      <section className="landing-section" data-testid="two-systems">
+        <span className="eyebrow">The architecture, in five seconds</span>
+        <h2>Two systems, one market</h2>
+        <div className="systems">
+          <div className="system">
+            <span className="system-name">Nox</span>
+            <p>computes privately</p>
+          </div>
+          <div className="system-join" aria-hidden="true">
+            →
+          </div>
+          <div className="system system-bind">
+            <span className="system-name">Kyrve</span>
+            <p>binds the result to exact execution</p>
+          </div>
+          <div className="system-join" aria-hidden="true">
+            →
+          </div>
+          <div className="system">
+            <span className="system-name">Midnight</span>
+            <p>settles publicly</p>
+          </div>
+        </div>
+        <p className="note">
+          Neither half is modified. The confidential runtime never learns who settles, and the
+          settlement layer never learns what was rejected.
+        </p>
+      </section>
+
+      {/* ── C. What remains private, what becomes public. ────────────────────────────────── */}
+      <section className="landing-section" data-testid="boundary">
+        <span className="eyebrow">The boundary</span>
+        <h2>What stays private, and what does not</h2>
+        <div className="boundary-columns">
           <div>
-            <span className="eyebrow">The problem</span>
-            <h2>Price discovery leaks the book</h2>
+            <h3>Stays private</h3>
+            <ul data-testid="boundary-private">
+              {PRIVATE.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
-          <div className="stack">
-            <p className="lede">
-              A lender who quotes a curve has published their appetite: which markets they will
-              touch, how much they hold, and the rate below which they stop. A borrower who shops a
-              requirement has published their need. In fixed income, both of those are the position.
-            </p>
-            <p className="lede">
-              The usual answer is a private venue with a trusted operator. Kyrve's answer is that
-              the computation itself is confidential, and that the one thing which becomes public is
-              the one thing that has to be: the offer that settles.
-            </p>
+          <div>
+            <h3>Becomes public</h3>
+            <ul data-testid="boundary-public">
+              {PUBLIC.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </div>
+        </div>
+        <p className="note">
+          Every value in Kyrve is in exactly one of these columns, and any screen that moves one
+          across says so before you sign.
+        </p>
+      </section>
+
+      {/* ── D. Product journeys. ─────────────────────────────────────────────────────────── */}
+      <section className="landing-section" data-testid="journeys">
+        <span className="eyebrow">Where you fit</span>
+        <h2>Three ways in</h2>
+        <div className="journey-cards">
+          <Link to="/app/start" className="journey-card">
+            <strong>Provide capital</strong>
+            <span>
+              Set lending terms nobody can read and receive confidential ownership of the credit
+              that settles against them.
+            </span>
+          </Link>
+          <Link to="/app/start" className="journey-card">
+            <strong>Request a quote</strong>
+            <span>
+              State what you need privately and receive one executable price. Nothing about your
+              limits is published, whether or not you settle.
+            </span>
+          </Link>
+          <Link to="/app/start" className="journey-card">
+            <strong>Verify a position</strong>
+            <span>
+              Recompute every public claim from chain state, or decrypt one frozen disclosure
+              granted to you — and nothing beyond it.
+            </span>
+          </Link>
         </div>
       </section>
 
-      <section className="landing-section">
-        <div className="split">
-          <div>
-            <span className="eyebrow">The mechanism</span>
-            <h2>Confidential in, one public offer out</h2>
-          </div>
-          <div className="stack">
-            <div className="card">
-              <h3>Encrypted mandates and one encrypted request</h3>
-              <p className="lede">
-                Every submission carries the same handle count whether one market is enabled or
-                eight, so the shape of a mandate is not readable from the transaction.
-              </p>
-            </div>
-            <div className="card">
-              <h3>An epoch computes on ciphertext</h3>
-              <p className="lede">
-                Eligibility, capacity, the privacy floor and leaf selection, all on encrypted
-                values. Every encrypted primitive is a separate transaction, so an epoch advances in
-                visible steps rather than behind a spinner.
-              </p>
-            </div>
-            <div className="card">
-              <h3>Exactly one leaf is published</h3>
-              <p className="lede">
-                A market, a rate and an aggregate amount. Everything rejected stays encrypted, and a
-                confidential rejection never produces a public reason — a private failure that
-                explained itself would be a public oracle.
-              </p>
-            </div>
-            <div className="card">
-              <h3>Settlement is unmodified Morpho Midnight</h3>
-              <p className="lede">
-                The credit position is public. Who owns how much of it is a confidential ERC-7984
-                balance, and is not derivable from anything on chain.
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* ── E. Real proof. ───────────────────────────────────────────────────────────────── */}
+      <section className="landing-section" data-testid="evidence">
+        <span className="eyebrow">Executed, not described</span>
+        <h2>Every stage has run on a public network</h2>
+        <ul className="evidence">
+          {EVIDENCE.map((item) => (
+            <li key={item.stage}>
+              <strong>{item.stage}</strong>
+              <span>{item.what}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="note">
+          {layers.length === 0
+            ? "This deployment is serving no settled series yet — every claim above is still checkable against the chain it points at."
+            : `This deployment is serving ${layers.length} settled series, and every claim above is checkable against it.`}
+        </p>
       </section>
 
-      <section className="landing-section">
-        <div className="split">
-          <div>
-            <span className="eyebrow">What you can check</span>
-            <h2>Verification recomputes, it does not display</h2>
-          </div>
-          <div className="stack">
-            <p className="lede">
-              Every verification page states a fact, reads the chain for that fact, and compares
-              against the deployment record. The record supplies addresses and is never the source
-              of a verdict — where the two disagree, the check fails and shows both. That property
-              is proven the only way it can be: by serving a record with a false series id and
-              requiring the page to disagree with it.
-            </p>
-            <p className="lede">
-              Values published through the Nox handle gateway carry{" "}
-              <strong>decryption proofs</strong>— signatures over a released plaintext. They are not
-              zero-knowledge proofs and Kyrve never calls them that.
-            </p>
-            <div>
-              <Link to="/proof" className="ghost">
-                Verify this deployment
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/*
+        F. One action.
 
-      <section className="landing-section">
-        <div className="card">
-          <h2>What this is not</h2>
-          <p className="lede">
-            Not an offer of securities and not investment advice. The Midnight deployment behind
-            this is an unmodified, source-available testnet replica used under its non-production
-            licence, and is not an official Morpho deployment. There is no Nox mainnet.
-          </p>
-          <p className="lede">
-            No gas indistinguishability is claimed, for any path. The confidential contract layer
-            has no static-analysis coverage — crytic-compile cannot be made to drive its compiler —
-            which is reported on every gate run rather than folded into a pass.
-          </p>
-          <p className="note">{record.disclosure}</p>
+        The closing call is a large GHOST rather than a second cobalt fill, because the hero already
+        holds this page's one cobalt element and `design.md` rations it to a single primary action per
+        page. `pnpm verify:web` counts them, so a second fill here would fail the build rather than
+        quietly breaking the rule — and the constraint is a good one: the eye should land on the hero's
+        point, which is the whole visual argument of the mark.
+      */}
+      <section className="landing-section landing-close" data-testid="close">
+        <h2>One quote. The curve stays private.</h2>
+        <div className="actions actions-close">
+          <Link to="/app/start" className="ghost ghost-strong" data-testid="enter-terminal">
+            Enter the terminal
+          </Link>
+          <Link to="/proof/deployment" className="row-link">
+            Verify the deployment
+          </Link>
         </div>
       </section>
     </>

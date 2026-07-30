@@ -311,10 +311,43 @@ describe("Phase 2: the local terminal, in a real browser, against the real stack
 
     const storage = await page.evaluate(() => ({
       local: window.localStorage.length,
+      localKeys: Object.keys(window.localStorage),
+      localValues: Object.keys(window.localStorage).map((key) =>
+        String(window.localStorage.getItem(key)),
+      ),
       session: window.sessionStorage.length,
     }));
-    assert.equal(storage.local, 0, "nothing is persisted to localStorage, decrypted or otherwise");
+    /*
+     * FROM A COUNT TO A NAMED SET, AND THE NEW ASSERTION IS THE STRONGER ONE.
+     *
+     * Phase 7 gave the product a role, and a role has to survive a reload or every visit begins by
+     * asking who you are. Two keys are now written: `kyrve.role` and `kyrve.onboarded`.
+     *
+     * "Zero keys" was easy to assert and weaker than it looks — it would have passed on a build that
+     * stored a decrypted balance under a key it cleared on unload. What matters is not how many keys
+     * exist but whether any of them holds a value that was decrypted, so the assertion now names the
+     * permitted set AND checks every stored value against the plaintext this flow revealed.
+     *
+     * The decryption path itself is unchanged and still cannot reach storage at all:
+     * `scripts/verify/privacy-scan.ts` forbids every storage sink in `packages/nox/src/client.ts`,
+     * which is the only module in the workspace that ever holds a plaintext.
+     */
+    const permitted = new Set(["kyrve.role", "kyrve.onboarded"]);
+    const unexpectedKeys = storage.localKeys.filter((key: string) => !permitted.has(key));
+    assert.deepEqual(unexpectedKeys, [], "only the role and the onboarding flag may be persisted");
     assert.equal(storage.session, 0, "nothing is persisted to sessionStorage");
+    for (const value of storage.localValues) {
+      assert.equal(
+        value.includes(WRAPPED_DISPLAY),
+        false,
+        `a persisted value contains the decrypted balance: ${value}`,
+      );
+      assert.equal(
+        /^\d{4,}$/.test(value),
+        false,
+        `a persisted value looks like an amount rather than a role: ${value}`,
+      );
+    }
 
     console.log(`  request bodies recorded : ${requests.length}`);
     for (const [origin, count] of byOrigin) {
@@ -322,6 +355,6 @@ describe("Phase 2: the local terminal, in a real browser, against the real stack
       console.log(`    ${origin.padEnd(24)} ${String(count).padStart(4)}  ${role}`);
     }
     console.log("  Kyrve components contacted : 0 — the application origin received no body");
-    console.log("  browser storage written    : 0 keys");
+    console.log(`  browser storage written    : ${storage.localKeys.join(", ") || "0 keys"}`);
   });
 });

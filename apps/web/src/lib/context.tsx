@@ -44,6 +44,7 @@ import { noxNetworkFor } from "./deployment.js";
 import type { LifecycleState } from "./lifecycle.js";
 import { type KyrveRecord, loadRecord } from "./records.js";
 import { safeErrorMessage } from "./redact.js";
+import { hasOnboarded, markOnboarded, type Role, readRole, writeRole } from "./role.js";
 import { lock, openPublicClient, openSession, type Session } from "./session.js";
 
 /** How the wallet half of the terminal is doing. Four states, none of them a spinner. */
@@ -66,6 +67,17 @@ export interface Kyrve {
   readonly connect: () => Promise<void>;
   /** Clears every decrypted value from memory. NOT a revocation — Nox has none to offer. */
   readonly disconnect: () => void;
+
+  /**
+   * Who the reader has said they are, and whether they have been introduced.
+   *
+   * `undefined` means they have not chosen, which is a real state rather than a default: guessing a
+   * role would put a borrower in front of lending terms and teach them the product is not for them.
+   */
+  readonly role: Role | undefined;
+  readonly onboarded: boolean;
+  readonly chooseRole: (role: Role) => void;
+  readonly completeOnboarding: () => void;
 }
 
 const KyrveContext = createContext<Kyrve | undefined>(undefined);
@@ -112,6 +124,18 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
   const [session, setSession] = useState<Session>();
   const [walletState, setWalletState] = useState<WalletState>("not-connected");
   const [walletFailure, setWalletFailure] = useState<string>();
+  const [role, setRole] = useState<Role | undefined>(() => readRole());
+  const [onboarded, setOnboarded] = useState<boolean>(() => hasOnboarded());
+
+  const chooseRole = useCallback((next: Role): void => {
+    writeRole(next);
+    setRole(next);
+  }, []);
+
+  const completeOnboarding = useCallback((): void => {
+    markOnboarded();
+    setOnboarded(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,6 +221,10 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
     walletFailure,
     connect,
     disconnect,
+    role,
+    onboarded,
+    chooseRole,
+    completeOnboarding,
   };
 
   return <KyrveContext.Provider value={value}>{children}</KyrveContext.Provider>;

@@ -1,0 +1,19 @@
+{
+  "$comment": "Navigational proof that a first-time reader can choose a role and reach their first task by clicking visible, readable controls — never by typing a route and never through a link labelled with a protocol noun. Protocol correctness is proven by the connected suites; this is about whether anybody can get to them.",
+  "rolesWalked": [
+    "provider",
+    "borrower",
+    "auditor"
+  ],
+  "navigationLabels": [
+    "Home",
+    "Activity",
+    "Positions",
+    "Verify"
+  ],
+  "oldProtocolNounsInNavigation": 0,
+  "roleSwitchingWorks": true,
+  "refreshRestoresPublicState": true,
+  "mobileNavigationUsable": true,
+  "findings": 0
+}
