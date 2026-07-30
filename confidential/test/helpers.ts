@@ -84,7 +84,10 @@ export interface Harness {
   controller: any;
   underlying: any;
   asset: any;
+  /** The Phase 2 `KyrveConfidentialAssetVault`, kept because it is deployed on Sepolia. */
   vault: any;
+  /** The Phase 5 `KyrveCustodyVault` — the handle-native one that can actually lock. */
+  custody: any;
   mandateBook: any;
   requestBook: any;
   /** The wallet permitted to open and release reservations in this deployment. */
@@ -127,6 +130,15 @@ export async function deployHarness(options: { reserver?: `0x${string}` } = {}):
     reserver,
     controller.address,
   ]);
+  // The P5-1 custody vault. Its reserver is BOUND ONCE rather than passed here, because the
+  // reservation ledger needs this address at construction, so one side of the cycle cannot be a
+  // constructor argument. Left unbound, every lock entry point reverts `ReserverNotBound` — which is
+  // the correct behaviour for a capability whose holder does not exist yet, and is what the Phase 2
+  // suites see.
+  const custody = await connection.viem.deployContract("KyrveCustodyVault", [
+    asset.address,
+    controller.address,
+  ]);
   const mandateBook = await connection.viem.deployContract("EncryptedMandateBook", [
     controller.address,
   ]);
@@ -142,6 +154,7 @@ export async function deployHarness(options: { reserver?: `0x${string}` } = {}):
     underlying,
     asset,
     vault,
+    custody,
     mandateBook,
     requestBook,
     reserver,

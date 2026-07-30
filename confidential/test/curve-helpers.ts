@@ -97,6 +97,9 @@ export const ROLE = {
   AggregateFillAmount: 4,
 } as const;
 
+/** The undefined handle. Nox resolves it to the type's PUBLIC zero, which has no ACL to grant. */
+const ZERO_HANDLE = `0x${"0".repeat(64)}` as Handle;
+
 export interface CurveHarness extends Harness {
   universes: any;
   epochs: any;
@@ -122,6 +125,7 @@ export async function deployCurveHarness(): Promise<CurveHarness> {
   ]);
   const graph = await base.connection.viem.deployContract("CurveGraphRegistry", [epochs.address]);
   const ledger = await base.connection.viem.deployContract("ReservationLedger", [
+    base.custody.address,
     base.controller.address,
   ]);
   const engine = await base.connection.viem.deployContract("NoxCurveEngine", [
@@ -131,7 +135,7 @@ export async function deployCurveHarness(): Promise<CurveHarness> {
     ledger.address,
     base.mandateBook.address,
     base.requestBook.address,
-    base.vault.address,
+    base.custody.address,
     base.controller.address,
   ]);
   const verifier = await base.connection.viem.deployContract("CurveResultVerifier", [
@@ -145,6 +149,12 @@ export async function deployCurveHarness(): Promise<CurveHarness> {
   await mine(base, await epochs.write.bindEngine([engine.address], { account: curator.account }));
   await mine(base, await graph.write.bindEngine([engine.address], { account: curator.account }));
   await mine(base, await ledger.write.bindEngine([engine.address], { account: curator.account }));
+  // The custody vault's reserver. Bound once, to the ledger, and never again — a mutable reserver
+  // would be an arbitrary-spend surface over every balance the vault holds (threat T-B).
+  await mine(
+    base,
+    await base.custody.write.bindReserver([ledger.address], { account: curator.account }),
+  );
 
   return { ...base, universes, epochs, graph, ledger, engine, verifier, curator };
 }
@@ -239,7 +249,7 @@ export async function createUniverse(
 export interface ProviderSetup {
   readonly walletIndex: number;
   readonly mandate?: Partial<Mandate>;
-  /** Confidential vault balance to fund. Defaults to a generous amount. */
+  /** Confidential custody balance to fund. Defaults to a generous amount. */
   readonly balance?: bigint;
 }
 
@@ -297,20 +307,20 @@ export async function setupProvider(
     const until = (await h.publicClient.getBlock()).timestamp + 3_600n;
     await mine(
       h,
-      await h.asset.write.setOperator([h.vault.address, until], { account: wallet.account }),
+      await h.asset.write.setOperator([h.custody.address, until], { account: wallet.account }),
     );
 
-    const encrypted = await client.encrypt(balance, "euint256", h.vault.address);
-    const nonce = await h.vault.read.nextNonce([address]);
+    const encrypted = await client.encrypt(balance, "euint256", h.custody.address);
+    const nonce = await h.custody.read.nextNonce([address]);
     await mine(
       h,
-      await h.vault.write.deposit([encrypted.handle, encrypted.proof, nonce], {
+      await h.custody.write.deposit([encrypted.handle, encrypted.proof, nonce], {
         account: wallet.account,
       }),
     );
     await mine(
       h,
-      await h.asset.write.setOperator([h.vault.address, 0n], { account: wallet.account }),
+      await h.asset.write.setOperator([h.custody.address, 0n], { account: wallet.account }),
     );
   }
 
@@ -327,9 +337,14 @@ export async function setupProvider(
   );
   const mandateId = await h.mandateBook.read.mandateIdFor([address, universeId]);
 
-  // Grant the engine every mandate handle, and the engine AND the ledger the vault balance handle.
+  // Grant the engine every mandate handle, and the engine the custody balance handle.
+  //
+  // ONE GRANT FEWER THAN PHASE 3, and deliberately so. Phase 3 also granted the ledger this handle,
+  // because the ledger subtracted from it. Phase 5 moved that subtraction into `KyrveCustodyVault`,
+  // which computed the balance itself and already holds `allowThis` on it. Every grant a provider
+  // makes is PERMANENT -- there is no `removeAdmin` -- so one fewer is worth naming. Delta T-5.
   const handles = await h.mandateBook.read.handlesOf([mandateId, 1]);
-  const balanceHandle = (await h.vault.read.confidentialAvailableOf([address])) as Handle;
+  const balanceHandle = (await h.custody.read.confidentialAvailableOf([address])) as Handle;
 
   for (const handle of mandateHandleList(handles)) {
     await mine(h, await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), handle, h.engine.address));
@@ -343,10 +358,6 @@ export async function setupProvider(
     await mine(
       h,
       await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), balanceHandle, h.engine.address),
-    );
-    await mine(
-      h,
-      await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), balanceHandle, h.ledger.address),
     );
   }
 
@@ -465,6 +476,34 @@ export async function openAndSeal(
 
   for (const provider of providers) {
     const wallet = h.wallets[provider.walletIndex];
+
+    /**
+     * THE GRANT IS PER-EPOCH NOW, AND PHASE 5 IS WHY. Delta T-8.
+     *
+     * Phase 3's reservation subtracted from a snapshot the ledger kept, so the custody vault's
+     * `confidentialAvailableOf` handle never moved and the grant `setupProvider` made once stayed
+     * valid for every later epoch. Phase 5's reservation moves REAL capital, so locking rewrites
+     * `_available` to a new handle — and a Nox ACL entry is per handle, not per slot. The second
+     * epoch therefore fails at `sealProviderSnapshot` with `EngineNotAuthorisedForHandle` naming a
+     * handle nobody has ever seen before.
+     *
+     * That is inherent rather than fixable: handles are immutable references, a grant cannot be
+     * pre-made for a handle that does not exist yet, and `allow` is gated on the caller already
+     * holding access — so only the provider can make it, and only after the previous epoch settled.
+     * The cost is one permanent grant per provider per epoch, which is exactly the one Phase 5
+     * removed by moving the subtraction out of the ledger. Net zero for a first epoch, plus one for
+     * each after it.
+     */
+    const currentBalance = (await h.custody.read.confidentialAvailableOf([
+      provider.address,
+    ])) as Handle;
+    if (currentBalance !== ZERO_HANDLE && currentBalance !== provider.balanceHandle) {
+      await mine(
+        h,
+        await grantHandleAccess(wallet, LOCAL_NOX_NETWORK(), currentBalance, h.engine.address),
+      );
+    }
+
     const nonce = await h.engine.read.nextNonce([provider.address]);
     const receipt = await mine(
       h,
