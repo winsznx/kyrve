@@ -34,8 +34,9 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-
+import { NOX_COMPUTE_BY_CHAIN, NOX_GATEWAY_BY_CHAIN } from "@kyrve/config";
 import { encodeMarket } from "@kyrve/midnight";
+import { createHandleClient } from "@kyrve/nox";
 import { deriveQuoteSize } from "@kyrve/quote";
 import { tickToPrice } from "@kyrve/quote-math";
 import {
@@ -90,6 +91,21 @@ function registryEarlyAddress(settlement: SettlementDeployment): Address {
   return address;
 }
 
+/**
+ * A CONFIDENTIAL-layer artifact, from Hardhat rather than Foundry.
+ *
+ * The two layers are separate compilation units at mutually exclusive solc pins (delta Q-1), so they
+ * write to different places. `artifact()` reads `out/`, which is Foundry's — and asking it for
+ * `KyrveCustodyVault` produces "no artifact; run forge build" for a contract Foundry never compiles.
+ */
+function confidentialArtifact(name: string): { abi: readonly unknown[] } {
+  const path = repoPath(`confidential/artifacts/contracts/${name}.sol/${name}.json`);
+  if (!existsSync(path)) {
+    throw new Error(`no artifact at ${path}; run \`pnpm --dir confidential exec hardhat compile\``);
+  }
+  return readJson<{ abi: readonly unknown[] }>(path);
+}
+
 function artifact(name: string): { abi: readonly unknown[] } {
   return artifactIn(name, name);
 }
@@ -111,14 +127,36 @@ function artifactIn(sourceName: string, contractName: string): { abi: readonly u
 }
 
 async function main(): Promise<void> {
-  const settlementPath = repoPath("deployments/sepolia/settlement.json");
-  const epochPath = repoPath("evidence/phase4/sepolia-epoch.json");
-  const activationPath = repoPath("evidence/phase4/sepolia-activation.json");
+  /**
+   * WHICH LAYER THIS SETTLES.
+   *
+   * `KYRVE_SERIES_LAYER=true` settles the Phase 5 handle-native deployment, and the only differences
+   * are where the addresses come from and where the money comes from. Everything else — the leaf
+   * resolution, the sizing, the activation, the partial-fill refusal, the exact `take`, the resume
+   * logic — is identical, because the settlement path is identical. That is the point: Phase 5 changed
+   * the funding, not the settlement.
+   *
+   * The funding difference is the whole phase. Phase 4 minted public USDC into the vault, deliberately
+   * and in the open (delta S-6). Phase 5 consumes real confidential locks, sums them, burns the sum out
+   * of the ERC-7984 wrapper and finalises a real ERC-20 transfer with a real gateway proof — and the
+   * plaintext of that burn must equal the epoch's published aggregate exactly.
+   */
+  const seriesLayer = process.env["KYRVE_SERIES_LAYER"] === "true";
+  const phaseDir = seriesLayer ? "phase5" : "phase4";
+  const settlementPath = repoPath(
+    seriesLayer ? "deployments/sepolia/series.json" : "deployments/sepolia/settlement.json",
+  );
+  const epochPath = repoPath(
+    seriesLayer
+      ? "evidence/phase5/sepolia-epoch-proofs.json"
+      : "evidence/phase4/sepolia-epoch.json",
+  );
+  const activationPath = repoPath(`evidence/${phaseDir}/sepolia-activation.json`);
 
   if (!existsSync(settlementPath)) {
     throw new Error(
-      "no deployments/sepolia/settlement.json. Deploy first: DEPLOY_SEPOLIA=true " +
-        "KYRVE_CONFIRM_BROADCAST=true pnpm deploy:settlement sepolia",
+      `no ${settlementPath}. Deploy first: DEPLOY_SEPOLIA=true KYRVE_CONFIRM_BROADCAST=true ` +
+        `pnpm deploy:${seriesLayer ? "series" : "settlement"} sepolia`,
     );
   }
   if (!existsSync(epochPath)) {
@@ -128,7 +166,51 @@ async function main(): Promise<void> {
     );
   }
 
-  const settlement = readJson<SettlementDeployment>(settlementPath);
+  /**
+   * The deployment, in one shape whichever layer it came from.
+   *
+   * `series.json` records contracts as `{ name: { address, … } }` with reused addresses in their own
+   * block; `settlement.json` records a flat `addresses` map and a `curve` map. Normalising here means
+   * every line below this point is layer-agnostic, which is why the two modes cannot drift.
+   */
+  const settlement: SettlementDeployment = seriesLayer
+    ? (() => {
+        const record = readJson<{
+          midnight: Address;
+          loanToken: Address;
+          reused: Record<string, Address>;
+          contracts: Record<string, { address: Address }>;
+        }>(settlementPath);
+        const at = (name: string): Address => {
+          const entry = record.contracts[name];
+          if (entry === undefined) throw new Error(`series.json does not name ${name}`);
+          return entry.address;
+        };
+        return {
+          midnight: record.midnight,
+          loanToken: record.loanToken,
+          curve: {
+            CurveUniverseRegistry: record.reused["CurveUniverseRegistry"] as Address,
+            QuoteEpochController: at("QuoteEpochController"),
+            CurveGraphRegistry: at("CurveGraphRegistry"),
+            ReservationLedger: at("ReservationLedger"),
+            NoxCurveEngine: at("NoxCurveEngine"),
+            CurveResultVerifier: at("CurveResultVerifier"),
+          },
+          addresses: {
+            KyrveQuoteRegistry: at("KyrveQuoteRegistry"),
+            KyrveSettlementRatifier: at("KyrveSettlementRatifier"),
+            KyrvePublicResultVerifier: at("KyrvePublicResultVerifier"),
+            QuoteActivator: at("QuoteActivator"),
+            KyrveQuoteExpiryController: at("KyrveQuoteExpiryController"),
+            KyrveSeriesFactory: at("KyrveSeriesFactory"),
+            KyrveCustodyVault: at("KyrveCustodyVault"),
+            KyrveWrappedAsset: at("KyrveWrappedAsset"),
+            SeriesAllocator: at("SeriesAllocator"),
+          },
+        };
+      })()
+    : readJson<SettlementDeployment>(settlementPath);
   const epoch = readJson<EpochEvidence>(epochPath);
 
   if (!epoch.published.quoteReady) {
@@ -357,17 +439,162 @@ async function main(): Promise<void> {
     ).status === 2;
 
   if (!consumedAlready && vaultBalance < size.buyerAssets) {
-    await send(
-      "fund vault",
-      await wallet.writeContract({
+    if (!seriesLayer) {
+      // Phase 4 funds from a PUBLIC mint, deliberately and in the open. Delta S-6.
+      await send(
+        "fund vault",
+        await wallet.writeContract({
+          address: settlement.loanToken,
+          abi: artifact("TestERC20").abi as never,
+          functionName: "mint",
+          args: [vault, size.buyerAssets - vaultBalance],
+          account,
+          chain: sepolia,
+        }),
+      );
+    } else {
+      /**
+       * THE PHASE 5 FUNDING PATH, and the whole reason this phase exists.
+       *
+       * Four steps and none is optional:
+       *
+       *   consumeChunk    each provider's lock leaves `locked` and joins the round's total. Keyed on
+       *                   the EPOCH, because activation calls `prepareQuote` and refuses a vault that
+       *                   cannot already pay — so the money must land before a quote id exists (T-9).
+       *   unwrapFunding   the total burns out of the ERC-7984 wrapper and its handle is marked publicly
+       *                   decryptable. IRREVERSIBLE: Nox has no un-publish.
+       *   publicDecrypt   the plaintext is read through the real gateway. IT MUST EQUAL THE PUBLISHED
+       *                   AGGREGATE — that equality is invariant 1, and it is proven here by a public
+       *                   ERC-20 transfer rather than by argument.
+       *   finalizeUnwrap  moves the real loan token to the series vault. Permissionless: the recipient
+       *                   was fixed at step two and cannot be redirected.
+       */
+      const allocator = settlement.addresses["SeriesAllocator"];
+      const custody = settlement.addresses["KyrveCustodyVault"];
+      const asset = settlement.addresses["KyrveWrappedAsset"];
+      if (allocator === undefined || custody === undefined || asset === undefined) {
+        throw new Error("the series manifest records no allocator, custody vault or wrapper");
+      }
+
+      const providerCount = (
+        (await publicClient.readContract({
+          address: settlement.curve["QuoteEpochController"] as Address,
+          abi: confidentialArtifact("QuoteEpochController").abi as never,
+          functionName: "epochOf",
+          args: [epoch.epochId],
+        })) as { providerCount: number }
+      ).providerCount;
+
+      const fundingState = (await publicClient.readContract({
+        address: custody,
+        abi: confidentialArtifact("KyrveCustodyVault").abi as never,
+        functionName: "fundingStateOf",
+        args: [epoch.epochId],
+      })) as number;
+
+      console.log(`\n  confidential funding (${providerCount} providers):`);
+
+      // 0 = None, 1 = Consumed, 2 = Funded. Each step is skipped once it has happened, so an
+      // interrupted run finishes rather than repeating a broadcast.
+      if (fundingState === 0) {
+        await send(
+          "consumeChunk",
+          await wallet.writeContract({
+            address: allocator,
+            abi: confidentialArtifact("SeriesAllocator").abi as never,
+            functionName: "consumeChunk",
+            args: [epoch.epochId, 0, providerCount],
+            account,
+            chain: sepolia,
+          }),
+        );
+      }
+      if (fundingState <= 1) {
+        await send(
+          "unwrapFunding",
+          await wallet.writeContract({
+            address: allocator,
+            abi: confidentialArtifact("SeriesAllocator").abi as never,
+            functionName: "unwrapFunding",
+            args: [epoch.epochId],
+            account,
+            chain: sepolia,
+          }),
+        );
+      }
+
+      const unwrapRequest = (await publicClient.readContract({
+        address: custody,
+        abi: confidentialArtifact("KyrveCustodyVault").abi as never,
+        functionName: "unwrapRequestOf",
+        args: [epoch.epochId],
+      })) as Hex;
+      if (unwrapRequest === `0x${"00".repeat(32)}`) {
+        throw new Error("the custody vault recorded no unwrap request for this round");
+      }
+
+      const noxNetwork = {
+        chainId: 11_155_111,
+        name: "ethereum-sepolia",
+        noxCompute: NOX_COMPUTE_BY_CHAIN[11_155_111] as Address,
+        gatewayUrl: NOX_GATEWAY_BY_CHAIN[11_155_111] as string,
+      };
+      const noxClient = await createHandleClient(wallet, noxNetwork);
+      // Ten-minute ceiling with backoff. Testnet Nox latency is UNVERIFIED (AS-1) and the SDK's own
+      // retry gives up after roughly seven seconds, which is not a policy a settlement can adopt.
+      const unwrapped = await noxClient.publicDecrypt(unwrapRequest as never, {
+        policy: { initialDelayMs: 2_000, maxDelayMs: 20_000, multiplier: 2, timeoutMs: 600_000 },
+      });
+
+      // INVARIANT 1. The burn's plaintext is what the vault is about to receive, and it must be the
+      // aggregate the curve published — not the leaf capacity, not the units, not the buyer assets.
+      if (unwrapped.value !== verified.aggregateFillAmount) {
+        throw new Error(
+          `the unwrapped funding is ${unwrapped.value} but the published aggregate is ` +
+            `${verified.aggregateFillAmount}. Refusing to settle: total confidential series supply ` +
+            "would not equal what was funded.",
+        );
+      }
+      console.log(`    unwrapped plaintext      ${unwrapped.value} == published aggregate`);
+
+      const requester = (await publicClient.readContract({
+        address: asset,
+        abi: confidentialArtifact("KyrveWrappedAsset").abi as never,
+        functionName: "unwrapRequester",
+        args: [unwrapRequest],
+      })) as Address;
+      if (requester.toLowerCase() !== vault.toLowerCase()) {
+        throw new Error(`the unwrap is addressed to ${requester}, not the series vault ${vault}`);
+      }
+
+      if (requester !== "0x0000000000000000000000000000000000000000") {
+        await send(
+          "finalizeUnwrap",
+          await wallet.writeContract({
+            address: asset,
+            abi: confidentialArtifact("KyrveWrappedAsset").abi as never,
+            functionName: "finalizeUnwrap",
+            args: [unwrapRequest, unwrapped.decryptionProof],
+            account,
+            chain: sepolia,
+          }),
+        );
+      }
+
+      const funded = (await publicClient.readContract({
         address: settlement.loanToken,
         abi: artifact("TestERC20").abi as never,
-        functionName: "mint",
-        args: [vault, size.buyerAssets - vaultBalance],
-        account,
-        chain: sepolia,
-      }),
-    );
+        functionName: "balanceOf",
+        args: [vault],
+      })) as bigint;
+      if (funded < size.buyerAssets) {
+        throw new Error(
+          `the vault holds ${funded} after the unwrap and needs ${size.buyerAssets}. The confidential ` +
+            "funding did not arrive.",
+        );
+      }
+      console.log(`    vault balance            ${funded} (from confidential capital, not a mint)`);
+    }
   }
 
   // ── 4. Activate ───────────────────────────────────────────────────────────────────────────
@@ -471,7 +698,7 @@ async function main(): Promise<void> {
 
     // Written IMMEDIATELY, before anything else can fail. Every later step is resumable only if this
     // exists: the offer lives in one log of one transaction and nothing can rebuild it.
-    mkdirSync(repoPath("evidence/phase4"), { recursive: true });
+    mkdirSync(repoPath(`evidence/${phaseDir}`), { recursive: true });
     writeFileSync(
       activationPath,
       `${stableStringify({
@@ -840,12 +1067,13 @@ async function main(): Promise<void> {
   };
 
   const payload = `${stableStringify(evidence)}\n`;
-  assertNoSecrets(payload, "evidence/phase4/sepolia-settlement.json");
-  mkdirSync(repoPath("evidence/phase4"), { recursive: true });
-  writeFileSync(repoPath("evidence/phase4/sepolia-settlement.json"), payload);
+  const settlementEvidence = `evidence/${phaseDir}/sepolia-settlement.json`;
+  assertNoSecrets(payload, settlementEvidence);
+  mkdirSync(repoPath(`evidence/${phaseDir}`), { recursive: true });
+  writeFileSync(repoPath(settlementEvidence), payload);
 
   console.log(`\n  ${formatEther(balanceBefore - balanceAfter)} ETH spent`);
-  console.log("  recorded in evidence/phase4/sepolia-settlement.json\n");
+  console.log(`  recorded in ${settlementEvidence}\n`);
 }
 
 main().catch((error: unknown) => {

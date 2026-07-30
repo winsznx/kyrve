@@ -42,6 +42,7 @@
     "test:sepolia-budget": "tsx scripts/test/sepolia-settlement-budget.ts",
     "test:sepolia-epoch": "tsx scripts/test/sepolia-curve-epoch.ts",
     "test:sepolia-nox": "tsx scripts/test/sepolia-nox-smoke.ts",
+    "test:sepolia-series-allocation": "tsx scripts/test/sepolia-series-allocation.ts",
     "test:sepolia-series-budget": "tsx scripts/test/sepolia-series-budget.ts",
     "test:sepolia-settlement": "tsx scripts/test/sepolia-settlement.ts",
     "test:unit": "vitest run",

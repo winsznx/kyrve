@@ -1,0 +1,58 @@
+{
+  "$comment": "MEASURED on Ethereum Sepolia against unmodified Midnight and the HOSTED iExec Nox gateway. Every value is public from activation. No decrypted mandate, request, allocation or capacity appears here and none is representable.",
+  "aggregateFillAmount": "299999999",
+  "borrower": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "borrowerDebtNote": "Credit and debt are CUMULATIVE positions in a shared public market. This borrower already held debt from Phase 1's Sepolia integration run, so the figure that describes THIS settlement is the delta across the settlement block, not the absolute.",
+  "borrowerDebtPositionAfter": "603001198",
+  "borrowerDebtPositionBefore": "303000599",
+  "chainId": 11155111,
+  "consumedUnits": "300000599",
+  "creditCreatedByThisFill": "300000599",
+  "creditUnits": "300000599",
+  "debtCreatedByThisFill": "300000599",
+  "debtUnits": "300000599",
+  "epochId": "0x760d32611ed96e975f1555808f7f49a4d3c418054de646d85f64f2504571ea42",
+  "ethSpent": "0.002237300869801732",
+  "exactUnits": "300000599",
+  "expectedBuyerAssets": "299999998",
+  "explorer": "https://sepolia.etherscan.io",
+  "marketId": "0xd3cb37a754429601735a16349771482103c5dc40848b51970c4dcec6241163e6",
+  "partialFillRejected": true,
+  "partialFillRejection": "The contract function \"take\" reverted with the following signature:",
+  "quoteId": "0xf05e7d39495491c591595e71ec2df81336a65c925b759ec0aa1c94ea1dc5b869",
+  "quoteStatus": 2,
+  "replayRejected": true,
+  "replayRejection": "The contract function \"take\" reverted with the following signature:",
+  "settled": true,
+  "transactions": [
+    {
+      "gasUsed": "689385",
+      "hash": "0xb5c663886c2ccd0d352efee2469aecda0f328965003754f677b5d3abf1e504f4",
+      "step": "consumeChunk"
+    },
+    {
+      "gasUsed": "303214",
+      "hash": "0x2e74f70c7e5a5fc302c8a62a2b82ab9b9e92bb20ac1f2bc3f8991c7436b0cfc0",
+      "step": "unwrapFunding"
+    },
+    {
+      "gasUsed": "74878",
+      "hash": "0xf4d85cf79d207b6abe423050913a8f9499ef98117048b17b7c19bdaff9b0b5da",
+      "step": "finalizeUnwrap"
+    },
+    {
+      "gasUsed": "698969",
+      "hash": "0x235c14ea027ffbcfab10db8c2fbb086f0afd976e283b6d1187c2a5e3e2b6195f",
+      "step": "activate"
+    },
+    {
+      "gasUsed": "264056",
+      "hash": "0xe0f4921a065e798bfa3fa2ebba941e356ccd349af8df663994ce9c26ebe64099",
+      "step": "take (exact fill)"
+    }
+  ],
+  "unreservedResidue": "1",
+  "vault": "0xA910E1E263338bE447ab24922693bc5c63BEC539",
+  "vaultCreditPositionAfter": "300000599"
+}
+

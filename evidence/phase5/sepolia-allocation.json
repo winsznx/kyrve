@@ -1,0 +1,67 @@
+{
+  "$comment": "One real confidential series allocation on Ethereum Sepolia, against credit a real Midnight `take` created. NO DECRYPTED VALUE APPEARS HERE. Each provider's balance was decrypted by their own wallet through the hosted gateway, compared in memory against the capital that funded it, and only the verdict is recorded. The supply below is public: the curve published the same number as this epoch's aggregate before any claim existed.",
+  "aggregate": "299999999",
+  "allocated": true,
+  "allocatedCount": 2,
+  "buyerAssets": "299999998",
+  "chainId": 11155111,
+  "closed": true,
+  "creditUnits": "300000599",
+  "duplicateAllocationRefusal": "The contract function \"allocateChunk\" reverted.",
+  "duplicateAllocationRefused": true,
+  "epochId": "0x760d32611ed96e975f1555808f7f49a4d3c418054de646d85f64f2504571ea42",
+  "everyPeerRefused": true,
+  "everyProviderMatchedTheirReservation": true,
+  "exactUnits": "300000599",
+  "explorer": "https://sepolia.etherscan.io",
+  "graphRoot": "0x035c03234b4714a673d03d7554d84a10f5d781d70fdfe60f0dbcbd1f10885cb3",
+  "measuredAt": "2026-07-30T02:36:19.869Z",
+  "providerCount": 2,
+  "providers": [
+    {
+      "ownBalanceMatchesReservation": true,
+      "peerDecryptionRefused": true,
+      "provider": "0x2442854c750C88168BE342C771827566c071F7a2"
+    },
+    {
+      "ownBalanceMatchesReservation": true,
+      "peerDecryptionRefused": true,
+      "provider": "0xaCdcFB704ac3321eD80efBBfc304C18801a36Bee"
+    }
+  ],
+  "publicCoverage": "300000594",
+  "quoteId": "0xf05e7d39495491c591595e71ec2df81336a65c925b759ec0aa1c94ea1dc5b869",
+  "residue": "1",
+  "seriesId": "0xadcfb2775f199173f151e559e7399a7f0dc925493861c9fbbd717d931bdcb086",
+  "seriesVault": "0xA910E1E263338bE447ab24922693bc5c63BEC539",
+  "solvencySnapshotBlock": "11379610",
+  "solvent": true,
+  "supply": "299999999",
+  "supplyEqualsAggregate": true,
+  "supplyIsNotBuyerAssets": true,
+  "supplyIsNotUnits": true,
+  "transactions": [
+    {
+      "gasUsed": "1015030",
+      "hash": "0x538bc63ccc758bbf78b01fd84fcc7b8dafed95d79a7e37087c6331f8efd72eac",
+      "step": "allocateChunk"
+    },
+    {
+      "gasUsed": "137634",
+      "hash": "0x2f6ccf9986efcf2edf0183cff9a5b4838c92c424cb564b5dd84f42f9663ee9db",
+      "step": "closeQuote"
+    },
+    {
+      "gasUsed": "132044",
+      "hash": "0xacd54378e9f1b900b8f1c8b4fdd377d4ddcf0398b336ca61d27230938e4b565c",
+      "step": "publishAggregateSupply"
+    },
+    {
+      "gasUsed": "286018",
+      "hash": "0x9c8fce3b67bf7b8a84f8c3799b1cd1434bfb9765ac8af058fac3dd37c15cd2f7",
+      "step": "proveSolvency"
+    }
+  ],
+  "universeId": "0xe8849781b80813aa04e5def3b23f8a9a4b5b480f9c71d2c264cfba854ec17eaf"
+}
+

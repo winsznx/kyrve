@@ -271,6 +271,29 @@ async function main(): Promise<void> {
   const resumeArg = process.argv.find((a) => a.startsWith("--resume="));
   const resumeUniverse = resumeArg?.slice("--resume=".length) as Hex | undefined;
 
+  /**
+   * `--continue=<universeId>` finishes an epoch whose SETUP has already been paid for.
+   *
+   * `--resume` verifies a COMPLETED epoch and skips the stages with it, which is right for reading a
+   * finished result back. It is wrong for an epoch that stopped mid-flight: the published handles do not
+   * exist yet, so the first thing the verification path does is ask the gateway for the undefined handle
+   * and get `unknown_chain: chain_id 0 not configured` — delta R-14's signature, arriving for a
+   * completely different reason.
+   *
+   * This mode skips the universe, the provider funding, the mandates and the request — all of which are
+   * already on chain and none of which can be re-sent — and runs the stage loop. Every stage is
+   * idempotent: `claimChunk` refuses a chunk that already executed, so a continued run pays only for
+   * what is left.
+   *
+   * It exists because a public-network epoch is 130 transactions and a wall-clock interruption partway
+   * through must not mean paying for all of them again.
+   */
+  const continueArg = process.argv.find((a) => a.startsWith("--continue="));
+  const continueUniverse = continueArg?.slice("--continue=".length) as Hex | undefined;
+  if (resumeUniverse !== undefined && continueUniverse !== undefined) {
+    throw new Error("--resume and --continue are different modes; pass one");
+  }
+
   const rpc = sepoliaRpc();
   const publicClient = createPublicClient({
     chain: sepolia,
@@ -282,26 +305,95 @@ async function main(): Promise<void> {
   if (observed !== CHAIN_ID)
     throw new Error(`connected chain is ${observed}, expected ${CHAIN_ID}`);
 
-  const curveRecord = readJson<{
-    addresses: Record<string, Address>;
-    phase2: Record<string, Address>;
-  }>(repoPath("deployments/sepolia/curve.json"));
+  /**
+   * WHICH LAYER THIS EPOCH RUNS AGAINST.
+   *
+   * `KYRVE_SERIES_LAYER=true` points every address at `deployments/sepolia/series.json` — the Phase 5
+   * handle-native set — instead of the Phase 4 curve record. Nothing else about the epoch changes: the
+   * stages, the widths, the reference model and every assertion are the same, because the engine's
+   * behaviour is the same. What differs is where provider capital lives.
+   *
+   * TWO SUBSTITUTIONS MAKE THAT WORK, and both are the point of the phase rather than plumbing:
+   *
+   *   the vault      is `KyrveCustodyVault`, not `KyrveConfidentialAssetVault`. `deposit`,
+   *                  `confidentialAvailableOf` and `nextNonce` have the same shape, so the funding path
+   *                  is unchanged — but a reservation against this one MOVES the balance instead of
+   *                  reserving against a snapshot. That is P5-1.
+   *   the wrapper    is the Phase 5 one, which wraps the market's own loan token. Delta T-12: the
+   *                  Phase 2 wrapper wraps a different tUSDC, and unwrapping through it would move an
+   *                  asset the series vault cannot pay Midnight in.
+   *
+   * The mandate book, the request book and the emergency controller are the same contracts in both
+   * modes — providers keep their mandates across the migration and re-grant the new engine (T-8).
+   */
+  const seriesLayer = process.env["KYRVE_SERIES_LAYER"] === "true";
 
-  const curve = {
-    CurveUniverseRegistry: requireAddress(curveRecord.addresses, "CurveUniverseRegistry"),
-    QuoteEpochController: requireAddress(curveRecord.addresses, "QuoteEpochController"),
-    CurveGraphRegistry: requireAddress(curveRecord.addresses, "CurveGraphRegistry"),
-    ReservationLedger: requireAddress(curveRecord.addresses, "ReservationLedger"),
-    NoxCurveEngine: requireAddress(curveRecord.addresses, "NoxCurveEngine"),
-    CurveResultVerifier: requireAddress(curveRecord.addresses, "CurveResultVerifier"),
-  } as const;
-  const phase2 = {
-    TestUnderlyingERC20: requireAddress(curveRecord.phase2, "TestUnderlyingERC20"),
-    KyrveWrappedAsset: requireAddress(curveRecord.phase2, "KyrveWrappedAsset"),
-    KyrveConfidentialAssetVault: requireAddress(curveRecord.phase2, "KyrveConfidentialAssetVault"),
-    EncryptedMandateBook: requireAddress(curveRecord.phase2, "EncryptedMandateBook"),
-    ConfidentialRequestBook: requireAddress(curveRecord.phase2, "ConfidentialRequestBook"),
-  } as const;
+  let curve: {
+    readonly CurveUniverseRegistry: Address;
+    readonly QuoteEpochController: Address;
+    readonly CurveGraphRegistry: Address;
+    readonly ReservationLedger: Address;
+    readonly NoxCurveEngine: Address;
+    readonly CurveResultVerifier: Address;
+  };
+  let phase2: {
+    readonly TestUnderlyingERC20: Address;
+    readonly KyrveWrappedAsset: Address;
+    readonly KyrveConfidentialAssetVault: Address;
+    readonly EncryptedMandateBook: Address;
+    readonly ConfidentialRequestBook: Address;
+  };
+
+  if (seriesLayer) {
+    const record = readJson<{
+      loanToken: Address;
+      reused: Record<string, Address>;
+      contracts: Record<string, { address: Address }>;
+    }>(repoPath("deployments/sepolia/series.json"));
+    const at = (name: string): Address => {
+      const entry = record.contracts[name];
+      if (entry === undefined) throw new Error(`series.json does not name ${name}`);
+      return entry.address;
+    };
+    curve = {
+      CurveUniverseRegistry: requireAddress(record.reused, "CurveUniverseRegistry"),
+      QuoteEpochController: at("QuoteEpochController"),
+      CurveGraphRegistry: at("CurveGraphRegistry"),
+      ReservationLedger: at("ReservationLedger"),
+      NoxCurveEngine: at("NoxCurveEngine"),
+      CurveResultVerifier: at("CurveResultVerifier"),
+    };
+    phase2 = {
+      TestUnderlyingERC20: record.loanToken,
+      KyrveWrappedAsset: at("KyrveWrappedAsset"),
+      KyrveConfidentialAssetVault: at("KyrveCustodyVault"),
+      EncryptedMandateBook: requireAddress(record.reused, "EncryptedMandateBook"),
+      ConfidentialRequestBook: requireAddress(record.reused, "ConfidentialRequestBook"),
+    };
+  } else {
+    const curveRecord = readJson<{
+      addresses: Record<string, Address>;
+      phase2: Record<string, Address>;
+    }>(repoPath("deployments/sepolia/curve.json"));
+    curve = {
+      CurveUniverseRegistry: requireAddress(curveRecord.addresses, "CurveUniverseRegistry"),
+      QuoteEpochController: requireAddress(curveRecord.addresses, "QuoteEpochController"),
+      CurveGraphRegistry: requireAddress(curveRecord.addresses, "CurveGraphRegistry"),
+      ReservationLedger: requireAddress(curveRecord.addresses, "ReservationLedger"),
+      NoxCurveEngine: requireAddress(curveRecord.addresses, "NoxCurveEngine"),
+      CurveResultVerifier: requireAddress(curveRecord.addresses, "CurveResultVerifier"),
+    };
+    phase2 = {
+      TestUnderlyingERC20: requireAddress(curveRecord.phase2, "TestUnderlyingERC20"),
+      KyrveWrappedAsset: requireAddress(curveRecord.phase2, "KyrveWrappedAsset"),
+      KyrveConfidentialAssetVault: requireAddress(
+        curveRecord.phase2,
+        "KyrveConfidentialAssetVault",
+      ),
+      EncryptedMandateBook: requireAddress(curveRecord.phase2, "EncryptedMandateBook"),
+      ConfidentialRequestBook: requireAddress(curveRecord.phase2, "ConfidentialRequestBook"),
+    };
+  }
 
   const ctx: Ctx = { publicClient, curve, phase2, gas: 0n };
 
@@ -335,7 +427,7 @@ async function main(): Promise<void> {
   const universeAbi = abiOf("CurveUniverseRegistry");
   const underlyingAbi = abiOf("TestUnderlyingERC20", "contracts/test");
   const assetAbi = abiOf("KyrveWrappedAsset");
-  const vaultAbi = abiOf("KyrveConfidentialAssetVault");
+  const vaultAbi = abiOf(seriesLayer ? "KyrveCustodyVault" : "KyrveConfidentialAssetVault");
   const mandateAbi = abiOf("EncryptedMandateBook");
   const requestAbi = abiOf("ConfidentialRequestBook");
   const epochAbi = abiOf("QuoteEpochController");
@@ -366,7 +458,8 @@ async function main(): Promise<void> {
         cellsPerChunk: 4,
       });
   const built = buildUniverse(draft);
-  const universe = resumeUniverse === undefined ? built : { ...built, id: resumeUniverse };
+  const knownUniverse = resumeUniverse ?? continueUniverse;
+  const universe = knownUniverse === undefined ? built : { ...built, id: knownUniverse };
 
   const borrowerClient = await createHandleClient(curatorWallet, network);
 
@@ -382,423 +475,519 @@ async function main(): Promise<void> {
     `  balance    ${formatEther(await publicClient.getBalance({ address: curator.address }))} ETH`,
   );
   console.log(
-    `  mode       ${resumeUniverse === undefined ? "full run" : "RESUME — verification only"}\n`,
+    `  mode       ${
+      resumeUniverse !== undefined
+        ? "RESUME — verification only"
+        : continueUniverse !== undefined
+          ? "CONTINUE — stages only, setup already paid for"
+          : "full run"
+    }\n`,
   );
 
   if (resumeUniverse === undefined) {
-    // ── Fund the providers ───────────────────────────────────────────────────────────────────
-    for (const [i, account] of providerAccounts.entries()) {
-      const balance = await publicClient.getBalance({ address: account.address });
-      if (balance >= PROVIDER_FUNDING) {
-        console.log(`  provider ${i} already funded (${formatEther(balance)} ETH)`);
-        continue;
+    // Declared outside the setup branch because a `--continue` run skips that branch entirely and
+    // derives the epoch from chain instead. Scoping it inside would make the two paths look alike and
+    // compile only for one of them.
+    let openedEpochIdFromSetup: Hex | undefined;
+
+    if (continueUniverse === undefined) {
+      // ── Fund the providers ───────────────────────────────────────────────────────────────────
+      for (const [i, account] of providerAccounts.entries()) {
+        const balance = await publicClient.getBalance({ address: account.address });
+        if (balance >= PROVIDER_FUNDING) {
+          console.log(`  provider ${i} already funded (${formatEther(balance)} ETH)`);
+          continue;
+        }
+        const hash = await curatorWallet.sendTransaction({
+          to: account.address,
+          value: PROVIDER_FUNDING - balance,
+        });
+        await publicClient.waitForTransactionReceipt({ hash });
+        console.log(`  funded provider ${i} with ${formatEther(PROVIDER_FUNDING - balance)} ETH`);
       }
-      const hash = await curatorWallet.sendTransaction({
-        to: account.address,
-        value: PROVIDER_FUNDING - balance,
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      console.log(`  funded provider ${i} with ${formatEther(PROVIDER_FUNDING - balance)} ETH`);
-    }
 
-    // ── The universe: 1 market, 2 rates, privacy floor 2 ─────────────────────────────────────
-    const grid = draft.markets[0];
-    if (grid === undefined) throw new Error("the universe draft has no market");
+      // ── The universe: 1 market, 2 rates, privacy floor 2 ─────────────────────────────────────
+      const grid = draft.markets[0];
+      if (grid === undefined) throw new Error("the universe draft has no market");
 
-    await send(
-      ctx,
-      curatorWallet,
-      {
-        address: curve.CurveUniverseRegistry,
-        abi: universeAbi,
-        functionName: "createUniverse",
-        args: [
-          label,
-          draft.maxProviders,
-          draft.privacyFloor,
-          draft.minTicketAssets,
-          draft.cellsPerChunk,
-        ],
-        account: curator,
-        chain: sepolia,
-      } as never,
-      "createUniverse",
-    );
-    await send(
-      ctx,
-      curatorWallet,
-      {
-        address: curve.CurveUniverseRegistry,
-        abi: universeAbi,
-        functionName: "addMarket",
-        args: [universe.id, grid.spec, grid.ticks, grid.pricesWad],
-        account: curator,
-        chain: sepolia,
-      } as never,
-      "addMarket",
-    );
-    await send(
-      ctx,
-      curatorWallet,
-      {
-        address: curve.CurveUniverseRegistry,
-        abi: universeAbi,
-        functionName: "activateUniverse",
-        args: [universe.id],
-        account: curator,
-        chain: sepolia,
-      } as never,
-      "activateUniverse",
-    );
-    console.log(`\n  universe   ${universe.id}`);
-    console.log(`             1 market, ${universe.leaves.length} leaves, floor 2\n`);
+      await send(
+        ctx,
+        curatorWallet,
+        {
+          address: curve.CurveUniverseRegistry,
+          abi: universeAbi,
+          functionName: "createUniverse",
+          args: [
+            label,
+            draft.maxProviders,
+            draft.privacyFloor,
+            draft.minTicketAssets,
+            draft.cellsPerChunk,
+          ],
+          account: curator,
+          chain: sepolia,
+        } as never,
+        "createUniverse",
+      );
+      await send(
+        ctx,
+        curatorWallet,
+        {
+          address: curve.CurveUniverseRegistry,
+          abi: universeAbi,
+          functionName: "addMarket",
+          args: [universe.id, grid.spec, grid.ticks, grid.pricesWad],
+          account: curator,
+          chain: sepolia,
+        } as never,
+        "addMarket",
+      );
+      await send(
+        ctx,
+        curatorWallet,
+        {
+          address: curve.CurveUniverseRegistry,
+          abi: universeAbi,
+          functionName: "activateUniverse",
+          args: [universe.id],
+          account: curator,
+          chain: sepolia,
+        } as never,
+        "activateUniverse",
+      );
+      console.log(`\n  universe   ${universe.id}`);
+      console.log(`             1 market, ${universe.leaves.length} leaves, floor 2\n`);
 
-    // ── Providers: wrap, deposit, submit a mandate, grant the engine ─────────────────────────
-    for (const [i, account] of providerAccounts.entries()) {
-      const wallet = providerWallets[i];
-      const balance = balances[i];
-      const mandate = mandates[i];
-      if (wallet === undefined || balance === undefined || mandate === undefined) {
-        throw new Error(`provider ${i} is not fully configured`);
+      // ── Providers: wrap, deposit, submit a mandate, grant the engine ─────────────────────────
+      for (const [i, account] of providerAccounts.entries()) {
+        const wallet = providerWallets[i];
+        const balance = balances[i];
+        const mandate = mandates[i];
+        if (wallet === undefined || balance === undefined || mandate === undefined) {
+          throw new Error(`provider ${i} is not fully configured`);
+        }
+        const client = await createHandleClient(wallet, network);
+
+        await send(
+          ctx,
+          wallet,
+          {
+            address: phase2.TestUnderlyingERC20,
+            abi: underlyingAbi,
+            functionName: "mint",
+            args: [account.address, balance],
+            account,
+            chain: sepolia,
+          } as never,
+          "mint",
+        );
+        await send(
+          ctx,
+          wallet,
+          {
+            address: phase2.TestUnderlyingERC20,
+            abi: underlyingAbi,
+            functionName: "approve",
+            args: [phase2.KyrveWrappedAsset, balance],
+            account,
+            chain: sepolia,
+          } as never,
+          "approve",
+        );
+        await send(
+          ctx,
+          wallet,
+          {
+            address: phase2.KyrveWrappedAsset,
+            abi: assetAbi,
+            functionName: "wrap",
+            args: [account.address, balance],
+            account,
+            chain: sepolia,
+          } as never,
+          "wrap",
+        );
+
+        const until = BigInt(Math.floor(Date.now() / 1000) + 3_600);
+        await send(
+          ctx,
+          wallet,
+          {
+            address: phase2.KyrveWrappedAsset,
+            abi: assetAbi,
+            functionName: "setOperator",
+            args: [phase2.KyrveConfidentialAssetVault, until],
+            account,
+            chain: sepolia,
+          } as never,
+          "setOperator",
+        );
+
+        const encrypted = await client.encrypt(
+          balance,
+          "euint256",
+          phase2.KyrveConfidentialAssetVault,
+        );
+        const vaultNonce = await read<bigint>(
+          publicClient,
+          phase2.KyrveConfidentialAssetVault,
+          vaultAbi,
+          "nextNonce",
+          [account.address],
+        );
+        await send(
+          ctx,
+          wallet,
+          {
+            address: phase2.KyrveConfidentialAssetVault,
+            abi: vaultAbi,
+            functionName: "deposit",
+            args: [encrypted.handle, encrypted.proof, vaultNonce],
+            account,
+            chain: sepolia,
+          } as never,
+          "deposit",
+        );
+        await send(
+          ctx,
+          wallet,
+          {
+            address: phase2.KyrveWrappedAsset,
+            abi: assetAbi,
+            functionName: "setOperator",
+            args: [phase2.KyrveConfidentialAssetVault, 0n],
+            account,
+            chain: sepolia,
+          } as never,
+          "setOperator(0)",
+        );
+
+        const encoded = await encryptMandate(client, phase2.EncryptedMandateBook, mandate);
+        const mandateNonce = await read<bigint>(
+          publicClient,
+          phase2.EncryptedMandateBook,
+          mandateAbi,
+          "nextNonce",
+          [account.address],
+        );
+        await send(
+          ctx,
+          wallet,
+          {
+            address: phase2.EncryptedMandateBook,
+            abi: mandateAbi,
+            functionName: "submitMandate",
+            args: [universe.id, encoded.struct, encoded.proofs, mandateNonce],
+            account,
+            chain: sepolia,
+          } as never,
+          "submitMandate",
+        );
+
+        const mandateId = await read<Hex>(
+          publicClient,
+          phase2.EncryptedMandateBook,
+          mandateAbi,
+          "mandateIdFor",
+          [account.address, universe.id],
+        );
+        const h = await read<{
+          totalBudget: Handle;
+          marketCaps: Handle[];
+          minRateIndexes: Handle[];
+          enabledFlags: Handle[];
+          collateralFamilyCaps: Handle[];
+          maturityBucketCaps: Handle[];
+          maxDurationIndex: Handle;
+          allocationWeight: Handle;
+        }>(publicClient, phase2.EncryptedMandateBook, mandateAbi, "handlesOf", [mandateId, 1]);
+        const balanceHandle = await read<Handle>(
+          publicClient,
+          phase2.KyrveConfidentialAssetVault,
+          vaultAbi,
+          "confidentialAvailableOf",
+          [account.address],
+        );
+
+        const mandateHandles: Handle[] = [
+          h.totalBudget,
+          ...h.marketCaps,
+          ...h.minRateIndexes,
+          ...h.enabledFlags,
+          ...h.collateralFamilyCaps,
+          ...h.maturityBucketCaps,
+          h.maxDurationIndex,
+          h.allocationWeight,
+        ];
+
+        /**
+         * 35 mandate handles to the engine, plus the balance.
+         *
+         * Only the owner can make these — `INoxCompute.allow` is gated on the caller already holding
+         * access, so nothing can make them on a provider's behalf.
+         *
+         * THE LEDGER GRANT IS PHASE-4-ONLY. Delta T-5: the Phase 5 ledger performs no arithmetic on this
+         * handle, because the subtraction moved into `KyrveCustodyVault`, which computed the balance
+         * itself and already holds `allowThis` on it. Every grant a provider makes is PERMANENT — there
+         * is no `removeAdmin` — so an irreversible grant nothing needs is removed rather than left as a
+         * harmless no-op.
+         */
+        await sendBatch(
+          ctx,
+          account,
+          (nonce) => [
+            ...mandateHandles.map((handle, k) =>
+              grantHandleAccess(wallet, network, handle, curve.NoxCurveEngine, {
+                nonce: nonce + k,
+              }),
+            ),
+            grantHandleAccess(wallet, network, balanceHandle, curve.NoxCurveEngine, {
+              nonce: nonce + mandateHandles.length,
+            }),
+            ...(seriesLayer
+              ? []
+              : [
+                  grantHandleAccess(wallet, network, balanceHandle, curve.ReservationLedger, {
+                    nonce: nonce + mandateHandles.length + 1,
+                  }),
+                ]),
+          ],
+          `provider ${i} ACL grants`,
+        );
+
+        console.log(
+          `  provider ${i} sealed: ${mandateHandles.length + (seriesLayer ? 1 : 2)} grants, mandate ${mandateId.slice(0, 10)}…`,
+        );
       }
-      const client = await createHandleClient(wallet, network);
 
-      await send(
-        ctx,
-        wallet,
-        {
-          address: phase2.TestUnderlyingERC20,
-          abi: underlyingAbi,
-          functionName: "mint",
-          args: [account.address, balance],
-          account,
-          chain: sepolia,
-        } as never,
-        "mint",
+      // ── Borrower ─────────────────────────────────────────────────────────────────────────────
+      const encodedRequest = await encryptRequest(
+        borrowerClient,
+        phase2.ConfidentialRequestBook,
+        request,
       );
-      await send(
-        ctx,
-        wallet,
-        {
-          address: phase2.TestUnderlyingERC20,
-          abi: underlyingAbi,
-          functionName: "approve",
-          args: [phase2.KyrveWrappedAsset, balance],
-          account,
-          chain: sepolia,
-        } as never,
-        "approve",
-      );
-      await send(
-        ctx,
-        wallet,
-        {
-          address: phase2.KyrveWrappedAsset,
-          abi: assetAbi,
-          functionName: "wrap",
-          args: [account.address, balance],
-          account,
-          chain: sepolia,
-        } as never,
-        "wrap",
-      );
-
-      const until = BigInt(Math.floor(Date.now() / 1000) + 3_600);
-      await send(
-        ctx,
-        wallet,
-        {
-          address: phase2.KyrveWrappedAsset,
-          abi: assetAbi,
-          functionName: "setOperator",
-          args: [phase2.KyrveConfidentialAssetVault, until],
-          account,
-          chain: sepolia,
-        } as never,
-        "setOperator",
-      );
-
-      const encrypted = await client.encrypt(
-        balance,
-        "euint256",
-        phase2.KyrveConfidentialAssetVault,
-      );
-      const vaultNonce = await read<bigint>(
+      const requestNonce = await read<bigint>(
         publicClient,
-        phase2.KyrveConfidentialAssetVault,
-        vaultAbi,
+        phase2.ConfidentialRequestBook,
+        requestAbi,
         "nextNonce",
-        [account.address],
+        [curator.address],
       );
       await send(
         ctx,
-        wallet,
+        curatorWallet,
         {
-          address: phase2.KyrveConfidentialAssetVault,
-          abi: vaultAbi,
-          functionName: "deposit",
-          args: [encrypted.handle, encrypted.proof, vaultNonce],
-          account,
+          address: phase2.ConfidentialRequestBook,
+          abi: requestAbi,
+          functionName: "submitRequest",
+          args: [
+            universe.id,
+            encodedRequest.struct,
+            encodedRequest.proofs,
+            86_400n,
+            true,
+            `0x${"00".repeat(32)}`,
+            requestNonce,
+          ],
+          value: 10n ** 15n,
+          account: curator,
           chain: sepolia,
         } as never,
-        "deposit",
-      );
-      await send(
-        ctx,
-        wallet,
-        {
-          address: phase2.KyrveWrappedAsset,
-          abi: assetAbi,
-          functionName: "setOperator",
-          args: [phase2.KyrveConfidentialAssetVault, 0n],
-          account,
-          chain: sepolia,
-        } as never,
-        "setOperator(0)",
+        "submitRequest",
       );
 
-      const encoded = await encryptMandate(client, phase2.EncryptedMandateBook, mandate);
-      const mandateNonce = await read<bigint>(
+      const newRequestId = await read<Hex>(
         publicClient,
-        phase2.EncryptedMandateBook,
-        mandateAbi,
-        "nextNonce",
-        [account.address],
+        phase2.ConfidentialRequestBook,
+        requestAbi,
+        "liveRequest",
+        [curator.address, universe.id],
       );
-      await send(
-        ctx,
-        wallet,
-        {
-          address: phase2.EncryptedMandateBook,
-          abi: mandateAbi,
-          functionName: "submitMandate",
-          args: [universe.id, encoded.struct, encoded.proofs, mandateNonce],
-          account,
-          chain: sepolia,
-        } as never,
-        "submitMandate",
-      );
-
-      const mandateId = await read<Hex>(
-        publicClient,
-        phase2.EncryptedMandateBook,
-        mandateAbi,
-        "mandateIdFor",
-        [account.address, universe.id],
-      );
-      const h = await read<{
-        totalBudget: Handle;
-        marketCaps: Handle[];
-        minRateIndexes: Handle[];
+      const rh = await read<{
+        desiredAssets: Handle;
+        minimumAssets: Handle;
+        maxRateIndexes: Handle[];
         enabledFlags: Handle[];
-        collateralFamilyCaps: Handle[];
-        maturityBucketCaps: Handle[];
-        maxDurationIndex: Handle;
-        allocationWeight: Handle;
-      }>(publicClient, phase2.EncryptedMandateBook, mandateAbi, "handlesOf", [mandateId, 1]);
-      const balanceHandle = await read<Handle>(
-        publicClient,
-        phase2.KyrveConfidentialAssetVault,
-        vaultAbi,
-        "confidentialAvailableOf",
-        [account.address],
-      );
-
-      const mandateHandles: Handle[] = [
-        h.totalBudget,
-        ...h.marketCaps,
-        ...h.minRateIndexes,
-        ...h.enabledFlags,
-        ...h.collateralFamilyCaps,
-        ...h.maturityBucketCaps,
-        h.maxDurationIndex,
-        h.allocationWeight,
+        preferredMaturityIndex: Handle;
+      }>(publicClient, phase2.ConfidentialRequestBook, requestAbi, "handlesOf", [newRequestId]);
+      const requestHandles: Handle[] = [
+        rh.desiredAssets,
+        rh.minimumAssets,
+        ...rh.maxRateIndexes,
+        ...rh.enabledFlags,
+        rh.preferredMaturityIndex,
       ];
 
-      // 35 mandate handles to the engine, the balance to the engine AND the ledger. Only the owner
-      // can make these — `INoxCompute.allow` is gated on the caller already holding access.
       await sendBatch(
         ctx,
-        account,
-        (nonce) => [
-          ...mandateHandles.map((handle, k) =>
-            grantHandleAccess(wallet, network, handle, curve.NoxCurveEngine, { nonce: nonce + k }),
+        curator,
+        (nonce) =>
+          requestHandles.map((handle, k) =>
+            grantHandleAccess(curatorWallet, network, handle, curve.NoxCurveEngine, {
+              nonce: nonce + k,
+            }),
           ),
-          grantHandleAccess(wallet, network, balanceHandle, curve.NoxCurveEngine, {
-            nonce: nonce + mandateHandles.length,
-          }),
-          grantHandleAccess(wallet, network, balanceHandle, curve.ReservationLedger, {
-            nonce: nonce + mandateHandles.length + 1,
-          }),
-        ],
-        `provider ${i} ACL grants`,
+        "borrower ACL grants",
       );
-
       console.log(
-        `  provider ${i} sealed: ${mandateHandles.length + 2} grants, mandate ${mandateId.slice(0, 10)}…`,
+        `  borrower sealed: ${requestHandles.length} grants, request ${newRequestId.slice(0, 10)}…\n`,
       );
-    }
 
-    // ── Borrower ─────────────────────────────────────────────────────────────────────────────
-    const encodedRequest = await encryptRequest(
-      borrowerClient,
-      phase2.ConfidentialRequestBook,
-      request,
-    );
-    const requestNonce = await read<bigint>(
-      publicClient,
-      phase2.ConfidentialRequestBook,
-      requestAbi,
-      "nextNonce",
-      [curator.address],
-    );
-    await send(
-      ctx,
-      curatorWallet,
-      {
-        address: phase2.ConfidentialRequestBook,
-        abi: requestAbi,
-        functionName: "submitRequest",
-        args: [
-          universe.id,
-          encodedRequest.struct,
-          encodedRequest.proofs,
-          86_400n,
-          true,
-          `0x${"00".repeat(32)}`,
-          requestNonce,
-        ],
-        value: 10n ** 15n,
-        account: curator,
-        chain: sepolia,
-      } as never,
-      "submitRequest",
-    );
-
-    const newRequestId = await read<Hex>(
-      publicClient,
-      phase2.ConfidentialRequestBook,
-      requestAbi,
-      "liveRequest",
-      [curator.address, universe.id],
-    );
-    const rh = await read<{
-      desiredAssets: Handle;
-      minimumAssets: Handle;
-      maxRateIndexes: Handle[];
-      enabledFlags: Handle[];
-      preferredMaturityIndex: Handle;
-    }>(publicClient, phase2.ConfidentialRequestBook, requestAbi, "handlesOf", [newRequestId]);
-    const requestHandles: Handle[] = [
-      rh.desiredAssets,
-      rh.minimumAssets,
-      ...rh.maxRateIndexes,
-      ...rh.enabledFlags,
-      rh.preferredMaturityIndex,
-    ];
-
-    await sendBatch(
-      ctx,
-      curator,
-      (nonce) =>
-        requestHandles.map((handle, k) =>
-          grantHandleAccess(curatorWallet, network, handle, curve.NoxCurveEngine, {
-            nonce: nonce + k,
-          }),
-        ),
-      "borrower ACL grants",
-    );
-    console.log(
-      `  borrower sealed: ${requestHandles.length} grants, request ${newRequestId.slice(0, 10)}…\n`,
-    );
-
-    // ── Open, seal, prepare ──────────────────────────────────────────────────────────────────
-    await send(
-      ctx,
-      curatorWallet,
-      {
-        address: curve.QuoteEpochController,
-        abi: epochAbi,
-        functionName: "openEpoch",
-        args: [universe.id, newRequestId, 86_400n],
-        account: curator,
-        chain: sepolia,
-      } as never,
-      "openEpoch",
-    );
-    const openedEpochId = await read<Hex>(
-      publicClient,
-      curve.QuoteEpochController,
-      epochAbi,
-      "epochIdFor",
-      [universe.id, newRequestId],
-    );
-
-    for (const [i, account] of providerAccounts.entries()) {
-      const wallet = providerWallets[i];
-      if (wallet === undefined) throw new Error(`provider ${i} has no wallet`);
-      const mandateId = await read<Hex>(
-        publicClient,
-        phase2.EncryptedMandateBook,
-        mandateAbi,
-        "mandateIdFor",
-        [account.address, universe.id],
-      );
-      const nonce = await read<bigint>(publicClient, curve.NoxCurveEngine, engineAbi, "nextNonce", [
-        account.address,
-      ]);
+      // ── Open, seal, prepare ──────────────────────────────────────────────────────────────────
       await send(
         ctx,
-        wallet,
+        curatorWallet,
+        {
+          address: curve.QuoteEpochController,
+          abi: epochAbi,
+          functionName: "openEpoch",
+          args: [universe.id, newRequestId, 86_400n],
+          account: curator,
+          chain: sepolia,
+        } as never,
+        "openEpoch",
+      );
+      openedEpochIdFromSetup = await read<Hex>(
+        publicClient,
+        curve.QuoteEpochController,
+        epochAbi,
+        "epochIdFor",
+        [universe.id, newRequestId],
+      );
+
+      for (const [i, account] of providerAccounts.entries()) {
+        const wallet = providerWallets[i];
+        if (wallet === undefined) throw new Error(`provider ${i} has no wallet`);
+        const mandateId = await read<Hex>(
+          publicClient,
+          phase2.EncryptedMandateBook,
+          mandateAbi,
+          "mandateIdFor",
+          [account.address, universe.id],
+        );
+        const nonce = await read<bigint>(
+          publicClient,
+          curve.NoxCurveEngine,
+          engineAbi,
+          "nextNonce",
+          [account.address],
+        );
+        await send(
+          ctx,
+          wallet,
+          {
+            address: curve.NoxCurveEngine,
+            abi: engineAbi,
+            functionName: "sealProviderSnapshot",
+            args: [openedEpochIdFromSetup, mandateId, 1, nonce],
+            account,
+            chain: sepolia,
+          } as never,
+          `sealProviderSnapshot ${i}`,
+        );
+      }
+
+      const engineNonce = await read<bigint>(
+        publicClient,
+        curve.NoxCurveEngine,
+        engineAbi,
+        "nextNonce",
+        [curator.address],
+      );
+      await send(
+        ctx,
+        curatorWallet,
         {
           address: curve.NoxCurveEngine,
           abi: engineAbi,
-          functionName: "sealProviderSnapshot",
-          args: [openedEpochId, mandateId, 1, nonce],
-          account,
+          functionName: "sealRequestSnapshot",
+          args: [openedEpochIdFromSetup, engineNonce],
+          account: curator,
           chain: sepolia,
         } as never,
-        `sealProviderSnapshot ${i}`,
+        "sealRequestSnapshot",
       );
+      await send(
+        ctx,
+        curatorWallet,
+        {
+          address: curve.NoxCurveEngine,
+          abi: engineAbi,
+          functionName: "prepareEpoch",
+          args: [openedEpochIdFromSetup],
+          account: curator,
+          chain: sepolia,
+        } as never,
+        "prepareEpoch",
+      );
+      console.log(`  epoch      ${openedEpochIdFromSetup}\n`);
+
+      // ── Stages ───────────────────────────────────────────────────────────────────────────────
     }
 
-    const engineNonce = await read<bigint>(
-      publicClient,
-      curve.NoxCurveEngine,
-      engineAbi,
-      "nextNonce",
-      [curator.address],
-    );
-    await send(
-      ctx,
-      curatorWallet,
-      {
-        address: curve.NoxCurveEngine,
-        abi: engineAbi,
-        functionName: "sealRequestSnapshot",
-        args: [openedEpochId, engineNonce],
-        account: curator,
-        chain: sepolia,
-      } as never,
-      "sealRequestSnapshot",
-    );
-    await send(
-      ctx,
-      curatorWallet,
-      {
-        address: curve.NoxCurveEngine,
-        abi: engineAbi,
-        functionName: "prepareEpoch",
-        args: [openedEpochId],
-        account: curator,
-        chain: sepolia,
-      } as never,
-      "prepareEpoch",
-    );
-    console.log(`  epoch      ${openedEpochId}\n`);
+    /**
+     * The epoch to drive.
+     *
+     * On a full run it is the one just opened. On a `--continue` it is derived from chain — the request
+     * book holds the borrower's live request for this universe and the controller derives the epoch id
+     * from the pair, so nothing has to be remembered between invocations.
+     */
+    const openedEpochId: Hex =
+      continueUniverse === undefined
+        ? (openedEpochIdFromSetup ??
+          (() => {
+            throw new Error("the setup path produced no epoch id");
+          })())
+        : await (async (): Promise<Hex> => {
+            const liveRequest = await read<Hex>(
+              publicClient,
+              phase2.ConfidentialRequestBook,
+              requestAbi,
+              "liveRequest",
+              [curator.address, universe.id],
+            );
+            const derived = await read<Hex>(
+              publicClient,
+              curve.QuoteEpochController,
+              epochAbi,
+              "epochIdFor",
+              [universe.id, liveRequest],
+            );
+            const epoch = await read<{ stage: number; providerCount: number }>(
+              publicClient,
+              curve.QuoteEpochController,
+              epochAbi,
+              "epochOf",
+              [derived],
+            );
+            console.log(
+              `  continuing epoch ${derived} at stage ${epoch.stage}, ${epoch.providerCount} providers\n`,
+            );
+            return derived;
+          })();
 
-    // ── Stages ───────────────────────────────────────────────────────────────────────────────
     const runStage = async (stage: number, method: string): Promise<void> => {
+      /**
+       * A stage the epoch has already passed is skipped, not retried.
+       *
+       * `NoxCurveEngine` calls `controller.requireStage`, so offering a chunk for a stage the epoch has
+       * moved beyond reverts with a bare selector rather than anything naming the cause — which is
+       * exactly what a `--continue` run hits when the interruption landed mid-loop. Reading the current
+       * stage first makes the whole loop idempotent at stage granularity, which is what it already was
+       * at chunk granularity through `claimChunk`.
+       */
+      const current = await read<{ stage: number }>(
+        publicClient,
+        curve.QuoteEpochController,
+        epochAbi,
+        "epochOf",
+        [openedEpochId],
+      );
+      if (Number(current.stage) > stage) {
+        console.log(`  ${method.padEnd(22)} already past (stage ${current.stage})`);
+        return;
+      }
+
       const progress = await read<{ total: number }>(
         publicClient,
         curve.QuoteEpochController,
@@ -1009,9 +1198,19 @@ async function main(): Promise<void> {
   };
 
   const payload = `${stableStringify(evidence)}\n`;
-  assertNoSecrets(payload, "evidence/phase3/sepolia-epoch.json");
-  mkdirSync(repoPath("evidence/phase3"), { recursive: true });
-  writeFileSync(repoPath("evidence/phase3/sepolia-epoch.json"), payload);
+  /**
+   * A series-layer run writes to `evidence/phase5/`, never over Phase 3's record.
+   *
+   * Phase 3's epoch ran against a different engine, a different ledger and a different vault. Its
+   * evidence describes contracts that are still on chain, and this repository must not stop describing
+   * what is on chain.
+   */
+  const epochEvidence = seriesLayer
+    ? "evidence/phase5/sepolia-epoch.json"
+    : "evidence/phase3/sepolia-epoch.json";
+  assertNoSecrets(payload, epochEvidence);
+  mkdirSync(repoPath(seriesLayer ? "evidence/phase5" : "evidence/phase3"), { recursive: true });
+  writeFileSync(repoPath(epochEvidence), payload);
 
   /**
    * In settlement mode, the same epoch is recorded again with the GATEWAY PROOFS, so
@@ -1051,17 +1250,20 @@ async function main(): Promise<void> {
       matchesPlaintextReferenceModel: agree,
     };
     const settlementPayload = `${stableStringify(settlementEvidence)}\n`;
-    assertNoSecrets(settlementPayload, "evidence/phase4/sepolia-epoch.json");
-    mkdirSync(repoPath("evidence/phase4"), { recursive: true });
-    writeFileSync(repoPath("evidence/phase4/sepolia-epoch.json"), settlementPayload);
-    console.log("  recorded in evidence/phase4/sepolia-epoch.json (with gateway proofs)");
+    const proofEvidence = seriesLayer
+      ? "evidence/phase5/sepolia-epoch-proofs.json"
+      : "evidence/phase4/sepolia-epoch.json";
+    assertNoSecrets(settlementPayload, proofEvidence);
+    mkdirSync(repoPath(seriesLayer ? "evidence/phase5" : "evidence/phase4"), { recursive: true });
+    writeFileSync(repoPath(proofEvidence), settlementPayload);
+    console.log(`  recorded in ${proofEvidence} (with gateway proofs)`);
   }
 
   if (ctx.gas > 0n) console.log(`\n  ${ctx.gas} gas spent by this run`);
   console.log(
     `  balance    ${formatEther(await publicClient.getBalance({ address: curator.address }))} ETH`,
   );
-  console.log("  recorded in evidence/phase3/sepolia-epoch.json\n");
+  console.log(`  recorded in ${epochEvidence}\n`);
 }
 
 main().catch((error: unknown) => {

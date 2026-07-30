@@ -402,3 +402,65 @@ from the receipt, so a resumed manifest is identical to a fresh one. And because
 nothing, its own balance delta is zero — which is why the record carries `contractCreationGas` as the
 durable figure alongside `gasUsedThisRun`. Reporting the latter as what the deployment cost would
 understate it by the whole deployment.
+
+## T-14 · `--resume` verifies a finished epoch; a stopped one needs `--continue`
+
+**Severity: was a wasted epoch waiting to happen. Fixed.**
+
+`scripts/test/sepolia-curve-epoch.ts --resume=<universeId>` exists so a COMPLETED epoch can be verified
+without paying for another 130 transactions. It skips the whole setup **and the stage loop**, then reads
+the five published handles.
+
+Against an epoch that stopped mid-flight that is exactly wrong, and it fails in a way that names the
+wrong thing:
+
+```
+gateway 400 (terminal): {"error":"unknown_chain","message":"chain_id 0 not configured"}
+```
+
+That is delta [R-14](../phase3/PRD-DELTA.md)'s signature — a published handle read before its producing
+stage is the undefined handle, whose embedded chain id is 0 — arriving for a completely different
+reason. The epoch had not published anything yet, because it was three stages from the end.
+
+**The fix is a third mode.** `--continue=<universeId>` skips the setup, which is already on chain and
+cannot be re-sent, and runs the stage loop. Two things make it safe:
+
+- the epoch id is DERIVED from chain — the request book holds the borrower's live request for the
+  universe and the controller derives the epoch id from the pair — so nothing has to be remembered
+  between invocations;
+- `runStage` reads the epoch's current stage and SKIPS one it has already passed. `claimChunk` already
+  made the loop idempotent at chunk granularity; this makes it idempotent at stage granularity too.
+  Without it, offering a chunk for a passed stage reverts with a bare selector, because
+  `controller.requireStage` fails before anything names the cause.
+
+Measured: the interrupted epoch was continued for **3,765,826 gas** instead of the ~27,000,000 a fresh
+one costs. The interruption was a wall-clock limit, not a fault — which is precisely the case a public
+network makes routine and a local suite never produces.
+
+## T-15 · The Phase 4 settled position could not be reused, and this is what replaced it
+
+**Severity: scope decision, checked rather than assumed.**
+
+The brief asked for the Phase 4 position — 300,000,599 units of Sepolia credit — to be reused "where
+safely compatible", and for a new epoch and settlement otherwise. It is not compatible, and the reason is
+structural rather than a matter of caution:
+
+- that quote lives in the Phase 4 `KyrveQuoteRegistry`, which the handle-native redeployment replaces;
+- `SeriesAllocator.allocateChunk` reads the quote from the registry it was constructed against, and
+  requires `provenance.epochId` to name the epoch whose locks it consumed;
+- those locks live in the new `KyrveCustodyVault`, created by the new `ReservationLedger`, driven by the
+  new `NoxCurveEngine`.
+
+There is no arrangement in which the old quote and the new locks are one funding round. So Phase 5 ran a
+**new** connected epoch and a **new** exact settlement, and reached the same target figures:
+
+| | Phase 4 | Phase 5 |
+|---|---|---|
+| published aggregate | 299,999,999 | **299,999,999** |
+| Midnight units settled | 300,000,599 | **300,000,599** |
+| buyer assets paid | 299,999,998 | **299,999,998** |
+| funding residue | 1 | **1** |
+| funded from | a public mint (S-6) | **two real confidential locks** |
+
+The figures coincide because the universe, the market, the tick and the mandates are the same shape — not
+because anything was copied. The one line that differs is the last, and it is the phase.

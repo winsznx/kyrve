@@ -539,35 +539,139 @@ const GATES: readonly Gate[] = [
   },
   {
     /**
-     * A SKIP rather than a silent omission. Running the flow on a public network is affordable
-     * arithmetic priced by the deployment record, not a technical unknown — and reporting it as
-     * anything other than "not run, here is what it costs" would be claiming a result nobody produced.
+     * THE SETTLEMENT THAT WAS FUNDED FROM CONFIDENTIAL CAPITAL.
+     *
+     * Phase 4 minted public USDC into the vault, deliberately and in the open (delta S-6). This gate is
+     * the difference: the unwrap's plaintext must equal the epoch's published aggregate, which is
+     * invariant 1 proven by a real ERC-20 transfer rather than by argument.
      */
     section: "SEPOLIA",
-    name: "one real series allocation executed on Sepolia",
+    name: "one exact fill settled on Sepolia, funded from confidential capital",
+    skipIf: () =>
+      existsSync(repoPath("evidence/phase5/sepolia-settlement.json"))
+        ? null
+        : "NOT RUN. Needs the Phase 5 deployment and a completed Sepolia epoch. Run: " +
+          "KYRVE_SERIES_LAYER=true DEPLOY_SEPOLIA=true KYRVE_CONFIRM_BROADCAST=true " +
+          "pnpm test:sepolia-settlement",
+    execute: () => {
+      const evidence = readJson<{
+        settled: boolean;
+        partialFillRejected: boolean;
+        replayRejected: boolean;
+        creditCreatedByThisFill: string;
+        debtCreatedByThisFill: string;
+        aggregateFillAmount: string;
+        exactUnits: string;
+      }>(repoPath("evidence/phase5/sepolia-settlement.json"));
+      if (!evidence.settled) throw new Error("the Sepolia flow did not settle");
+      if (!evidence.partialFillRejected) throw new Error("the partial fill was not rejected");
+      if (!evidence.replayRejected) throw new Error("the replay was not rejected");
+      // Credit and debt are cumulative positions; only the DELTA describes one fill. Delta S-8.
+      if (evidence.creditCreatedByThisFill !== evidence.debtCreatedByThisFill) {
+        throw new Error(
+          `credit created ${evidence.creditCreatedByThisFill} does not equal debt created ` +
+            `${evidence.debtCreatedByThisFill}`,
+        );
+      }
+      if (evidence.creditCreatedByThisFill !== evidence.exactUnits) {
+        throw new Error("the credit created is not the quote's exact units");
+      }
+      return (
+        `${evidence.creditCreatedByThisFill} units of credit and debt from an aggregate of ` +
+        `${evidence.aggregateFillAmount}, partial fill and replay both refused`
+      );
+    },
+  },
+  {
+    /**
+     * THE PHASE'S ONE IRREDUCIBLE CLAIM, on a public network.
+     *
+     * Every assertion here is read from the recorded run rather than restated: the supply, the three
+     * quantities that must not coincide, the per-provider decryption, the peer refusals, the credit, the
+     * solvency verdict and the duplicate refusal.
+     */
+    section: "SEPOLIA",
+    name: "one real confidential series allocation executed on Sepolia",
     skipIf: () =>
       existsSync(repoPath("evidence/phase5/sepolia-allocation.json"))
         ? null
-        : "NOT RUN. It needs the series layer deployed on Sepolia against a settled Midnight " +
-          "position. Every step is proven against the real Nox stack and real unmodified Midnight " +
-          "locally, on one chain, in `confidential/test/100-series-ownership.ts`.",
+        : "NOT RUN. Needs the settled Sepolia position above. Run: DEPLOY_SEPOLIA=true " +
+          "KYRVE_CONFIRM_BROADCAST=true pnpm test:sepolia-series-allocation",
     execute: () => {
       const evidence = readJson<{
         quoteId: string;
         allocated: boolean;
+        closed: boolean;
+        providerCount: number;
+        allocatedCount: number;
         supply: string;
         aggregate: string;
+        exactUnits: string;
+        buyerAssets: string;
+        creditUnits: string;
         residue: string;
+        supplyEqualsAggregate: boolean;
+        supplyIsNotUnits: boolean;
+        supplyIsNotBuyerAssets: boolean;
+        everyProviderMatchedTheirReservation: boolean;
+        everyPeerRefused: boolean;
         solvent: boolean;
+        publicCoverage: string;
+        duplicateAllocationRefused: boolean;
       }>(repoPath("evidence/phase5/sepolia-allocation.json"));
+
       if (!evidence.allocated) throw new Error("the Sepolia allocation did not complete");
-      if (evidence.supply !== evidence.aggregate) {
+      if (!evidence.closed) throw new Error("the allocation was not sealed");
+      if (evidence.allocatedCount !== evidence.providerCount) {
         throw new Error(
-          `confidential supply ${evidence.supply} does not equal the published aggregate ${evidence.aggregate}`,
+          `${evidence.allocatedCount} claims minted for ${evidence.providerCount} providers`,
         );
       }
+
+      // INVARIANT 1, and the negative half of 2 and 3 beside it. All three quantities differ on this
+      // fixture, so an implementation that conflated any pair fails here rather than passing by luck.
+      if (!evidence.supplyEqualsAggregate || evidence.supply !== evidence.aggregate) {
+        throw new Error(
+          `confidential supply ${evidence.supply} does not equal the published aggregate ` +
+            `${evidence.aggregate}`,
+        );
+      }
+      if (!evidence.supplyIsNotUnits) throw new Error("supply equals the Midnight units");
+      if (!evidence.supplyIsNotBuyerAssets) throw new Error("supply equals the borrower's assets");
+      const distinct = new Set([evidence.supply, evidence.exactUnits, evidence.buyerAssets]);
+      if (distinct.size !== 3) {
+        throw new Error(
+          "supply, units and buyer assets are not three distinct numbers on this run",
+        );
+      }
+
+      // INVARIANTS 6 and 7: each provider read their own and nobody read another's.
+      if (!evidence.everyProviderMatchedTheirReservation) {
+        throw new Error("a provider's series balance did not equal the capital that funded it");
+      }
+      if (!evidence.everyPeerRefused) {
+        throw new Error("a provider was NOT refused another provider's balance");
+      }
+
+      // INVARIANT 13, and the public credit the claims are on.
       if (!evidence.solvent) throw new Error("the published solvency verdict was not true");
-      return `quote ${evidence.quoteId.slice(0, 10)}…, supply ${evidence.supply}, residue ${evidence.residue}`;
+      if (BigInt(evidence.publicCoverage) < BigInt(evidence.supply)) {
+        throw new Error("public coverage does not cover the confidential claims");
+      }
+      if (BigInt(evidence.creditUnits) < BigInt(evidence.exactUnits)) {
+        throw new Error("the vault does not hold the credit the claims are against");
+      }
+
+      if (!evidence.duplicateAllocationRefused) {
+        throw new Error("a duplicate allocation was not refused");
+      }
+
+      return (
+        `quote ${evidence.quoteId.slice(0, 10)}…, supply ${evidence.supply} == aggregate, ` +
+        `units ${evidence.exactUnits}, assets ${evidence.buyerAssets}, credit ` +
+        `${evidence.creditUnits}, residue ${evidence.residue}, ${evidence.providerCount}/` +
+        `${evidence.providerCount} providers decrypted their own and were refused each other's, solvent`
+      );
     },
   },
 ];
