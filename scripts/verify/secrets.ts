@@ -28,9 +28,19 @@ const SENSITIVE = [
   // Disposable Sepolia funding wallets (`pnpm dust:generate`). They hold testnet ETH for minutes,
   // but they are funded-wallet material and `.claude/rules/git.md` makes no exception for small
   // amounts — so they are scanned for exactly like the deployer key.
+  // All ten slots, not only the ones currently in use. `dust:generate` appends into the first free
+  // slot, so naming only the occupied ones would leave a newly minted key unscanned until someone
+  // remembered to add it here — which is exactly when it is most likely to be pasted somewhere.
   "DUST_PRIVATE_KEY_1",
   "DUST_PRIVATE_KEY_2",
   "DUST_PRIVATE_KEY_3",
+  "DUST_PRIVATE_KEY_4",
+  "DUST_PRIVATE_KEY_5",
+  "DUST_PRIVATE_KEY_6",
+  "DUST_PRIVATE_KEY_7",
+  "DUST_PRIVATE_KEY_8",
+  "DUST_PRIVATE_KEY_9",
+  "DUST_PRIVATE_KEY_10",
   "ETHERSCAN_API_KEY",
   // Phase 6 operational role keys (`pnpm roles:generate`). The keeper and the curator sign in
   // normal operation, so these are live authority rather than funding plumbing: a leaked curator

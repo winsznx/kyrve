@@ -43,31 +43,51 @@ import { repoPath } from "../lib/shell.js";
 const DEFAULT_COUNT = 3;
 const PREFIX = "DUST_PRIVATE_KEY_";
 
+/** `sweep.ts` scans this many slots, so nothing beyond it would ever be swept. */
+const MAX_WALLETS = 10;
+
 function main(): void {
   loadEnv();
   const count = Number.parseInt(process.argv[2] ?? String(DEFAULT_COUNT), 10);
-  if (!Number.isInteger(count) || count < 1 || count > 10) {
-    throw new Error(`count must be an integer between 1 and 10, received ${process.argv[2]}`);
+  if (!Number.isInteger(count) || count < 1 || count > MAX_WALLETS) {
+    throw new Error(
+      `count must be an integer between 1 and ${MAX_WALLETS}, received ${process.argv[2]}`,
+    );
   }
 
-  // Never overwrite. A regenerated key over a funded address strands the funds, and the failure
-  // mode is silent — the address in the faucet's history simply stops being one we hold.
-  const existing: string[] = [];
-  for (let i = 1; i <= count; i += 1) {
-    if ((process.env[`${PREFIX}${i}`] ?? "").trim().length > 0) existing.push(`${PREFIX}${i}`);
+  /**
+   * APPENDS, never overwrites, and the distinction is the whole safety property.
+   *
+   * A regenerated key over a funded address strands the funds, and the failure mode is silent — the
+   * address in the faucet's history simply stops being one we hold. So `count` is how many NEW
+   * wallets to add, and they take the first free slots above whatever already exists rather than
+   * slots 1..count. The earlier version refused outright when any of 1..count was taken, which was
+   * safe and also made "give me four more" impossible without hand-editing `.env`.
+   */
+  const occupied: number[] = [];
+  for (let i = 1; i <= MAX_WALLETS; i += 1) {
+    if ((process.env[`${PREFIX}${i}`] ?? "").trim().length > 0) occupied.push(i);
   }
-  if (existing.length > 0) {
-    console.log("dust wallets already exist in .env — not regenerating\n");
-    for (let i = 1; i <= count; i += 1) {
-      const key = (process.env[`${PREFIX}${i}`] ?? "").trim();
-      if (key.length === 0) continue;
-      console.log(`  ${PREFIX}${i}  ${privateKeyToAccount(key as `0x${string}`).address}`);
-    }
-    console.log(
-      "\n  Regenerating would strand anything already sent to these addresses. Remove the\n" +
-        "  DUST_PRIVATE_KEY_* lines from .env by hand if you really want new ones.\n",
+
+  const free: number[] = [];
+  for (let i = 1; i <= MAX_WALLETS && free.length < count; i += 1) {
+    if (!occupied.includes(i)) free.push(i);
+  }
+  if (free.length < count) {
+    throw new Error(
+      `only ${free.length} of the ${MAX_WALLETS} dust slots are free and ${count} were asked for. ` +
+        "Sweep and remove some DUST_PRIVATE_KEY_* lines from .env first — `pnpm dust:sweep` moves " +
+        "their balances to the deployer before anything is discarded.",
     );
-    return;
+  }
+
+  if (occupied.length > 0) {
+    console.log(`${occupied.length} dust wallet(s) already exist and are left untouched:\n`);
+    for (const i of occupied) {
+      const key = (process.env[`${PREFIX}${i}`] ?? "").trim() as `0x${string}`;
+      console.log(`  ${PREFIX}${i}  ${privateKeyToAccount(key).address}`);
+    }
+    console.log("");
   }
 
   const lines: string[] = [
@@ -78,12 +98,12 @@ function main(): void {
     "# these on mainnet: the keys are in plaintext on this machine.",
   ];
 
-  console.log(`dust wallets — ${count} disposable Sepolia funding addresses\n`);
-  for (let i = 1; i <= count; i += 1) {
+  console.log(`dust wallets — ${count} NEW disposable Sepolia funding address(es)\n`);
+  for (const i of free) {
     const key = generatePrivateKey();
     const address = privateKeyToAccount(key).address;
     lines.push(`${PREFIX}${i}=${key}`);
-    console.log(`  ${i}.  ${address}`);
+    console.log(`  ${PREFIX}${i}  ${address}`);
   }
   appendFileSync(repoPath(".env"), `${lines.join("\n")}\n`);
 
