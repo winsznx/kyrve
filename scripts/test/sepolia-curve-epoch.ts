@@ -1227,11 +1227,27 @@ async function main(): Promise<void> {
    * evidence describes contracts that are still on chain, and this repository must not stop describing
    * what is on chain.
    */
-  const epochEvidence = seriesLayer
-    ? "evidence/phase5/sepolia-epoch.json"
-    : "evidence/phase3/sepolia-epoch.json";
+  /**
+   * `KYRVE_EVIDENCE_TAG=a` writes `evidence/phase6/sepolia-epoch-a.json`.
+   *
+   * WITHOUT IT, PHASE 6 CLOBBERS PHASE 5. A series-layer run wrote one fixed path, so running an
+   * epoch against layer A would overwrite the record describing the epoch Phase 5 actually ran —
+   * and running layer B would then overwrite layer A. Every one of those describes different
+   * contracts that are all still on chain, and this repository must not stop describing what is on
+   * chain. The tag keeps them separate, which is also the Phase 6 instruction: a successful layer A
+   * flow must never silently satisfy a layer B check.
+   */
+  const evidenceTag = (process.env["KYRVE_EVIDENCE_TAG"] ?? "").trim();
+  const epochEvidence =
+    evidenceTag !== ""
+      ? `evidence/phase6/sepolia-epoch-${evidenceTag}.json`
+      : seriesLayer
+        ? "evidence/phase5/sepolia-epoch.json"
+        : "evidence/phase3/sepolia-epoch.json";
+  const epochEvidenceDir =
+    evidenceTag !== "" ? "evidence/phase6" : seriesLayer ? "evidence/phase5" : "evidence/phase3";
   assertNoSecrets(payload, epochEvidence);
-  mkdirSync(repoPath(seriesLayer ? "evidence/phase5" : "evidence/phase3"), { recursive: true });
+  mkdirSync(repoPath(epochEvidenceDir), { recursive: true });
   writeFileSync(repoPath(epochEvidence), payload);
 
   /**
@@ -1272,11 +1288,23 @@ async function main(): Promise<void> {
       matchesPlaintextReferenceModel: agree,
     };
     const settlementPayload = `${stableStringify(settlementEvidence)}\n`;
-    const proofEvidence = seriesLayer
-      ? "evidence/phase5/sepolia-epoch-proofs.json"
-      : "evidence/phase4/sepolia-epoch.json";
+    const proofEvidence =
+      evidenceTag !== ""
+        ? `evidence/phase6/sepolia-epoch-proofs-${evidenceTag}.json`
+        : seriesLayer
+          ? "evidence/phase5/sepolia-epoch-proofs.json"
+          : "evidence/phase4/sepolia-epoch.json";
     assertNoSecrets(settlementPayload, proofEvidence);
-    mkdirSync(repoPath(seriesLayer ? "evidence/phase5" : "evidence/phase4"), { recursive: true });
+    mkdirSync(
+      repoPath(
+        evidenceTag !== ""
+          ? "evidence/phase6"
+          : seriesLayer
+            ? "evidence/phase5"
+            : "evidence/phase4",
+      ),
+      { recursive: true },
+    );
     writeFileSync(repoPath(proofEvidence), settlementPayload);
     console.log(`  recorded in ${proofEvidence} (with gateway proofs)`);
   }
