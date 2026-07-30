@@ -1,0 +1,30 @@
+{
+  "$comment": "A real confidential curve epoch on Ethereum Sepolia, against the HOSTED iExec Nox stack. The aggregate below is one of the five values the engine deliberately publishes; no private value is recorded here or anywhere else.",
+  "chainId": 11155111,
+  "engine": "0xb2be4575c78b8f6be1bc84d54ece9f0da643010a",
+  "epochId": "0x18115ad38a9117e0d92d19f57b309206e8aa209c15bd4339b2bd1be84225828e",
+  "gasUsedThisRun": "0",
+  "gateway": "https://gateway-testnets.noxprotocol.dev",
+  "graphRoot": "0xf130cb0c9a741a5f78be62aa65ce2ef111bb5eecfacba10cf432cca21b910e9e",
+  "matchesPlaintextReferenceModel": true,
+  "measuredAt": "2026-07-30T09:15:59.973Z",
+  "published": {
+    "aggregateFillAmount": "299999999",
+    "privacyFloorPassed": true,
+    "quoteReady": true,
+    "selectedMarketIndex": 0,
+    "selectedRateIndex": 0
+  },
+  "requestId": "0x0b96bf9d73b536aafa279c1804af85d9383ae23e3931f0c710314c3daef15657",
+  "resumed": true,
+  "shape": {
+    "cells": 4,
+    "leaves": 2,
+    "markets": 1,
+    "providers": 2,
+    "rates": 2
+  },
+  "universeId": "0xcb6ad03461af8421920953e1f12d1c8d05a1cb22b04244d70d00b0a207fbe71c",
+  "verdict": "PASS — the full pipeline ran on a public network against hosted services, the five results verified through CurveResultVerifier with real gateway proofs, and every published value matched the plaintext reference model exactly."
+}
+

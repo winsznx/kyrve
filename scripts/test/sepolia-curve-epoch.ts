@@ -275,6 +275,28 @@ async function main(): Promise<void> {
   assertBroadcastArmed();
 
   /**
+   * A PHASE 6 LAYER EPOCH EXISTS TO BE SETTLED, SO IT MUST BE SETTLEMENT-GRADE.
+   *
+   * Without `KYRVE_SETTLEMENT_UNIVERSE=true` this builds a SYNTHETIC universe whose market id is a
+   * placeholder. The epoch runs perfectly — sealed graph, published aggregate matching the plaintext
+   * reference model — and then `activateQuote` dies on `toMarket(0x…01)` with `MarketNotCreated()`,
+   * because Midnight has never heard of that market. The whole epoch's gas is spent and the quote
+   * can never settle.
+   *
+   * That happened once, on layer A, and cost a full epoch. `KYRVE_EVIDENCE_TAG` is only ever set for
+   * a Phase 6 layer run, and every Phase 6 layer run must reach settlement, so the two flags are
+   * required together rather than left to be remembered.
+   */
+  if ((process.env["KYRVE_EVIDENCE_TAG"] ?? "").trim() !== "" && !settlementUniverse) {
+    throw new Error(
+      "KYRVE_EVIDENCE_TAG is set, so this is a Phase 6 layer epoch and it must be able to settle. " +
+        "Set KYRVE_SETTLEMENT_UNIVERSE=true. Without it the universe carries a placeholder market " +
+        "id, the epoch completes, and activation then fails with MarketNotCreated() after the gas " +
+        "is already spent.",
+    );
+  }
+
+  /**
    * `--resume=<universeId>` verifies an epoch that already ran, instead of paying for another 130
    * transactions on a public network.
    *

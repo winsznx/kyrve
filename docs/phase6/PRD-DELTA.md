@@ -187,6 +187,34 @@ implying they are.
 
 ---
 
+## U-8 · A Phase 6 layer epoch must be settlement-grade, and one was not
+
+**Status:** guarded. **Severity:** an epoch's gas, spent and unrecoverable.
+
+`sepolia-curve-epoch` builds one of two universes. Without `KYRVE_SETTLEMENT_UNIVERSE=true` it builds
+Phase 3's **synthetic** one, whose market id is a placeholder; with it, one whose market is a real
+Midnight market. Both run identically.
+
+Layer A's first epoch was run without the flag. It completed perfectly — 91 ACL grants, all six
+stages, a sealed graph, and a published aggregate of **299,999,999** matching the plaintext reference
+model exactly. Then `activateQuote` died on `toMarket(0x…01)` with `MarketNotCreated()`, because
+Midnight has never heard of that market. **The epoch is unsettleable and its gas is spent.**
+
+The failure is late by construction: nothing before activation needs the market to exist, so the
+confidential half is fully exercised against a market that cannot receive a quote. Its records are
+kept as `sepolia-epoch-a-synthetic-abandoned.json` rather than deleted — this repository records what
+happened, and an abandoned epoch is part of what happened.
+
+**Guarded rather than remembered.** `KYRVE_EVIDENCE_TAG` is only ever set for a Phase 6 layer run,
+and every Phase 6 layer run exists to reach settlement, so the two flags are now required together.
+The refusal names the exact failure that follows from omitting it.
+
+**What it does not invalidate.** The abandoned epoch is real evidence of the confidential curve on a
+public network against the hosted gateway — sealed graph, five published handles, aggregate matching
+the model. It is not evidence of settlement, and it is not counted as any.
+
+---
+
 ## Carried forward, still binding
 
 Everything in `docs/phase5/PRD-DELTA.md` remains in force. Three Phase 5 items are exercised again
