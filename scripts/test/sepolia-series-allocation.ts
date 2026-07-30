@@ -66,6 +66,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
 import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import { layerPaths, requireLayerFile } from "../lib/layer.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const CHAIN_ID = 11_155_111;
@@ -101,9 +102,15 @@ interface SeriesDeployment {
 }
 
 async function main(): Promise<void> {
-  const deploymentPath = repoPath("deployments/sepolia/series.json");
-  const settlementPath = repoPath("evidence/phase5/sepolia-settlement.json");
-  const epochPath = repoPath("evidence/phase5/sepolia-epoch.json");
+  /**
+   * Layer-scoped, and it will NOT fall back. A layer B allocation that read layer A's settlement
+   * record would mint against a position layer B never took, and every later check would pass on
+   * evidence from the wrong stack.
+   */
+  const layer = layerPaths();
+  const deploymentPath = repoPath(layer.deployment);
+  const settlementPath = repoPath(layer.settlement);
+  const epochPath = repoPath(layer.epoch);
 
   for (const [what, path] of [
     ["the Phase 5 deployment", deploymentPath],
@@ -556,16 +563,16 @@ async function main(): Promise<void> {
   };
 
   const payload = `${stableStringify(evidence)}\n`;
-  assertNoSecrets(payload, "evidence/phase5/sepolia-allocation.json");
-  mkdirSync(repoPath("evidence/phase5"), { recursive: true });
-  writeFileSync(repoPath("evidence/phase5/sepolia-allocation.json"), payload);
+  assertNoSecrets(payload, layer.allocation);
+  mkdirSync(repoPath(layer.allocation.replace(/\/[^/]+$/, "")), { recursive: true });
+  writeFileSync(repoPath(layer.allocation), payload);
 
   const spent = receipts.reduce((sum, entry) => sum + BigInt(entry.gasUsed), 0n);
   console.log(`\n  ${spent} gas across ${receipts.length} transaction(s)`);
   console.log(
     `  balance    ${formatEther(await publicClient.getBalance({ address: keeper.address }))} ETH`,
   );
-  console.log("  recorded in evidence/phase5/sepolia-allocation.json\n");
+  console.log(`  recorded in ${layer.allocation}\n`);
 }
 
 main().catch((error: unknown) => {

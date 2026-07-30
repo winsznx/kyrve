@@ -54,6 +54,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
 import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import { layerPaths } from "../lib/layer.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const EXPLORER = "https://sepolia.etherscan.io";
@@ -142,16 +143,33 @@ async function main(): Promise<void> {
    * plaintext of that burn must equal the epoch's published aggregate exactly.
    */
   const seriesLayer = process.env["KYRVE_SERIES_LAYER"] === "true";
-  const phaseDir = seriesLayer ? "phase5" : "phase4";
+  /**
+   * `KYRVE_EVIDENCE_TAG` selects the LAYER, and every path follows from it. Two layers share no
+   * contract, so a settlement run reading one layer's epoch proofs and writing another's evidence
+   * would report a proof that never happened. `scripts/lib/layer.ts` derives the record from the tag
+   * for exactly that reason: two sources of truth for "which layer" is how that mistake is made.
+   */
+  const layer = layerPaths();
+  const phaseDir = layer.tag !== "" ? "phase6" : seriesLayer ? "phase5" : "phase4";
   const settlementPath = repoPath(
-    seriesLayer ? "deployments/sepolia/series.json" : "deployments/sepolia/settlement.json",
+    layer.tag !== ""
+      ? layer.deployment
+      : seriesLayer
+        ? "deployments/sepolia/series.json"
+        : "deployments/sepolia/settlement.json",
   );
   const epochPath = repoPath(
-    seriesLayer
-      ? "evidence/phase5/sepolia-epoch-proofs.json"
-      : "evidence/phase4/sepolia-epoch.json",
+    layer.tag !== ""
+      ? layer.epochProofs
+      : seriesLayer
+        ? "evidence/phase5/sepolia-epoch-proofs.json"
+        : "evidence/phase4/sepolia-epoch.json",
   );
-  const activationPath = repoPath(`evidence/${phaseDir}/sepolia-activation.json`);
+  const activationPath = repoPath(
+    layer.tag !== ""
+      ? `evidence/phase6/sepolia-activation-${layer.tag}.json`
+      : `evidence/${phaseDir}/sepolia-activation.json`,
+  );
 
   if (!existsSync(settlementPath)) {
     throw new Error(
@@ -1067,7 +1085,9 @@ async function main(): Promise<void> {
   };
 
   const payload = `${stableStringify(evidence)}\n`;
-  const settlementEvidence = `evidence/${phaseDir}/sepolia-settlement.json`;
+  // Tagged per layer. Untagged keeps the Phase 5 name so nothing that reads it is orphaned.
+  const settlementEvidence =
+    layer.tag !== "" ? layer.settlement : `evidence/${phaseDir}/sepolia-settlement.json`;
   assertNoSecrets(payload, settlementEvidence);
   mkdirSync(repoPath(`evidence/${phaseDir}`), { recursive: true });
   writeFileSync(repoPath(settlementEvidence), payload);
