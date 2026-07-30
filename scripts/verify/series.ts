@@ -39,7 +39,7 @@ import { existsSync } from "node:fs";
 import { type Address, createPublicClient, type Hex, http, keccak256 } from "viem";
 import { hardhat, sepolia } from "viem/chains";
 
-import { sepoliaRpc } from "../lib/env.js";
+import { safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath } from "../lib/shell.js";
 
 const LOCAL_RPC = "http://127.0.0.1:8545";
@@ -446,8 +446,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nverify:series FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nverify:series FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

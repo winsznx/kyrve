@@ -15,7 +15,7 @@
 import { createPublicClient, formatEther, http } from "viem";
 import { hardhat, sepolia } from "viem/chains";
 
-import { sepoliaRpc } from "../lib/env.js";
+import { safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { describeRoles, resolveRoles } from "../lib/roles.js";
 
 const LOCAL_RPC = "http://127.0.0.1:8545";
@@ -88,8 +88,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nroles:status failed — ${error instanceof Error ? error.message : String(error)}\n`,
-  );
+  console.error(`\nroles:status failed — ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

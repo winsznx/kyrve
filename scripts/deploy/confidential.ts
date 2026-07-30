@@ -35,7 +35,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { repoPath, stableStringify } from "../lib/shell.js";
 
 const LOCAL_RPC = "http://127.0.0.1:8545";
@@ -271,7 +277,7 @@ async function main(): Promise<void> {
 // Only run when invoked directly; `deployConfidential` is imported by the local flow driver.
 if (process.argv[1]?.endsWith("confidential.ts")) {
   main().catch((error: unknown) => {
-    console.error(`\ndeployment FAILED: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`\ndeployment FAILED: ${safeErrorMessage(error)}`);
     process.exitCode = 1;
   });
 }

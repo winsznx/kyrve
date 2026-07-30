@@ -38,7 +38,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, deployer, loadEnv, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  deployer,
+  loadEnv,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 
 const CHAIN_ID = 11_155_111;
 const PREFIX = "DUST_PRIVATE_KEY_";
@@ -192,6 +198,6 @@ if (process.argv.includes("--execute")) {
 }
 
 main().catch((error: unknown) => {
-  console.error(`\ndust:sweep FAILED: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`\ndust:sweep FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

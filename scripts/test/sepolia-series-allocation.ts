@@ -65,7 +65,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { layerPaths, requireLayerFile } from "../lib/layer.js";
 import { resolveRoles, signingKey } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
@@ -388,7 +394,7 @@ async function main(): Promise<void> {
           policy: { initialDelayMs: 1_000, maxDelayMs: 4_000, multiplier: 2, timeoutMs: 30_000 },
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = safeErrorMessage(error);
         refused = /holds no grant|not authoris|not authoriz|forbidden|unauthor/i.test(message);
         if (!refused) throw error;
       }
@@ -518,11 +524,7 @@ async function main(): Promise<void> {
     });
   } catch (error) {
     duplicateRefused = true;
-    duplicateDetail = (error instanceof Error ? error.message : String(error))
-      .split("\n")
-      .slice(0, 2)
-      .join(" ")
-      .trim();
+    duplicateDetail = safeErrorMessage(error).split("\n").slice(0, 2).join(" ").trim();
   }
   if (!duplicateRefused) {
     throw new Error("a second allocation of the same quote was NOT refused");
@@ -588,8 +590,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nsepolia series allocation FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nsepolia series allocation FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

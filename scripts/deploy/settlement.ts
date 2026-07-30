@@ -49,7 +49,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { resolveRoles } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
@@ -497,9 +503,7 @@ export async function deploySettlement(environment: Environment): Promise<Settle
 if (basename(process.argv[1] ?? "") === "settlement.ts") {
   const target: Environment = process.argv[2] === "sepolia" ? "sepolia" : "local";
   deploySettlement(target).catch((error: unknown) => {
-    console.error(
-      `\ndeploy:settlement FAILED: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`\ndeploy:settlement FAILED: ${safeErrorMessage(error)}`);
     process.exitCode = 1;
   });
 }

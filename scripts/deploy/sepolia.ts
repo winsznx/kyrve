@@ -24,7 +24,13 @@ import { createPublicClient, formatEther, http, keccak256 } from "viem";
 import { sepolia } from "viem/chains";
 
 import { buildAllRateGrids } from "../generate/rate-grids.js";
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { readJson, repoPath, run, stableStringify } from "../lib/shell.js";
 import { buildManifest, MARKET_KEYS, type RawDeployment } from "./manifest.js";
 import { preflight } from "./preflight.js";
@@ -236,6 +242,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(`\ndeployment FAILED: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`\ndeployment FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

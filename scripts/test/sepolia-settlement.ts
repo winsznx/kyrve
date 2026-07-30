@@ -53,7 +53,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { layerPaths } from "../lib/layer.js";
 import { resolveRoles, signingKey } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
@@ -832,8 +838,7 @@ async function main(): Promise<void> {
         account,
       });
     } catch (error) {
-      partialRejection =
-        (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "";
+      partialRejection = safeErrorMessage(error).split("\n")[0] ?? "";
     }
     if (partialRejection === "") {
       throw new Error("a partial fill was ADMITTED on Sepolia. Refusing to continue.");
@@ -1056,7 +1061,7 @@ async function main(): Promise<void> {
       account,
     });
   } catch (error) {
-    replayRejection = (error instanceof Error ? error.message : String(error)).split("\n")[0] ?? "";
+    replayRejection = safeErrorMessage(error).split("\n")[0] ?? "";
   }
   if (replayRejection === "") throw new Error("a replay was ADMITTED on Sepolia");
   console.log(`    refused: ${replayRejection.slice(0, 120)}`);
@@ -1113,8 +1118,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nsepolia settlement FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nsepolia settlement FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

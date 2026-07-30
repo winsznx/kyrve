@@ -36,7 +36,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { createPublicClient, encodeDeployData, formatEther, http } from "viem";
 import { sepolia } from "viem/chains";
 
-import { assertNoSecrets, sepoliaRpc } from "../lib/env.js";
+import { assertNoSecrets, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { type RoleName, resolveRoles } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
@@ -462,8 +462,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nsepolia market budget FAILED — ${error instanceof Error ? error.message : String(error)}\n`,
-  );
+  console.error(`\nsepolia market budget FAILED — ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

@@ -37,7 +37,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { createPublicClient, formatEther, http } from "viem";
 import { sepolia } from "viem/chains";
 
-import { assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import { assertNoSecrets, deployer, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 /** The floor, until more public samples exist. Raise it, never lower it, without evidence. */
@@ -287,8 +287,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nfunding budget FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nfunding budget FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

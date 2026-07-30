@@ -48,7 +48,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { type Address, createPublicClient, type Hex, http, keccak256 } from "viem";
 import { hardhat, sepolia } from "viem/chains";
 
-import { assertNoSecrets, sepoliaRpc } from "../lib/env.js";
+import { assertNoSecrets, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 export const EXIT = { PASS: 0, FAIL: 1, UNAVAILABLE: 2, USAGE: 3 } as const;
@@ -1175,7 +1175,7 @@ async function checkRoll(
 }
 
 function short(error: unknown): string {
-  const text = error instanceof Error ? error.message : String(error);
+  const text = safeErrorMessage(error);
   return text.split("\n")[0]?.slice(0, 160) ?? "unknown error";
 }
 

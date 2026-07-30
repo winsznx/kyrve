@@ -94,6 +94,7 @@ import {
   assertNoSecrets,
   deployer,
   etherscanApiKey,
+  safeErrorMessage,
   sepoliaRpc,
 } from "../lib/env.js";
 import { describeRoles, resolveRoles, signingKey } from "../lib/roles.js";
@@ -1054,8 +1055,6 @@ deploySeries(environment, {
   ...(universeArg === undefined ? {} : { universeId: universeArg as Hex }),
   ...(argOf("--suffix") === undefined ? {} : { suffix: argOf("--suffix") as string }),
 }).catch((error: unknown) => {
-  console.error(
-    `\ndeploy:series FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\ndeploy:series FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

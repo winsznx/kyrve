@@ -46,7 +46,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, sepoliaRpc } from "../lib/env.js";
+import { assertBroadcastArmed, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { type RoleName, resolveRoles, signingKey } from "../lib/roles.js";
 import { readJson, repoPath } from "../lib/shell.js";
 
@@ -239,8 +239,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nroles:fund failed — ${error instanceof Error ? error.message : String(error)}\n`,
-  );
+  console.error(`\nroles:fund failed — ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

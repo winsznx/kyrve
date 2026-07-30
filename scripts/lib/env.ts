@@ -54,6 +54,34 @@ function require(name: string, purpose: string): string {
  * Provider API keys live in the PATH (`https://eth-sepolia.g.alchemy.com/v2/<key>`), so printing a
  * "partial" URL by truncating the end is not safe — the whole path is discarded instead.
  */
+/**
+ * Redacts EVERY url in a block of text to scheme and host.
+ *
+ * THE ERROR PATH IS A LEAK PATH, AND IT LEAKED TWICE. viem embeds the transport URL in its error
+ * text — `The request timed out. URL: https://eth-sepolia.g.alchemy.com/v2/<key>` — and a provider
+ * API key lives in the PATH, so any handler that prints a caught error verbatim publishes the
+ * owner's credential to the terminal and to every captured log. `assertNoSecrets` guards files and
+ * nothing guarded stdout.
+ *
+ * Use this in every top-level catch. {redactUrl} handles a single known URL; this one handles a
+ * string that merely happens to contain one, which is the case that actually bites.
+ */
+export function redactUrls(text: string): string {
+  return text.replace(/https?:\/\/[^\s"')\]]+/g, (url) => {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.protocol}//${parsed.host}/***`;
+    } catch {
+      return "<url redacted>";
+    }
+  });
+}
+
+/** The message of an unknown thrown value, with every URL redacted. Safe to print. */
+export function safeErrorMessage(error: unknown): string {
+  return redactUrls(error instanceof Error ? error.message : String(error));
+}
+
 export function redactUrl(url: string): string {
   try {
     const parsed = new URL(url);

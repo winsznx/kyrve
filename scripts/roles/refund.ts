@@ -21,7 +21,7 @@ import { createPublicClient, createWalletClient, formatEther, http } from "viem"
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, sepoliaRpc } from "../lib/env.js";
+import { assertBroadcastArmed, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { type RoleName, resolveRoles, signingKey } from "../lib/roles.js";
 
 const CHAIN_ID = 11_155_111;
@@ -112,8 +112,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nroles:refund failed — ${error instanceof Error ? error.message : String(error)}\n`,
-  );
+  console.error(`\nroles:refund failed — ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

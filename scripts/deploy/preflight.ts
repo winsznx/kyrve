@@ -14,7 +14,7 @@ import { createPublicClient, formatEther, http } from "viem";
 import { sepolia } from "viem/chains";
 
 import { CHAIN_IDS } from "../../packages/config/src/index.js";
-import { deployer, presence, sepoliaRpc } from "../lib/env.js";
+import { deployer, presence, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { repoPath, run } from "../lib/shell.js";
 
 /** Deliberately generous: a failed deployment costs more than an over-estimate. */
@@ -158,6 +158,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(`\npreflight FAILED: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`\npreflight FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

@@ -33,7 +33,7 @@ import { existsSync } from "node:fs";
 import { type Address, createPublicClient, http } from "viem";
 import { hardhat, sepolia } from "viem/chains";
 
-import { sepoliaRpc } from "../lib/env.js";
+import { safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath } from "../lib/shell.js";
 
 const LOCAL_RPC = "http://127.0.0.1:8545";
@@ -150,7 +150,7 @@ async function main(): Promise<void> {
       checks.push({
         name: `${source.contract}.${source.getter}()`,
         ok: false,
-        detail: `read failed — ${error instanceof Error ? error.message : String(error)}`,
+        detail: `read failed — ${safeErrorMessage(error)}`,
       });
       continue;
     }
@@ -296,8 +296,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nverify:roles failed — ${error instanceof Error ? error.message : String(error)}\n`,
-  );
+  console.error(`\nverify:roles failed — ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

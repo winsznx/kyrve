@@ -48,7 +48,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { describeRoles, resolveRoles } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
@@ -464,8 +470,6 @@ export async function deployMarket(environment: Environment): Promise<MarketDepl
 
 const environment: Environment = process.argv[2] === "sepolia" ? "sepolia" : "local";
 deployMarket(environment).catch((error: unknown) => {
-  console.error(
-    `\ndeploy:market FAILED: ${error instanceof Error ? error.message : String(error)}\n`,
-  );
+  console.error(`\ndeploy:market FAILED: ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

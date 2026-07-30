@@ -30,7 +30,7 @@ import {
 import { type Address, createPublicClient, http, keccak256 } from "viem";
 import { hardhat, sepolia } from "viem/chains";
 
-import { sepoliaRpc } from "../lib/env.js";
+import { safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath } from "../lib/shell.js";
 
 const ARTIFACT_PATH: Readonly<Record<ConfidentialContract, string>> = {
@@ -204,8 +204,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nverify:confidential FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nverify:confidential FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

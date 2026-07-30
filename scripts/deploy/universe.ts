@@ -49,7 +49,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const CHAIN_ID = 11_155_111;
@@ -292,8 +298,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\ndeploy:universe FAILED: ${error instanceof Error ? error.message : String(error)}\n`,
-  );
+  console.error(`\ndeploy:universe FAILED: ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

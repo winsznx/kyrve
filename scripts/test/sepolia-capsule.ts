@@ -46,7 +46,7 @@ import { type Address, createPublicClient, createWalletClient, type Hex, http } 
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, sepoliaRpc } from "../lib/env.js";
+import { assertBroadcastArmed, assertNoSecrets, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { layerPaths, requireLayerFile } from "../lib/layer.js";
 import { resolveRoles, signingKey } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
@@ -62,18 +62,6 @@ const POLL = {
 const CAPSULE_LIFETIME = 7n * 24n * 3600n;
 const SCOPE_OWNERSHIP = 0;
 const SCOPE_SOLVENCY = 3;
-
-/** Redacts every URL to scheme and host. A provider API key lives in the PATH. */
-function redactUrls(text: string): string {
-  return text.replace(/https?:\/\/[^\s"')]+/g, (url) => {
-    try {
-      const parsed = new URL(url);
-      return `${parsed.protocol}//${parsed.host}/***`;
-    } catch {
-      return "<url redacted>";
-    }
-  });
-}
 
 function abiOf(name: string): readonly unknown[] {
   const path = repoPath(`confidential/artifacts/contracts/${name}.sol/${name}.json`);
@@ -484,8 +472,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nsepolia capsule FAILED — ${redactUrls(error instanceof Error ? error.message : String(error))}\n`,
-  );
+  console.error(`\nsepolia capsule FAILED — ${safeErrorMessage(error)}\n`);
   process.exitCode = 1;
 });

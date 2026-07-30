@@ -7,7 +7,6 @@
  */
 
 import { existsSync } from "node:fs";
-
 import { parseDeploymentManifest } from "../../packages/config/src/index.js";
 import { marketId } from "../../packages/midnight/src/index.js";
 import {
@@ -18,6 +17,7 @@ import {
   tickToPrice,
 } from "../../packages/quote-math/src/index.js";
 import type { RateGrid } from "../generate/rate-grids.js";
+import { safeErrorMessage } from "../lib/env.js";
 import { readJson, repoPath } from "../lib/shell.js";
 
 const environment = process.argv[2] ?? "local";
@@ -94,7 +94,7 @@ function main(): void {
     try {
       assertGridViable(ticks, entry.settlementFeeCbp, secondsToMaturity, entry.tickSpacing);
     } catch (error) {
-      failures.push(`${entry.key}: ${error instanceof Error ? error.message : String(error)}`);
+      failures.push(`${entry.key}: ${safeErrorMessage(error)}`);
     }
 
     // 5. Every tick must actually produce a quote, not merely pass a bounds check.
@@ -108,9 +108,7 @@ function main(): void {
           tickSpacing: entry.tickSpacing,
         });
       } catch (error) {
-        failures.push(
-          `${entry.key}: tick ${tick} does not quote: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        failures.push(`${entry.key}: tick ${tick} does not quote: ${safeErrorMessage(error)}`);
         break;
       }
     }

@@ -44,7 +44,13 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const LOCAL_RPC = "http://127.0.0.1:8545";
@@ -399,6 +405,6 @@ export async function deployCurve(environment: Environment): Promise<CurveDeploy
 
 const environment: Environment = process.argv[2] === "sepolia" ? "sepolia" : "local";
 deployCurve(environment).catch((error: unknown) => {
-  console.error(`\ndeploy:curve FAILED: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`\ndeploy:curve FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

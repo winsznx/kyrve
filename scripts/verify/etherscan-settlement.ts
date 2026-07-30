@@ -44,7 +44,7 @@ import { existsSync, writeFileSync } from "node:fs";
 import { type Address, createPublicClient, type Hex, http, keccak256 } from "viem";
 import { sepolia } from "viem/chains";
 import { SETTLEMENT_COMPILER } from "../deploy/settlement.js";
-import { assertNoSecrets, etherscanApiKey, sepoliaRpc } from "../lib/env.js";
+import { assertNoSecrets, etherscanApiKey, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath, run, stableStringify } from "../lib/shell.js";
 
 const CHAIN_ID = 11155111;
@@ -396,6 +396,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(`\nFAILED: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`\nFAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

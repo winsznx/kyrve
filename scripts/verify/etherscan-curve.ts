@@ -33,7 +33,7 @@ import { existsSync, globSync, writeFileSync } from "node:fs";
 
 import { CONFIDENTIAL_COMPILER } from "@kyrve/config";
 
-import { assertNoSecrets, etherscanApiKey } from "../lib/env.js";
+import { assertNoSecrets, etherscanApiKey, safeErrorMessage } from "../lib/env.js";
 import { readJson, repoPath, run, stableStringify } from "../lib/shell.js";
 
 const CHAIN_ID = 11155111;
@@ -297,6 +297,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(`\nFAILED: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`\nFAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

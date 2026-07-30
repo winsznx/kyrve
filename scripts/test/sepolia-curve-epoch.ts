@@ -77,6 +77,7 @@ import {
   assertNoSecrets,
   deployer,
   loadEnv,
+  safeErrorMessage,
   sepoliaRpc,
 } from "../lib/env.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
@@ -1339,8 +1340,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nsepolia-curve-epoch FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nsepolia-curve-epoch FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

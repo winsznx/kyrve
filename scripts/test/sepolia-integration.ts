@@ -49,7 +49,13 @@ import {
   tickToPrice,
   WAD,
 } from "../../packages/quote-math/src/index.js";
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { readJson, repoPath, run, stableStringify } from "../lib/shell.js";
 
 /**
@@ -370,7 +376,7 @@ async function main(): Promise<void> {
       console.log(`  ${label.padEnd(34)} SUCCEEDED — expected a revert`);
       return { reverted: false, matched: false, reason: "call succeeded" };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = safeErrorMessage(error);
       const matched = pattern.test(message);
       const named =
         message.match(/Error:\s*([A-Za-z0-9_]+)\(/)?.[1] ??
@@ -542,8 +548,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nsepolia integration FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nsepolia integration FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

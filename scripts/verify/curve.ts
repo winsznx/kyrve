@@ -35,7 +35,7 @@ import {
 import { type Address, createPublicClient, http, keccak256 } from "viem";
 import { hardhat, sepolia } from "viem/chains";
 
-import { sepoliaRpc } from "../lib/env.js";
+import { safeErrorMessage, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath } from "../lib/shell.js";
 
 const MAX_RUNTIME_BYTES = 24_576;
@@ -265,6 +265,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(`\nverify:curve FAILED: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`\nverify:curve FAILED: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

@@ -55,7 +55,13 @@ import { type Address, createPublicClient, createWalletClient, formatEther, http
 import { privateKeyToAccount } from "viem/accounts";
 import { sepolia } from "viem/chains";
 
-import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import {
+  assertBroadcastArmed,
+  assertNoSecrets,
+  deployer,
+  safeErrorMessage,
+  sepoliaRpc,
+} from "../lib/env.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const CHAIN_ID = 11_155_111;
@@ -341,9 +347,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(
-    `\nsepolia-nox-smoke FAILED: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.error(`\nsepolia-nox-smoke FAILED: ${safeErrorMessage(error)}`);
   console.error(
     "\n  AS-1 remains UNVERIFIED. Do not deploy the Phase 3 layer to Sepolia until this passes:\n" +
       "  a curve engine on a stack that has never accepted an encrypted input is an assumption,\n" +
