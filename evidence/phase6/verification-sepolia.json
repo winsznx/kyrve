@@ -1,5 +1,5 @@
 {
-  "blockNumber": "11383973",
+  "blockNumber": "11384025",
   "chainId": 11155111,
   "environment": "sepolia",
   "findings": [
@@ -161,7 +161,7 @@
     "verdict": "UNAVAILABLE"
   },
   "tool": "kyrve-verify",
-  "verifiedAt": "2026-07-30T17:42:08.627Z",
+  "verifiedAt": "2026-07-30T17:53:28.937Z",
   "version": 1
 }
 
