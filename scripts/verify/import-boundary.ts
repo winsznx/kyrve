@@ -40,6 +40,13 @@ const BOUNDARIES: readonly Boundary[] = [
       // `confidential/scripts/` is product code and goes through @kyrve/nox like everything else.
       "confidential/hardhat.config.ts",
       "confidential/test/",
+      // The local stack host, for the same reason and under the same terms. It runs under
+      // `hardhat test`, ships nowhere, appears in no bundle, and imports exactly one symbol:
+      // `handleGatewayUrl`, whose value the plugin sets in that process's environment and which
+      // nothing outside the process can otherwise see. Reading the raw env var instead would have
+      // satisfied this check by duplicating the plugin's own contract, which is the version skew
+      // this boundary exists to prevent rather than a way around it.
+      "confidential/stack/",
       // Frozen Day 0 evidence, which must keep reproducing exactly as recorded.
       "spikes/",
     ],

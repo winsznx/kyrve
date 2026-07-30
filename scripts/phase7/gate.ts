@@ -356,8 +356,14 @@ const GATES: readonly Gate[] = [
     name: "a gate cannot report PASS over a failure, a skip or an empty run",
     execute: () => {
       const output = run("pnpm", ["exec", "vitest", "run", "scripts/lib/tally.test.ts"]).stdout;
-      const passed = /(\d+) passed/.exec(output);
-      if (passed === null) throw new Error("the tally regression suite printed no result");
+      // `Tests  N passed`, not the first `N passed` in the output — vitest prints the FILE count
+      // first, so the naive match reported "1 regression tests" for a suite of eight. A gate that
+      // miscounts its own evidence is a smaller version of the defect this suite exists to prevent.
+      const passed = /Tests\s+(\d+) passed/.exec(output);
+      const failed = /Tests\s+\d+ failed/.test(output);
+      if (passed === null || failed) {
+        throw new Error(`the tally regression suite did not pass cleanly: ${summarise(output, 3)}`);
+      }
       return `${passed[1]} regression tests over the shared tally helper`;
     },
   },
