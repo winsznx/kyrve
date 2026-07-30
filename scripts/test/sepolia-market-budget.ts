@@ -51,11 +51,22 @@ interface Component {
   readonly gas: number;
   readonly kind: "estimated" | "measured";
   readonly source: string;
+  /**
+   * Evidence that this component has ALREADY been executed, relative to the repository root.
+   *
+   * THE VERDICT IS ABOUT WHAT REMAINS, NOT ABOUT THE WHOLE SEQUENCE. Once layer A is deployed, its
+   * 28M gas is spent and the deployer's balance is lower by exactly that — pricing it again reports
+   * the deployer as short by the amount it correctly spent, which is a stop condition firing on
+   * success. Each component names the file that proves it landed.
+   */
+  readonly doneWhen?: string;
 }
 
 interface RoleVerdict {
   readonly role: Payer;
+  /** Gas still to be spent by this role. The whole-sequence figure is `gasTotal`. */
   readonly gas: number;
+  readonly gasTotal: number;
   readonly requiredEth: string;
   readonly balanceEth: string;
   readonly funded: boolean;
@@ -67,7 +78,9 @@ interface Sample {
   readonly phase: "phase6";
   readonly scope: string;
   readonly components: readonly Component[];
+  /** Gas still to be spent. The whole sequence, including what has landed, is `wholeSequenceGas`. */
   readonly estimatedGas: number;
+  readonly wholeSequenceGas: number;
   readonly baseFeePerGasWei: string;
   readonly priorityFeePerGasWei: string;
   readonly effectiveGasPriceWei: string;
@@ -179,6 +192,7 @@ async function main(): Promise<void> {
       ]),
       kind: "estimated",
       source: "eth_estimateGas against Sepolia, real bytecode and the real seven role addresses",
+      doneWhen: "deployments/sepolia/series.json",
     },
     {
       name: "KyrveCapsuleVault",
@@ -196,6 +210,7 @@ async function main(): Promise<void> {
       ]),
       kind: "estimated",
       source: "eth_estimateGas against Sepolia, real bytecode, Phase 5 contracts standing in",
+      doneWhen: "deployments/sepolia/market.json",
     },
     {
       name: "KyrveCrossBook",
@@ -203,6 +218,7 @@ async function main(): Promise<void> {
       gas: crossBookGas,
       kind: "estimated",
       source: "eth_estimateGas against Sepolia, real bytecode and the real declared price and fee",
+      doneWhen: "deployments/sepolia/market.json",
     },
     {
       /**
@@ -226,6 +242,7 @@ async function main(): Promise<void> {
         "bounded by KyrveCrossBook's live eth_estimateGas — the roll book's constructor refuses " +
         "SameSeries so it cannot be estimated before a second series token exists, and its runtime " +
         "is 447 bytes SMALLER, so this over-states",
+      doneWhen: "deployments/sepolia/market.json",
     },
 
     // ── Measured, from executed public and local runs ────────────────────────────────────────
@@ -235,6 +252,7 @@ async function main(): Promise<void> {
       gas: 28_318_988,
       kind: "measured",
       source: "evidence/phase5/GATE.md — the Phase 5 Sepolia deployment, executed",
+      doneWhen: "deployments/sepolia/series.json",
     },
     {
       name: "layer A: provider funding, mandates, ACL grants and one full confidential epoch",
@@ -244,6 +262,7 @@ async function main(): Promise<void> {
       source:
         "evidence/phase5/funding-budget.json — the deployer stands in for providers and the " +
         "borrower on a public network, so this is its cost rather than the keeper's",
+      doneWhen: "evidence/phase6/sepolia-epoch-a.json",
     },
     {
       name: "layer A: activation, one exact Midnight take, allocation, close, solvency",
@@ -251,6 +270,7 @@ async function main(): Promise<void> {
       gas: 4_284_765,
       kind: "measured",
       source: "evidence/phase5/funding-budget.json — the keeper's own transactions",
+      doneWhen: "evidence/phase6/sepolia-allocation-a.json",
     },
     {
       name: "layer A: universe checks and createSeries",
@@ -258,6 +278,7 @@ async function main(): Promise<void> {
       gas: 1_936_085,
       kind: "measured",
       source: "evidence/phase5/funding-budget.json — createSeries is onlyCurator from Phase 6",
+      doneWhen: "deployments/sepolia/series.json",
     },
     {
       name: "Capsule: one ownership capsule and one public capsule",
@@ -265,6 +286,7 @@ async function main(): Promise<void> {
       gas: 816_394,
       kind: "measured",
       source: "evidence/phase6/capsule-gas.json — measured against the real Nox stack",
+      doneWhen: "evidence/phase6/sepolia-capsule.json",
     },
     {
       name: "Cross: submit, submit, match, cancel, publish, settle residual",
@@ -272,6 +294,7 @@ async function main(): Promise<void> {
       gas: 3_032_766,
       kind: "measured",
       source: "evidence/phase6/cross-gas.json — measured against the real Nox stack",
+      doneWhen: "evidence/phase6/sepolia-cross.json",
     },
     {
       name: "layer B: a SECOND complete layer, for the smallest coherent Roll",
@@ -281,6 +304,7 @@ async function main(): Promise<void> {
       source:
         "delta U-1 — one custody vault serves one series, so a roll needs a second complete " +
         "layer. Same shape as layer A, so the same measured figure",
+      doneWhen: "deployments/sepolia/series-b.json",
     },
     {
       name: "layer B: providers, mandates, grants and a second confidential epoch",
@@ -288,6 +312,7 @@ async function main(): Promise<void> {
       gas: 26_931_546,
       kind: "measured",
       source: "the same Phase 5 measurement — a second epoch is not cheaper than the first",
+      doneWhen: "evidence/phase6/sepolia-epoch-b.json",
     },
     {
       name: "layer B: activation, take, allocation, close",
@@ -295,6 +320,7 @@ async function main(): Promise<void> {
       gas: 4_284_765,
       kind: "measured",
       source: "evidence/phase5/funding-budget.json",
+      doneWhen: "evidence/phase6/sepolia-allocation-b.json",
     },
     {
       name: "layer B: createSeries and the source redemption factor",
@@ -302,6 +328,7 @@ async function main(): Promise<void> {
       gas: 2_000_000,
       kind: "measured",
       source: "createSeries measured, plus setRedemptionFactor which the roll conversion needs",
+      doneWhen: "deployments/sepolia/series-b.json",
     },
     {
       name: "Roll: intent, supply, net, declare, settle, cancel",
@@ -309,6 +336,7 @@ async function main(): Promise<void> {
       gas: 2_650_810,
       kind: "measured",
       source: "evidence/phase6/roll-gas.json — measured against the real Nox stack",
+      doneWhen: "evidence/phase6/sepolia-roll.json",
     },
     {
       name: "recovery paths: one cancel and one recoverFunding",
@@ -325,7 +353,17 @@ async function main(): Promise<void> {
   const gasPrice = baseFee + priority;
   const margin = DEFAULT_SAFETY_MARGIN;
 
-  const totalGas = components.reduce((sum, c) => sum + c.gas, 0);
+  /**
+   * REMAINING, not total. A component whose evidence file exists has already been paid for, and
+   * pricing it again reports a role as short by exactly what it correctly spent — a stop condition
+   * firing on success. The whole-sequence figure is still reported, clearly labelled.
+   */
+  const isDone = (component: Component): boolean =>
+    component.doneWhen !== undefined && existsSync(repoPath(component.doneWhen));
+  const remaining = components.filter((component) => !isDone(component));
+
+  const totalGas = remaining.reduce((sum, c) => sum + c.gas, 0);
+  const wholeSequenceGas = components.reduce((sum, c) => sum + c.gas, 0);
   const predicted = BigInt(totalGas) * gasPrice;
   const withMargin = (predicted * BigInt(Math.round((1 + margin) * 100))) / 100n;
 
@@ -334,13 +372,15 @@ async function main(): Promise<void> {
   );
   for (const c of components) {
     console.log(
-      `  ${c.kind === "estimated" ? "~" : " "}${c.name.slice(0, 62).padEnd(63)} ${c.payer.padEnd(9)} ${c.gas.toLocaleString()}`,
+      `  ${isDone(c) ? "done" : c.kind === "estimated" ? "   ~" : "    "} ` +
+        `${c.name.slice(0, 62).padEnd(63)} ${c.payer.padEnd(9)} ${c.gas.toLocaleString()}`,
     );
   }
 
   const perRole: RoleVerdict[] = [];
   for (const payer of PAYERS) {
-    const gas = components.filter((c) => c.payer === payer).reduce((s, c) => s + c.gas, 0);
+    const gas = remaining.filter((c) => c.payer === payer).reduce((s, c) => s + c.gas, 0);
+    const gasTotal = components.filter((c) => c.payer === payer).reduce((s, c) => s + c.gas, 0);
     const required = (BigInt(gas) * gasPrice * BigInt(Math.round((1 + margin) * 100))) / 100n;
     const balance = await client.getBalance({
       address: roles.accounts[payer as RoleName].address,
@@ -348,6 +388,7 @@ async function main(): Promise<void> {
     perRole.push({
       role: payer,
       gas,
+      gasTotal,
       requiredEth: formatEther(required),
       balanceEth: formatEther(balance),
       funded: balance >= required,
@@ -357,7 +398,9 @@ async function main(): Promise<void> {
 
   console.log(`\n  base fee      ${Number(baseFee) / 1e9} gwei`);
   console.log(`  priority      ${Number(priority) / 1e9} gwei`);
-  console.log(`  total gas     ${totalGas.toLocaleString()}`);
+  console.log(
+    `  remaining gas ${totalGas.toLocaleString()}  (whole sequence ${wholeSequenceGas.toLocaleString()})`,
+  );
   console.log(`  predicted     ${formatEther(predicted)} ETH`);
   console.log(`  with ${Math.round(margin * 100)}%      ${formatEther(withMargin)} ETH\n`);
 
@@ -381,6 +424,7 @@ async function main(): Promise<void> {
       "throughput is claimed and no part of the second series is simulated.",
     components,
     estimatedGas: totalGas,
+    wholeSequenceGas,
     baseFeePerGasWei: baseFee.toString(),
     priorityFeePerGasWei: priority.toString(),
     effectiveGasPriceWei: gasPrice.toString(),
