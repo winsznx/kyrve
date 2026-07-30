@@ -137,3 +137,44 @@ receives `units`, and Midnight permits `newConsumed <= offer.maxUnits`, so
 
 Phase 4 settles from **public** funding. A curve reservation is still not a capital lock — P4-2 is
 open on purpose, and delta S-6 says so. Run `pnpm verify:phase4`.
+
+## Phase 5 — confidential series ownership
+
+`KyrveCustodyVault` is the P5-1 discharge and the first Kyrve contract that takes custody. A curve
+reservation now moves real capital: **one** `safeSub`, against the provider's live balance, in the same
+contract that holds the ERC-7984 coverage backing it. `ReservationLedger` keeps epoch state and performs
+zero subtractions — the parallel remainder it used to keep is exactly what made `sum(reserved)` and the
+capital that can pay two independent quantities (delta S-6). Read `docs/phase5/P5-1-DECISION.md` before
+changing anything on that path; the rejected option is recorded beside the chosen one.
+
+Six things that are easy to violate and hard to notice:
+
+- **Series supply is the published aggregate.** Not the leaf capacity, not the Midnight units, not the
+  borrower's assets. On the measured fixture all four differ and minting against units over-issues by 600.
+  `KyrveSeriesToken.mintClaim` has no overload that takes a number, so this is structural — and the
+  unit-to-asset conversion is a PUBLIC redemption factor derived on chain from two public numbers. Delta
+  T-1.
+- **There are TWO residues and both are 1.** `capacity − aggregate` is private forever; publishing it
+  discloses the winning leaf's capacity by subtraction. `aggregate − buyerAssets` is public and is real
+  loan tokens with an immutable declared destination. Never assert "the residue is 1" without saying
+  which. Delta T-2.
+- **Funding is keyed on the EPOCH, allocation on the QUOTE.** `QuoteActivator.activate` calls
+  `prepareQuote`, which refuses a vault that cannot already pay — so the money must land before a quote id
+  exists. Quote-keyed funding deadlocks. Delta T-9.
+- **A real lock rewrites the balance handle**, and a Nox ACL entry is per handle rather than per slot. The
+  engine needs a fresh permanent grant each epoch; it cost three Phase 4 test failures on second and third
+  epochs. Delta T-8.
+- **The wrapper must wrap the market's own loan token.** Three phases tolerated two test tokens because
+  nothing crossed back; the moment one did, activation reverted `FundingShortfall(600000509, 0)` on a run
+  where every encrypted step succeeded. Delta T-10.
+- **Transient access is a full grant.** `lendSupply` originally took its recipient as a parameter, which
+  let any caller publish the aggregate supply irreversibly. Finding F-1. One bind-once address now.
+
+`AggregateSolvencyVerifier` proves `supply + pendingEntitlements <= credit + reserves − fees` with a fully
+public right-hand side and publishes only the verdict bit. It deliberately does **not** prove the custody
+vault's own Q-6 accounting: that needs an encrypted `sum(available)`, and an aggregate beside a provider's
+balance is the Q-5 mechanism. Delta T-7.
+
+Run `pnpm verify:phase5`. Read `docs/phase5/PHASE-6-PREREQUISITES.md` before starting Cross, Roll, Capsule
+or Cloudflare — P6-0 records the two PASS conditions this phase did not execute and what stands in their
+place.
