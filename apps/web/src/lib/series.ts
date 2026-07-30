@@ -95,3 +95,20 @@ export function formatMaturity(secondsSinceEpoch: string): string {
   if (!Number.isFinite(millis)) return secondsSinceEpoch;
   return new Date(millis).toISOString().replace("T", " ").slice(0, 16);
 }
+
+/**
+ * The Phase 6 market layer, which is its own record.
+ *
+ * `KyrveRollBook` cannot exist until a SECOND complete series does (delta U-1), and a series
+ * deployed with no market layer is a coherent state — so these addresses are optional, and a page
+ * that cannot find one must say "not deployed here" rather than render a verdict about it.
+ *
+ * As with `SeriesRecord`, there is no amount in this type at all.
+ */
+export type MarketContractName = "KyrveCapsuleVault" | "KyrveCrossBook" | "KyrveRollBook";
+
+export interface MarketRecord {
+  readonly addresses: Partial<Readonly<Record<MarketContractName, `0x${string}`>>>;
+  /** The series the Capsule vault and Cross book were deployed OVER. The Roll book spans two. */
+  readonly seriesId: `0x${string}`;
+}

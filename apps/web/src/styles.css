@@ -487,3 +487,60 @@ th {
   padding: 0;
   margin: var(--element-gap) 0 0;
 }
+
+/*
+  Verify.
+
+  A verdict is a word, not a colour. Cobalt is reserved for the single primary action on the page
+  (design.md), so a passing row cannot claim it, and a red-on-green pass/fail pair would make the
+  verdict unreadable to anyone who does not distinguish them. The word carries the meaning; the
+  border weight carries the emphasis.
+*/
+.verify-rows {
+  list-style: none;
+  margin: var(--card-padding) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--element-gap);
+}
+
+.verify-rows > li {
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+  border-left: 2px solid var(--color-slate-border);
+}
+
+.verify-rows > li[data-verdict="fail"] {
+  border-left-width: 4px;
+  border-left-color: var(--color-ivory-text);
+}
+
+.verify-claim {
+  display: flex;
+  align-items: baseline;
+  gap: var(--element-gap);
+  flex-wrap: wrap;
+}
+
+.verify-verdict {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+  border: 1px solid var(--color-slate-border);
+  border-radius: var(--radius-pill);
+  padding: 2px 12px;
+  white-space: nowrap;
+}
+
+.verify-fail {
+  color: var(--color-ivory-text);
+  border-color: var(--color-ivory-text);
+}
+
+.verify-rows p {
+  color: var(--color-ash-text);
+  margin: var(--element-gap) 0 0;
+}

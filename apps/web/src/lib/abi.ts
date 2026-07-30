@@ -588,6 +588,18 @@ export const SERIES_TOKEN_ABI = [
     inputs: [],
     outputs: [{ type: "bytes32" }],
   },
+  /**
+   * The LIVE total-supply handle, which is admin-granted to the token alone and must NEVER equal
+   * `publishedSupply`. Publication isolates a snapshot first; if these two handles ever agreed, the
+   * live handle would have been made permanently decryptable and Nox offers no way to undo it.
+   */
+  {
+    type: "function",
+    name: "confidentialAggregateSupply",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
   {
     type: "function",
     name: "symbol",
@@ -705,4 +717,37 @@ export const SOLVENCY_VERIFIER_ABI = [
       { name: "total", type: "uint256" },
     ],
   },
+] as const;
+
+/** Phase 6. Frozen selective disclosure — bindings only; a capsule's value is never read here. */
+export const CAPSULE_VAULT_ABI = [
+  { type: "function", name: "SERIES_ID", stateMutability: "view", inputs: [], outputs: [{ type: "bytes32" }] },
+  { type: "function", name: "DEPLOYMENT_ID", stateMutability: "view", inputs: [], outputs: [{ type: "bytes32" }] },
+  { type: "function", name: "capsuleCount", stateMutability: "view", inputs: [], outputs: [{ type: "uint32" }] },
+] as const;
+
+/**
+ * Phase 6. The Cross book's economics, all of them `immutable`.
+ *
+ * `MAX_FEE_BPS` is read alongside `FEE_BPS` on purpose: a fee is only meaningfully bounded if the
+ * bound is read from the same contract rather than asserted by the page displaying it.
+ */
+export const CROSS_BOOK_ABI = [
+  { type: "function", name: "PRICE_WAD", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "FEE_BPS", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "MAX_FEE_BPS", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "FEE_BENEFICIARY", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+] as const;
+
+/**
+ * Phase 6. The Roll book.
+ *
+ * `conversionWad` is a view, so reading it proves only what the contract chose to return. The
+ * operands are read too, so the arithmetic can be reproduced rather than trusted.
+ */
+export const ROLL_BOOK_ABI = [
+  { type: "function", name: "SOURCE_TOKEN", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  { type: "function", name: "TARGET_TOKEN", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  { type: "function", name: "TARGET_PRICE_WAD", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "conversionWad", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;

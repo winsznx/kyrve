@@ -29,10 +29,11 @@ import { BoundaryPreview } from "./components/BoundaryPreview.js";
 import { ConfidentialValue } from "./components/ConfidentialValue.js";
 import { OwnershipBand } from "./components/OwnershipBand.js";
 import { QuoteBand } from "./components/QuoteBand.js";
+import { VerifyBand } from "./components/VerifyBand.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "./components/Status.js";
 import { ERC20_ABI, MANDATE_BOOK_ABI, REQUEST_BOOK_ABI, WRAPPED_ASSET_ABI } from "./lib/abi.js";
 import { type Deployment, loadDeployment, noxNetworkFor } from "./lib/deployment.js";
-import type { SeriesDeployment, SeriesRecord } from "./lib/series.js";
+import type { MarketRecord, SeriesDeployment, SeriesRecord } from "./lib/series.js";
 import {
   lock,
   openSession,
@@ -214,6 +215,14 @@ function Terminal({
       {series !== undefined ? (
         <OwnershipBand series={series} session={session} onDisconnect={onDisconnect} />
       ) : null}
+      {series !== undefined ? (
+        <VerifyBand
+          series={series}
+          market={marketOf(deployment)}
+          session={session}
+          chainId={deployment.chainId}
+        />
+      ) : null}
 
       <section className="band">
         <div className="card">
@@ -250,6 +259,18 @@ function settlementOf(deployment: Deployment) {
  */
 function seriesOf(deployment: Deployment): SeriesRecord | undefined {
   return (deployment as SeriesDeployment).series;
+}
+
+/**
+ * The Phase 6 market layer, or nothing.
+ *
+ * Absent is a real and common answer — the Capsule vault and Cross book are deployed over ONE
+ * series, and the Roll book needs a second complete series to exist at all (delta U-1). Verify
+ * renders each missing surface as "not deployed here" rather than as a verdict, so the whole record
+ * being absent is handled by the same path as one contract being absent.
+ */
+function marketOf(deployment: Deployment): MarketRecord | undefined {
+  return (deployment as { market?: MarketRecord }).market;
 }
 
 function PrivacyLock(): React.ReactElement {
