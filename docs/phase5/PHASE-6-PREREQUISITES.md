@@ -4,78 +4,65 @@ Phase 6 is Cross, Roll, Capsule and the Cloudflare application. None of it start
 read.
 
 Phase 5 made a curve reservation into a real capital lock, turned a settled Midnight position into
-confidential ERC-7984 claims, and proved the ownership journey in a real browser. What it did **not** do is
-finish on a public network: the series layer is not deployed on Sepolia, because the sequence is priced and
-the deployer cannot cover it. That is P6-0, it is first, and it is open on a measured number rather than
-half-built.
+confidential ERC-7984 claims, proved the ownership journey in a real browser, and finished on a public
+network: eighteen contracts deployed and verified on Ethereum Sepolia, and one real confidential allocation
+against credit a real Midnight `take` created. P6-0 records what that left on chain for Phase 6 to build
+on, and the two operational properties a public-network sequence turned out to need.
 
 Five entries below are constraints Phase 5 established by measurement or by failure. Each recurs at a point
 where the consequence is lost capital or a mispriced claim rather than a failed test.
 
 ---
 
-## P6-0 · Phase 5 is not finished on a public network
+## P6-0 · Phase 5 IS finished, and here is what it left on chain
 
-One of the brief's PASS conditions is unmet, and `docs/phase5/GATE.md` records it as a distinct
-`NOT FUNDED` verdict — never as a PASS — with the exact shortfall rather than folding it into the pass
-count.
+Discharged. `pnpm verify:phase5` reports **32 passed, 0 failed, 0 skipped**. Every condition executed;
+nothing is assumed and no local result stands in for a public one. `docs/phase5/GATE.md` records it.
 
-**The ownership view in real Chromium is DONE.** `apps/web` now carries an ownership band and
-`confidential/test/101-series-browser.ts` drives it: provider A decrypts a balance equal to the plaintext
-reference model and disconnecting removes it from the DOM; provider B, in a separate browser context with
-a separate injected key, is refused A's balance with `not-authorised`, decrypts their own, and reads supply
-equal to the published aggregate with a solvency verdict of true. A fourth test collects every origin the
-page contacted and compares it against exactly three legitimate ones. The gate RUNS that demonstration
-rather than reading its evidence file.
+**What Phase 6 builds on, on Ethereum Sepolia.** Eighteen contracts, twelve one-shot bindings, 19/19
+Etherscan-verified across both compiler pins, and 56 read-back checks against chain state:
 
-**Sepolia.** Nothing was broadcast, and no deploy, verify-on-chain or allocation script was written
-either. That is deliberate: carry-over 8 says *"a verification command that has never run is worse than a
-missing one"* (deltas R-11 and R-13), and a deploy script wired into a gate that cannot be executed against
-anything is exactly that. The path becomes writable — and testable — the moment the deployer is funded.
+```
+KyrveCustodyVault          0x69b8b911ec83673e35d369c100a5812734f997e3
+KyrveSeriesToken           0xe2aea76cf8a2bf4877943792eb3ea877e8dec073
+SeriesOwnershipRegistry    0xd0a3e53c7c089b1b47207237f2a923ced601bfff
+SeriesAllocator            0x4a5092e1ca49044e4be2755873c116fa199b7428
+AggregateSolvencyVerifier  0xf5da1616407ad9e9e4bb593b9e6049589d912f33
+SeriesResidueAccount       0x372bd4fed1c8d08a97f24359befb9399431f68ec
 
-The cost is **measured, not estimated**, and `pnpm test:sepolia-series-budget` runs on every gate
-invocation. It calls `eth_estimateGas` against the live network with the real creation bytecode and the
-real encoded constructor arguments for every contract, adds the transaction sequences from real measured
-runs, prices the total at the live base and priority fee, and appends the prediction to an append-only
-ledger.
+series 0xadcfb277…   vault 0xA910E1E263338bE447ab24922693bc5c63BEC539
+epoch  0x760d3261…   quote 0xf05e7d39…   deployment 0xb2f6707578…
+```
 
-| | measured |
+One real confidential allocation, funded from two real confidential locks rather than a mint:
+
+| | |
 |---|---|
-| total sequence | **58,546,501 gas** |
-| — the confidential epoch alone | 26,931,546 gas (46%) |
-| — every deployment | 26,610,154 gas |
-| effective gas price | 972,818,563 wei |
-| predicted cost | 0.057207210153643823 ETH |
-| required at a 35% margin | **0.077229733707419161 ETH** |
-| deployer balance | 0.048735012281547763 ETH |
-| **shortfall** | **0.028494721425871398 ETH** |
+| published aggregate | **299,999,999** |
+| unwrap plaintext | **299,999,999** — invariant 1, proven by a public ERC-20 transfer |
+| Midnight units settled | **300,000,599** — the credit the vault holds |
+| buyer assets paid | **299,999,998** |
+| total confidential supply | **299,999,999** — the aggregate, never the units |
+| funding residue | **1**, recorded against an immutable declared beneficiary |
+| per-provider | both decrypted their own; both refused the other's |
+| solvency | published as one bit: solvent, coverage 300,000,594 |
 
-The gas is fixed; the ETH is not. Across the recorded samples the shortfall has ranged from
-0.028154 to 0.028495 ETH on the same 58,546,501 gas, because the base fee moves every block — which is why the
-ledger appends rather than overwrites, and why the authoritative record is
-`evidence/phase5/funding-budget.json` rather than any figure quoted in prose.
+**Two things Phase 6 inherits from how that ran, not from the design.**
 
-**Required:** fund `0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2` by at least the shortfall and re-run the
-preflight. It reports FUNDED and names the deploy command, or it reports the new shortfall. The gate keeps
-the three Sepolia steps as SKIP until a deployment record exists, and none of them may be downgraded to
-PASS for a sequence nobody performed.
+The Sepolia funding forecast under-predicted by **18%**, against Phase 3's 27%. The 35% floor held both
+times — the first evidence that multiplier has ever had beyond a single sample. Keep it at 35%: two
+samples are not a distribution, and an under-funded sequence strands halfway with provider capital held
+until someone cancels it.
 
-**Two things about that total that are not negotiable.** Nearly half of it is one confidential epoch,
-dominated by 36 **permanent** ACL grants per provider that a new engine cannot inherit (deltas T-5 and
-T-8). The deployment half is the whole curve and settlement stack, because `bindEngine` is one-shot on
-`ReservationLedger`, `QuoteEpochController` and `CurveGraphRegistry` and `NoxCurveEngine` holds the vault
-as an `immutable` — and P5-1 §3 shows the rejected option needed exactly the same set, so it is not a cost
-the architecture choice introduced. `CurveUniverseRegistry`, `KyrveWrappedAsset`, `EncryptedMandateBook`,
-`ConfidentialRequestBook` and `KyrveEmergencyController` are all reused, which keeps registered universes
-and provider wrapper balances alive across the migration.
+And a public-network run gets interrupted. `--continue` finished an epoch that stopped three stages from
+the end for **3,765,826 gas** instead of the ~27,000,000 a fresh one costs, and the deployment resumed
+28,318,988 gas of already-landed contracts for nothing. Deltas T-13 and T-14. Anything Phase 6 broadcasts
+in sequence needs the same two properties: record each step the moment it lands, and skip what has already
+happened rather than retrying it.
 
-**And the Phase 4 settled position cannot be reused, which was checked rather than assumed.** It was
-created by a quote in the Phase 4 `KyrveQuoteRegistry`, which a redeployed stack replaces.
-`SeriesAllocator.allocateChunk` reads the quote from the registry it was constructed against and requires
-`provenance.epochId` to name the epoch whose locks it consumed — and those locks live in the new custody
-vault, created by the new ledger, driven by the new engine. There is no arrangement in which the old quote
-and the new locks are the same funding round. So the sequence is a new connected epoch and a new exact
-settlement, which is what the 26.9M component prices, and which is the fallback the brief itself names.
+**The one thing that is still not done, and is not Phase 5's.** Keeper, operator, curator and the residue
+beneficiary are four immutable roles that are one Sepolia address. Separating them is a deployment, not a
+code change, and it should happen before anything holds value that matters.
 
 ## P6-1 · A funded round whose quote never settles needs public tokens back, and Kyrve cannot compel it
 
