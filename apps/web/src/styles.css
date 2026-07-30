@@ -1659,6 +1659,11 @@ th {
     gap: 4px;
   }
 
+  .problem,
+  .faq > div {
+    grid-template-columns: 1fr;
+  }
+
   .systems {
     flex-direction: column;
   }
@@ -1833,7 +1838,7 @@ th {
 */
 .problem {
   display: grid;
-  grid-template-columns: minmax(260px, 2fr) minmax(320px, 3fr);
+  grid-template-columns: minmax(min(260px, 100%), 2fr) minmax(min(320px, 100%), 3fr);
   gap: var(--section-gap);
   align-items: start;
 }
@@ -2066,8 +2071,19 @@ th {
 
 /* ── Evidence ───────────────────────────────────────────────────────────────────────────────── */
 
+/*
+  `min()` on every minimum, the same fix as the application grids.
+
+  A fixed minimum track cannot shrink below its floor, so three of them plus the section padding
+  pushed the LANDING body 215px wider than a 360px viewport — measured, not guessed. The evidence
+  rows and the problem and FAQ splits all collapse to one column below 900px anyway; this is what
+  keeps them honest in between.
+*/
 .evidence > li {
-  grid-template-columns: minmax(220px, 2fr) minmax(140px, 1fr) 3fr;
+  grid-template-columns:
+    minmax(min(220px, 100%), 2fr)
+    minmax(min(140px, 100%), 1fr)
+    3fr;
 }
 
 .evidence-verdict {
@@ -2103,7 +2119,7 @@ th {
 
 .faq > div {
   display: grid;
-  grid-template-columns: minmax(240px, 2fr) 3fr;
+  grid-template-columns: minmax(min(240px, 100%), 2fr) 3fr;
   gap: var(--card-padding);
   padding: var(--card-padding) 0;
   border-bottom: 1px solid var(--hairline-soft);
@@ -2315,5 +2331,31 @@ button:active:not(:disabled),
 @media (max-width: 1024px) {
   .problem {
     gap: var(--card-padding);
+  }
+}
+
+/*
+  The landing grids collapse LAST in the file, deliberately.
+
+  These rules restate collapses that also appear in an earlier `max-width: 900px` block. That block
+  now sits ABOVE the landing base rules appended after it, so the base rules were winning at every
+  width and the evidence rows pushed the body 215px past a 360px viewport — measured by walking every
+  element's bounding box, not guessed.
+
+  Restating them here rather than reordering the file: a stylesheet where the cascade depends on a
+  block's position is one an edit can break silently, and the fix that survives an edit is the one
+  that reads in source order.
+*/
+@media (max-width: 900px) {
+  .evidence > li,
+  .problem,
+  .faq > div {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .evidence-detail,
+  .evidence-verdict {
+    max-width: 100%;
   }
 }

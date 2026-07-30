@@ -109,6 +109,7 @@
     "verify:source-lock": "tsx scripts/verify/source-lock.ts",
     "verify:stack": "tsx scripts/verify/stack-restart.ts",
     "verify:toolchain": "tsx scripts/verify/toolchain.ts",
+    "verify:ux-final": "tsx scripts/verify/ux-final.ts",
     "verify:vendor": "tsx scripts/verify/vendor.ts",
     "verify:web": "tsx scripts/verify/web.ts",
     "web:build": "pnpm --filter @kyrve/web build",

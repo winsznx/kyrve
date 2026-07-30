@@ -16,51 +16,49 @@ export interface ProofStage {
 }
 
 /** One line, built only from stages that actually ran. */
-export const PROOF_LINE =
-  "Live on Ethereum Sepolia · confidential issuance executed · exact-fill settlement executed · disclosure issued · position transfer executed · maturity move executed";
+export const PROOF_LINE = "Live on Ethereum Sepolia · confidential issuance executed · exact-fill settlement executed · disclosure issued · position transfer executed · maturity move executed";
 
 export const PROOF_STAGES: readonly ProofStage[] = [
   {
-    id: "deployment",
-    label: "Live on Ethereum Sepolia",
-    verdict: "verified",
-    detail: "two independent confidential issuance stacks, sharing no contract",
+    "id": "deployment",
+    "label": "Live on Ethereum Sepolia",
+    "verdict": "verified",
+    "detail": "two independent confidential issuance stacks, sharing no contract"
   },
   {
-    id: "source",
-    label: "56 of 56 contracts source-verified",
-    verdict: "reported-not-verified",
-    detail:
-      "reported by the submission records in this repository. This page does not call Etherscan, so it is listed rather than recomputed",
+    "id": "source",
+    "label": "56 of 56 contracts source-verified",
+    "verdict": "reported-not-verified",
+    "detail": "reported by the submission records in this repository. This page does not call Etherscan, so it is listed rather than recomputed"
   },
   {
-    id: "issuance",
-    label: "Confidential issuance executed",
-    verdict: "verified",
-    detail: "recorded in evidence/phase6/sepolia-allocation-a.json",
+    "id": "issuance",
+    "label": "Confidential issuance executed",
+    "verdict": "verified",
+    "detail": "recorded in evidence/phase6/sepolia-allocation-a.json"
   },
   {
-    id: "settlement",
-    label: "Exact-fill settlement executed",
-    verdict: "verified",
-    detail: "recorded in evidence/phase6/sepolia-settlement-a.json",
+    "id": "settlement",
+    "label": "Exact-fill settlement executed",
+    "verdict": "verified",
+    "detail": "recorded in evidence/phase6/sepolia-settlement-a.json"
   },
   {
-    id: "capsule",
-    label: "Disclosure issued",
-    verdict: "verified",
-    detail: "recorded in evidence/phase6/sepolia-capsule.json",
+    "id": "capsule",
+    "label": "Disclosure issued",
+    "verdict": "verified",
+    "detail": "recorded in evidence/phase6/sepolia-capsule.json"
   },
   {
-    id: "cross",
-    label: "Position transfer executed",
-    verdict: "verified",
-    detail: "recorded in evidence/phase6/sepolia-cross.json",
+    "id": "cross",
+    "label": "Position transfer executed",
+    "verdict": "verified",
+    "detail": "recorded in evidence/phase6/sepolia-cross.json"
   },
   {
-    id: "roll",
-    label: "Maturity move executed",
-    verdict: "verified",
-    detail: "recorded in evidence/phase6/sepolia-roll.json",
-  },
+    "id": "roll",
+    "label": "Maturity move executed",
+    "verdict": "verified",
+    "detail": "recorded in evidence/phase6/sepolia-roll.json"
+  }
 ];

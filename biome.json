@@ -1,6 +1,10 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
     "includes": [
       "**",
@@ -14,7 +18,8 @@
       "!evidence",
       "!packages/generated/src",
       "!**/test/fixtures",
-      "!source-lock.json"
+      "!source-lock.json",
+      "!apps/web/src/generated/**"
     ]
   },
   "formatter": {
@@ -29,7 +34,15 @@
       "preset": "recommended",
       "suspicious": {
         "noExplicitAny": "error",
-        "noConsole": { "level": "error", "options": { "allow": ["error", "warn"] } }
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": [
+              "error",
+              "warn"
+            ]
+          }
+        }
       },
       "style": {
         "useConst": "error",
@@ -41,35 +54,60 @@
     }
   },
   "javascript": {
-    "formatter": { "quoteStyle": "double", "semicolons": "always", "trailingCommas": "all" }
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
   },
   "json": {
-    "parser": { "allowComments": true },
-    "formatter": { "enabled": true }
+    "parser": {
+      "allowComments": true
+    },
+    "formatter": {
+      "enabled": true
+    }
   },
   "overrides": [
     {
-      "includes": ["**/test/**/*.ts", "**/*.test.ts"],
+      "includes": [
+        "**/test/**/*.ts",
+        "**/*.test.ts"
+      ],
       "linter": {
         "rules": {
-          "style": { "noNonNullAssertion": "off" },
-          "suspicious": { "noExplicitAny": "off", "noConsole": "off" }
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off",
+            "noConsole": "off"
+          }
         }
       }
     },
     {
-      "includes": ["scripts/**/*.ts"],
+      "includes": [
+        "scripts/**/*.ts"
+      ],
       "linter": {
         "rules": {
-          "suspicious": { "noConsole": "off" }
+          "suspicious": {
+            "noConsole": "off"
+          }
         }
       }
     },
     {
-      "includes": ["confidential/stack/**/*.ts"],
+      "includes": [
+        "confidential/stack/**/*.ts"
+      ],
       "linter": {
         "rules": {
-          "suspicious": { "noConsole": "off", "noExplicitAny": "off" }
+          "suspicious": {
+            "noConsole": "off",
+            "noExplicitAny": "off"
+          }
         }
       }
     }
