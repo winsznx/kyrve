@@ -4,10 +4,73 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <title>kyrve — confidential terminal</title>
+    <meta name="theme-color" content="#171721" />
+
+    <!--
+      The title and description are OWNED BY THE ROUTER and rewritten on every navigation. These are
+      the values a crawler or a share preview sees before any JavaScript runs, and the values a route
+      would otherwise inherit stale from the previous page. `scripts/verify/metadata.ts` walks every
+      route in a real browser and compares the resulting document against the route table.
+    -->
+    <title>kyrve — one quote. The curve stays private.</title>
+    <meta
+      name="description"
+      content="Kyrve turns encrypted lender mandates and borrower requirements into one executable Morpho Midnight offer, while the full yield curve stays private."
+    />
+
+    <!--
+      The approved positive master, used unmodified. It is authored for LIGHT surfaces and is correct
+      here: a favicon and a social card are composited by the browser and by the sharing platform,
+      not by Kyrve, and neither is the Onyx canvas. The dark application header uses the lowercase
+      wordmark set as text in Ivory instead, which is the interim recorded in `brand.json` until the
+      reversed master is delivered. Every file below is hash-pinned and re-checked by
+      `pnpm brand:verify`; none is regenerated, recoloured or upscaled here.
+    -->
+    <link rel="icon" href="/brand/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/brand/favicon/favicon-16.png" />
+    <link rel="apple-touch-icon" href="/brand/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Kyrve" />
+    <meta property="og:title" content="Kyrve — one quote. The curve stays private." />
+    <meta
+      property="og:description"
+      content="Confidential fixed-income liquidity. Encrypted mandates and one encrypted requirement become a single executable offer; the curve behind it never becomes public."
+    />
+    <!-- 1200x630 exactly, the size crawlers require. Not a crop of the master taken at render time. -->
+    <meta property="og:image" content="/brand/social/kyrve-og-1200x630.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The Kyrve mark: layered private curves converging into one selected cobalt leaf."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kyrve — one quote. The curve stays private." />
+    <meta
+      name="twitter:description"
+      content="Confidential fixed-income liquidity. Encrypted mandates and one encrypted requirement become a single executable offer; the curve behind it never becomes public."
+    />
+    <meta name="twitter:image" content="/brand/social/kyrve-og-1200x630.png" />
+
+    <!--
+      Not indexed, and not because it is secret. This is a local and testnet deployment against an
+      unmodified source-available Midnight replica under its non-production licence; a search result
+      pointing at it would present a demonstration as a product.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="max-width: 68ch; margin: 56px auto; padding: 0 24px; color: #ededf3">
+        Kyrve needs JavaScript. Every value on every page is either read from chain state or
+        decrypted in this browser — there is no server rendering a copy, because a server that held a
+        decrypted value would be the thing this product exists to avoid.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

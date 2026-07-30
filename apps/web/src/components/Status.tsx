@@ -2,36 +2,29 @@
  * Progress and failure, named rather than spun.
  *
  * `.claude/rules/frontend.md`: a loading state must name the actual async phase — input proof
- * submitted, event confirmed, runner queued, output stored, decryption ready — never one
- * indefinite spinner. And an error must distinguish a public transaction failure from an invalid
- * proof, a pending Nox output, a public invariant failure, a private no-fill, and a service being
- * unavailable, because those tell the user to do six different things.
+ * submitted, event confirmed, runner queued, output stored, decryption ready — never one indefinite
+ * spinner. And an error must distinguish a public transaction failure from an invalid proof, a
+ * pending Nox output, a public invariant failure, a private no-fill, and a service being unavailable,
+ * because those tell the reader to do six different things.
  *
  * A private no-fill in particular must never say WHICH provider or rule caused it. There is no
- * variant here that could, because a no-fill has no reason to report — the encrypted branch
+ * variant here that could: a no-fill has no reason to report, because the encrypted branch
  * contributed zero and no public reason exists.
+ *
+ * THE STATE VOCABULARY IS `lib/lifecycle.ts` AND NOTHING ELSE. This component renders whatever is in
+ * that union and cannot render anything outside it, which is how a fourteenth ad-hoc state fails to
+ * compile rather than shipping as a string nobody wrote copy for.
+ *
+ * EVERY DETAIL PASSES THROUGH `safeErrorMessage` FIRST. viem serialises the whole request into a
+ * transport error, URL included, and U-F1 is what that cost in Phase 6 when it reached stdout twice
+ * from two different scripts. In a browser it would reach the DOM, and from there a screenshot.
  */
 
-export type Phase =
-  | "idle"
-  | "encrypting"
-  | "awaiting-signature"
-  | "submitted"
-  | "confirmed"
-  | "runner-queued"
-  | "decryption-ready"
-  | "done";
+import { isPending, LIFECYCLE_COPY, type LifecycleState } from "../lib/lifecycle.js";
+import { safeErrorMessage } from "../lib/redact.js";
 
-const PHASE_COPY: Record<Phase, string> = {
-  idle: "",
-  encrypting: "Encrypting locally and requesting an input proof from the Nox gateway",
-  "awaiting-signature": "Waiting for you to sign in your wallet",
-  submitted: "Transaction submitted; waiting for it to be included",
-  confirmed: "Included on chain; the Nox ingestor is picking up the event",
-  "runner-queued": "The off-chain runner is computing; polling the gateway for readiness",
-  "decryption-ready": "Handle is ready; requesting the key material for this wallet",
-  done: "Done",
-};
+/** Retained name. The vocabulary is the lifecycle union; this alias keeps existing call sites valid. */
+export type Phase = LifecycleState;
 
 export type FailureKind =
   | "public-transaction"
@@ -98,31 +91,41 @@ export function Status({ phase, failure, testId }: StatusProps): React.ReactElem
       <div className="status error" role="alert" data-testid={testId} data-failure={failure.kind}>
         <strong>{copy.title}</strong>
         <div>{copy.guidance}</div>
-        {failure.detail !== undefined ? <div className="phase">{failure.detail}</div> : null}
+        {failure.detail === undefined ? null : (
+          <div className="phase">{safeErrorMessage(failure.detail)}</div>
+        )}
       </div>
     );
   }
 
   if (phase === "idle") return null;
 
+  const copy = LIFECYCLE_COPY[phase];
   return (
-    <div className="status" role="status" data-testid={testId} data-phase={phase}>
-      <span className="phase">{phase}</span> — {PHASE_COPY[phase]}
+    <div
+      className="status"
+      role="status"
+      aria-busy={isPending(phase)}
+      data-testid={testId}
+      data-phase={phase}
+      data-state={copy.label}
+    >
+      <span className="phase">{copy.label}</span> — {copy.detail}
     </div>
   );
 }
 
 /**
- * Classifies a raw failure into one of the six kinds above.
+ * Classifies a raw failure into one of the seven kinds above.
  *
  * Defaults to `public-transaction` rather than to something reassuring: an unrecognised failure is
- * more likely to be a real refusal than a transient hiccup, and telling a user to "try again" when
+ * more likely to be a real refusal than a transient hiccup, and telling someone to "try again" when
  * the chain rejected them wastes their time and their gas.
  */
 export function classifyFailure(error: unknown): { kind: FailureKind; detail: string } {
   const message = error instanceof Error ? error.message : String(error);
   const lower = message.toLowerCase();
-  const detail = message.slice(0, 300);
+  const detail = safeErrorMessage(message);
 
   if (error instanceof Error && error.name === "NotAuthorisedToDecryptError") {
     return { kind: "not-authorised", detail };

@@ -34,29 +34,6 @@ export class DeploymentUnavailableError extends Error {
 }
 
 /**
- * Loads the deployment record the local flow wrote.
- *
- * On failure this throws rather than falling back to a default. A confidential terminal that
- * silently points somewhere else is worse than one that will not start.
- */
-export async function loadDeployment(): Promise<Deployment> {
-  const response = await fetch("/deployment.json", { cache: "no-store" });
-  if (!response.ok) {
-    throw new DeploymentUnavailableError(
-      `no deployment record is being served (HTTP ${response.status}). Run ` +
-        "`pnpm deploy:confidential local` against a running local node with the Nox stack up.",
-    );
-  }
-  const deployment = (await response.json()) as Deployment;
-  if (deployment.addresses?.KyrveWrappedAsset === undefined) {
-    throw new DeploymentUnavailableError(
-      "the deployment record is missing contract addresses; it was probably written by a failed run.",
-    );
-  }
-  return deployment;
-}
-
-/**
  * The Nox network for a deployment.
  *
  * The gateway URL is read from the record for a local stack, whose Docker host port is assigned at

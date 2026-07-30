@@ -20,6 +20,7 @@
  */
 
 import { createHandleClient, type KyrveHandleClient, type NoxNetwork } from "@kyrve/nox";
+import { useSyncExternalStore } from "react";
 import {
   type Address,
   createPublicClient,
@@ -59,6 +60,18 @@ declare global {
     /** The local Nox handle gateway, whose Docker host port is assigned at stack startup. */
     __KYRVE_NOX_GATEWAY__?: string;
   }
+}
+
+/**
+ * A read-only client, with no wallet involved.
+ *
+ * The proof pages and every public panel need this and nothing more: they read chain state and
+ * recompute, and none of them decrypts. Requiring a wallet to READ would make a verification page
+ * unusable by the one audience it exists for — someone checking Kyrve who holds no position in it.
+ */
+export function openPublicClient(network: NoxNetwork, rpcUrl: string): PublicClient {
+  const chain = network.chainId === 11155111 ? sepolia : hardhat;
+  return createPublicClient({ chain, transport: http(rpcUrl), cacheTime: 0 }) as PublicClient;
 }
 
 export async function openSession(network: NoxNetwork, rpcUrl: string): Promise<Session> {
@@ -125,8 +138,38 @@ export function revealedCount(): number {
   return revealed.size;
 }
 
+/**
+ * Every value this browser has decrypted, for one purpose only: refusing to put one in a file.
+ *
+ * `downloadArtefact` checks the serialised artefact against this list before handing the browser a
+ * download. It is the negative check that keeps a verification file public — a positive allow-list
+ * is not possible, because a check's measured values are legitimately arbitrary public hex.
+ *
+ * NOTHING ELSE MAY CALL THIS. It exists to keep values out of a file, not to move them around, and
+ * `scripts/verify/privacy-scan.ts` treats any other caller as a finding.
+ */
+export function revealedValues(): readonly bigint[] {
+  return [...revealed.values()];
+}
+
 /** Clears every decrypted value from memory. Immediate, not deferred. */
 export function lock(): void {
   revealed.clear();
   notify();
+}
+
+/**
+ * Re-renders the caller whenever the set of decrypted values changes.
+ *
+ * `useSyncExternalStore` rather than an effect plus a counter: the store is genuinely external — it
+ * is a module-level map that decryption writes into from outside React — and this is the API for
+ * exactly that. The snapshot is the SIZE and never the contents, so a decrypted value cannot reach a
+ * component that only wanted to know whether the lock button should be enabled.
+ */
+export function useRevealed(): number {
+  return useSyncExternalStore(
+    (listener) => subscribe(listener),
+    () => revealed.size,
+    () => 0,
+  );
 }

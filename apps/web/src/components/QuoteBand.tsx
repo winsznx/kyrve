@@ -265,7 +265,7 @@ export function QuoteBand({
         chain: null,
       });
       setActivationTx(hash);
-      setPhase("submitted");
+      setPhase("transaction-pending");
 
       const receipt = await session.publicClient.waitForTransactionReceipt({ hash });
       // The offer is recovered from the event, never from a simulation: `offer.start` is
@@ -358,7 +358,7 @@ export function QuoteBand({
         chain: null,
       });
       setSettlementTx(hash);
-      setPhase("submitted");
+      setPhase("transaction-pending");
       await session.publicClient.waitForTransactionReceipt({ hash });
       if (quoteId !== undefined) await refresh(quoteId);
       setPhase("done");
@@ -393,7 +393,7 @@ export function QuoteBand({
         account: session.account,
         chain: null,
       });
-      setPhase("submitted");
+      setPhase("transaction-pending");
       await session.publicClient.waitForTransactionReceipt({ hash });
       await refresh(quoteId);
       setPhase("done");

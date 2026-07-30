@@ -162,7 +162,59 @@ export const MANDATE_BOOK_ABI = [
     inputs: [{ type: "address" }],
     outputs: [{ type: "uint256" }],
   },
+  /**
+   * The mandate lifecycle. Three states past Active, and only one of them is reversible.
+   *
+   * `pauseMandate` stops a mandate being quoted against without discarding it; `resumeMandate` puts
+   * it back on its existing epoch. `retireMandate` is TERMINAL and cannot be undone — `mandateId` is
+   * deterministic in (provider, universe), so a retired mandate's identifier can never be reused and
+   * no new mandate for the same pair can be created. The interface has to say that before the click,
+   * because the contract will not say it after.
+   */
+  {
+    type: "function",
+    name: "pauseMandate",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "mandateId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "resumeMandate",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "mandateId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "retireMandate",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "mandateId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "isUsable",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }, { type: "uint32" }],
+    outputs: [{ type: "bool" }],
+  },
 ] as const;
+
+/** `EncryptedMandateBook.MandateState`, in enum order. */
+export enum MandateState {
+  None = 0,
+  Active = 1,
+  Paused = 2,
+  Retired = 3,
+}
+
+export const MANDATE_STATE_LABEL: Readonly<Record<MandateState, string>> = {
+  [MandateState.None]: "no mandate",
+  [MandateState.Active]: "active",
+  [MandateState.Paused]: "paused",
+  [MandateState.Retired]: "retired — permanently",
+};
 
 const REQUEST_INPUT = {
   type: "tuple",
@@ -721,9 +773,27 @@ export const SOLVENCY_VERIFIER_ABI = [
 
 /** Phase 6. Frozen selective disclosure — bindings only; a capsule's value is never read here. */
 export const CAPSULE_VAULT_ABI = [
-  { type: "function", name: "SERIES_ID", stateMutability: "view", inputs: [], outputs: [{ type: "bytes32" }] },
-  { type: "function", name: "DEPLOYMENT_ID", stateMutability: "view", inputs: [], outputs: [{ type: "bytes32" }] },
-  { type: "function", name: "capsuleCount", stateMutability: "view", inputs: [], outputs: [{ type: "uint32" }] },
+  {
+    type: "function",
+    name: "SERIES_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "DEPLOYMENT_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "capsuleCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint32" }],
+  },
 ] as const;
 
 /**
@@ -733,10 +803,72 @@ export const CAPSULE_VAULT_ABI = [
  * bound is read from the same contract rather than asserted by the page displaying it.
  */
 export const CROSS_BOOK_ABI = [
-  { type: "function", name: "PRICE_WAD", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
-  { type: "function", name: "FEE_BPS", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
-  { type: "function", name: "MAX_FEE_BPS", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
-  { type: "function", name: "FEE_BENEFICIARY", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
+  {
+    type: "function",
+    name: "PRICE_WAD",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  // `uint16`, matching the contract. A uint16 return occupies a full word so decoding it as uint256
+  // would produce the same number — but a declared width that is not the contract's width is a
+  // transcription, and transcriptions are what `source-lock.json` exists to stop.
+  {
+    type: "function",
+    name: "FEE_BPS",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint16" }],
+  },
+  {
+    type: "function",
+    name: "MAX_FEE_BPS",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint16" }],
+  },
+  {
+    type: "function",
+    name: "FEE_BENEFICIARY",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "SERIES_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "DEPLOYMENT_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "LOAN_TOKEN",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "KEEPER",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "MAX_ORDER_LIFETIME",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint64" }],
+  },
 ] as const;
 
 /**
@@ -746,8 +878,459 @@ export const CROSS_BOOK_ABI = [
  * operands are read too, so the arithmetic can be reproduced rather than trusted.
  */
 export const ROLL_BOOK_ABI = [
-  { type: "function", name: "SOURCE_TOKEN", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
-  { type: "function", name: "TARGET_TOKEN", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
-  { type: "function", name: "TARGET_PRICE_WAD", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
-  { type: "function", name: "conversionWad", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  {
+    type: "function",
+    name: "SOURCE_TOKEN",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "TARGET_TOKEN",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "TARGET_PRICE_WAD",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "MAX_ROLL_LIFETIME",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint64" }],
+  },
+  {
+    type: "function",
+    name: "SOURCE_SERIES_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "TARGET_SERIES_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "KEEPER",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "conversionWad",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "quoteRoll",
+    stateMutability: "view",
+    inputs: [{ name: "sourceAmount", type: "uint256" }],
+    outputs: [{ name: "targetAmount", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "submitIntent",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "encryptedAmount", type: "bytes32" },
+      { name: "inputProof", type: "bytes" },
+      { name: "expiry", type: "uint64" },
+      { name: "nonce", type: "uint256" },
+    ],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "cancelIntent",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "intentId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "submittedBy",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "intentIdFor",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "uint256" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "confidentialIntentEscrow",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  /**
+   * `statusOf` returns the NEXT ACTION, which is why a roll survives being interrupted.
+   *
+   * A roll is not atomic and nothing in Kyrve claims it is (U-F11). A progress bar implying one
+   * transaction would be the claim the contracts deliberately do not make, so the interface renders
+   * the next action instead of a percentage.
+   */
+  {
+    type: "function",
+    name: "statusOf",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [
+      { name: "state", type: "uint8" },
+      { name: "holder", type: "address" },
+      { name: "netCount", type: "uint32" },
+      { name: "residualHandle", type: "bytes32" },
+      { name: "residualUnwound", type: "uint256" },
+      { name: "next", type: "uint8" },
+    ],
+  },
+  {
+    type: "function",
+    name: "supplyStatusOf",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [
+      { name: "state", type: "uint8" },
+      { name: "supplier", type: "address" },
+      { name: "expiry", type: "uint64" },
+      { name: "netCount", type: "uint32" },
+    ],
+  },
+  {
+    type: "function",
+    name: "supplyIdFor",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "uint256" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "nextNonce",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+/** `KyrveRollBook.IntentState`, in enum order. */
+export enum IntentState {
+  None = 0,
+  Open = 1,
+  ResidualDeclared = 2,
+  Completed = 3,
+  Cancelled = 4,
+}
+
+export const INTENT_STATE_LABEL: Readonly<Record<IntentState, string>> = {
+  [IntentState.None]: "no intent",
+  [IntentState.Open]: "open",
+  [IntentState.ResidualDeclared]: "residual declared",
+  [IntentState.Completed]: "completed",
+  [IntentState.Cancelled]: "cancelled",
+};
+
+/** `KyrveRollBook.NextAction`, in enum order. The honest alternative to a progress bar. */
+export enum NextAction {
+  Nothing = 0,
+  Net = 1,
+  DeclareResidual = 2,
+  SettleResidual = 3,
+  Cancel = 4,
+}
+
+export const NEXT_ACTION_LABEL: Readonly<Record<NextAction, string>> = {
+  [NextAction.Nothing]: "nothing further",
+  [NextAction.Net]: "the keeper nets this intent against a supply",
+  [NextAction.DeclareResidual]: "declare the residual",
+  [NextAction.SettleResidual]: "settle the declared residual publicly",
+  [NextAction.Cancel]: "cancel — the window has closed",
+};
+
+/**
+ * Phase 6. The Cross book's order surface.
+ *
+ * `submitExit` and `submitEntry` take an `externalEuint256` and its input proof. The wallet that
+ * encrypted must be the DIRECT CALLER — `Nox.fromExternal` binds the proof to owner, app contract,
+ * chain id and a 3600 s expiry — so there is no relayer, no paymaster and no batch router on this path.
+ */
+export const CROSS_BOOK_ORDER_ABI = [
+  {
+    type: "function",
+    name: "submitExit",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "encryptedAmount", type: "bytes32" },
+      { name: "inputProof", type: "bytes" },
+      { name: "expiry", type: "uint64" },
+      { name: "nonce", type: "uint256" },
+    ],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "submitEntry",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "encryptedAmount", type: "bytes32" },
+      { name: "inputProof", type: "bytes" },
+      { name: "expiry", type: "uint64" },
+      { name: "nonce", type: "uint256" },
+    ],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "cancel",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "orderId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "orderOf",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [
+      { name: "state", type: "uint8" },
+      { name: "side", type: "uint8" },
+      { name: "owner", type: "address" },
+      { name: "openedAt", type: "uint64" },
+      { name: "expiry", type: "uint64" },
+      { name: "matchCount", type: "uint32" },
+      { name: "residualHandle", type: "bytes32" },
+      { name: "residualSettled", type: "uint256" },
+    ],
+  },
+  {
+    type: "function",
+    name: "confidentialEscrowOf",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "submittedBy",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "orderIdFor",
+    stateMutability: "view",
+    inputs: [{ type: "address" }, { type: "uint8" }, { type: "uint256" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "quoteAssets",
+    stateMutability: "view",
+    inputs: [{ name: "amount", type: "uint256" }],
+    outputs: [
+      { name: "proceeds", type: "uint256" },
+      { name: "fee", type: "uint256" },
+      { name: "net", type: "uint256" },
+    ],
+  },
+  {
+    type: "function",
+    name: "MAX_ORDER_LIFETIME",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint64" }],
+  },
+  {
+    type: "function",
+    name: "nextNonce",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+/** `KyrveCrossBook.Side` and `OrderState`, in enum order. */
+export const CROSS_SIDE = { Exit: 0, Entry: 1 } as const;
+
+export enum OrderState {
+  None = 0,
+  Open = 1,
+  Cancelled = 2,
+  Settled = 3,
+}
+
+export const ORDER_STATE_LABEL: Readonly<Record<OrderState, string>> = {
+  [OrderState.None]: "no order",
+  [OrderState.Open]: "open",
+  [OrderState.Cancelled]: "cancelled",
+  [OrderState.Settled]: "settled",
+};
+
+/**
+ * Phase 6. Reading a capsule, and the one way a holder creates one.
+ *
+ * A holder does not call the vault. `KyrveSeriesToken.issueOwnershipCapsule` is the entry point,
+ * because `Nox.allow` requires the caller to be an admin on the handle and the token is the only
+ * contract that ever is — so the token grants and the vault records. The vault could not make that
+ * grant and must not be able to.
+ */
+export const CAPSULE_READ_ABI = [
+  {
+    type: "function",
+    name: "capsuleOf",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "issued", type: "bool" },
+          { name: "scope", type: "uint8" },
+          { name: "subject", type: "address" },
+          { name: "recipient", type: "address" },
+          { name: "issuedAt", type: "uint64" },
+          { name: "expiry", type: "uint64" },
+          { name: "snapshotBlock", type: "uint64" },
+          { name: "quoteId", type: "bytes32" },
+          { name: "snapshotHandle", type: "bytes32" },
+          { name: "factsDigest", type: "bytes32" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "capsulesFor",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "bytes32[]" }],
+  },
+  {
+    type: "function",
+    name: "issuedBy",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "originDigest",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "assertsValidAt",
+    stateMutability: "view",
+    inputs: [{ type: "bytes32" }, { type: "uint256" }],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "SERIES_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "DEPLOYMENT_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "CHAIN_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "MARKET_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "CURATOR",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "address" }],
+  },
+  {
+    type: "function",
+    name: "MAX_CAPSULE_LIFETIME",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint64" }],
+  },
+] as const;
+
+/** `KyrveCapsuleVault.Scope`, in enum order. */
+export const CAPSULE_SCOPE_LABEL: readonly string[] = [
+  "one provider's series ownership",
+  "the aggregate series supply",
+  "the public Midnight credit",
+  "the solvency verdict",
+  "a settled quote summary",
+  "the declared residue",
+  "allocation provenance",
+];
+
+/** The holder's own capsule entry point, on the series token. */
+export const SERIES_TOKEN_CAPSULE_ABI = [
+  {
+    type: "function",
+    name: "issueOwnershipCapsule",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "recipient", type: "address" },
+      { name: "quoteId", type: "bytes32" },
+      { name: "expiry", type: "uint64" },
+      { name: "nonce", type: "uint256" },
+    ],
+    outputs: [
+      { name: "capsuleId", type: "bytes32" },
+      { name: "snapshot", type: "bytes32" },
+    ],
+  },
+  {
+    type: "function",
+    name: "nextNonce",
+    stateMutability: "view",
+    inputs: [{ type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "event",
+    name: "OwnershipCapsuleIssued",
+    inputs: [
+      { name: "capsuleId", type: "bytes32", indexed: true },
+      { name: "subject", type: "address", indexed: true },
+      { name: "recipient", type: "address", indexed: true },
+      { name: "snapshotHandle", type: "bytes32", indexed: false },
+    ],
+  },
 ] as const;

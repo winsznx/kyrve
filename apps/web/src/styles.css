@@ -1,17 +1,20 @@
 /*
  * Kyrve terminal styling.
  *
- * Every value here comes from `design.md`, which is the visual source of truth. The rules that are
- * easy to violate by accident, and are therefore stated at the point of use:
+ * Every value here comes from `design.md` and `brand.json`, which are the visual source of truth and
+ * are immutable. The rules that are easy to violate by accident, and are therefore stated at the
+ * point of use:
  *
  *   - the canvas is Onyx and cards are Graphite, ONE step lighter. Separation comes from that lift
  *     alone: there are no shadows anywhere in this file, and none may be added.
  *   - Cobalt is the only chromatic note and is reserved for the single primary action on a page.
- *     Never as decoration, never as an icon fill, never two within 32px.
- *   - body text is Ivory, never pure white. Muted text is Ash.
+ *     Never as decoration, never as an icon fill, never two within 32px. The shell has none at all.
+ *   - body text is Ivory, never pure white. Muted text is Ash. Pure white appears in exactly one
+ *     place — on a Cobalt fill — which is the only context `design.md` permits it in.
  *   - headings are weight 480. Never 700.
  *   - interactive controls use pill radius. Sharp corners are structural only.
  *   - 72px between major sections.
+ *   - every changeable number is tabular, so a price does not reflow as it ticks.
  */
 
 :root {
@@ -19,20 +22,27 @@
   --color-graphite-card: #1e1e2a;
   --color-obsidian-button: #272735;
   --color-slate-border: #70707d;
+  --color-mist-border: #e2e3ed;
   --color-ash-text: #c3c3cc;
   --color-ivory-text: #ededf3;
   --color-cobalt: #5266eb;
+  /* Permitted on a Cobalt fill and nowhere else. `design.md`, Tokens — Colors. */
+  --color-on-cobalt: #ffffff;
 
   --font-body:
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-body);
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
   --text-caption: 12px;
   --text-body-sm: 14px;
   --text-body: 16px;
+  --text-body-lg: 18px;
   --text-subheading: 21px;
   --text-heading-sm: 28px;
   --text-heading: 32px;
+  --text-heading-lg: 42px;
+  --text-display: 65px;
 
   --weight-regular: 400;
   --weight-w420: 420;
@@ -47,10 +57,18 @@
   --radius-xl: 12px;
   --radius-3xl: 32px;
   --radius-pill: 40px;
+
+  --hairline: rgba(112, 112, 125, 0.35);
+  --hairline-soft: rgba(112, 112, 125, 0.2);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  /* An in-page anchor must not land under the sticky masthead. */
+  scroll-padding-top: 120px;
 }
 
 body {
@@ -66,11 +84,183 @@ body {
 
 /* Tabular numerals throughout: a balance that shifts width as it changes reads as unstable. */
 .numeric,
+.mono,
 td,
 th {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
+
+.mono {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Focus is always visible, and it is Cobalt.
+ *
+ * The one deliberate exception to "Cobalt is the primary action only": a focus ring is not a control,
+ * it is the keyboard's cursor, and a monochrome ring on a monochrome interface is a ring a keyboard
+ * user cannot find. WCAG 2.4.7 outranks the palette rationing here, and the deviation is recorded in
+ * `docs/phase7/PRD-DELTA.md` rather than left as an inconsistency for the next reader to find.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-cobalt);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/*
+ * There is no `prefers-reduced-motion` block, because there is no motion.
+ *
+ * Nothing in this file declares a transition, an animation or a transform. A blanket
+ * `transition-duration: 0.01ms !important` reset would be dead code claiming a concession the
+ * interface never needed to make — and the `!important` would then be the only one in the sheet,
+ * waiting for somebody to reuse it for something real.
+ */
+
+/* ── Skip link ──────────────────────────────────────────────────────────────────────────────── */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 12px 24px;
+  background: var(--color-graphite-card);
+  color: var(--color-ivory-text);
+  border-radius: 0 0 var(--radius-xl) 0;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* ── Masthead ───────────────────────────────────────────────────────────────────────────────── */
+
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(23, 23, 33, 0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.masthead-inner {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--card-padding);
+  flex-wrap: wrap;
+}
+
+.wordmark-link {
+  text-decoration: none;
+  display: block;
+}
+
+/*
+ * The dark header uses the lowercase wordmark set as TEXT in Ivory.
+ *
+ * The approved brand symbol is authored for light backgrounds — measured across all 45,374 opaque
+ * pixels, 0.0% clear 4.5:1 against Onyx, at a median of 1.30:1. A reversed master is commissioned and
+ * not yet delivered (docs/brand/REVERSED-MASTER-BRIEF.md), so the symbol is not rendered here, no
+ * background plate is added, and the positive master is not recoloured. It still ships as the
+ * favicon, the OG card and the CTA panel — all light surfaces.
+ */
+.wordmark {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-heading);
+  font-weight: var(--weight-w480);
+  letter-spacing: 0.48px;
+  line-height: 1.15;
+  color: var(--color-ivory-text);
+}
+
+.tagline {
+  display: block;
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  letter-spacing: 0.07px;
+}
+
+.nav {
+  flex: 1 1 420px;
+}
+
+.nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.nav-pill {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-pill:hover {
+  color: var(--color-ivory-text);
+  background: var(--color-obsidian-button);
+}
+
+/*
+ * The active section. Ivory on Obsidian, never Cobalt: a coloured nav item would compete with the
+ * page's one primary action, and `aria-current="page"` is what actually communicates it.
+ */
+.nav-pill-active {
+  color: var(--color-ivory-text);
+  background: var(--color-obsidian-button);
+}
+
+/* ── Wallet badge ───────────────────────────────────────────────────────────────────────────── */
+
+.wallet {
+  flex: 0 1 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-caption);
+}
+
+.wallet-state {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+  font-weight: var(--weight-w480);
+}
+
+.wallet-detail {
+  display: block;
+  color: var(--color-ash-text);
+  font-size: var(--text-caption);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.wallet-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* ── Page and sections ──────────────────────────────────────────────────────────────────────── */
 
 .page {
   max-width: var(--page-max-width);
@@ -78,56 +268,74 @@ th {
   padding: 56px 24px 112px;
 }
 
-header.masthead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 32px;
-  border-bottom: 1px solid rgba(112, 112, 125, 0.35);
-}
-
-/*
- * The dark header uses the lowercase wordmark set as text in Ivory.
- *
- * The approved brand symbol is authored for light backgrounds — measured across all 45,374 opaque
- * pixels, 0.0% clear 4.5:1 against Onyx, at a median of 1.30:1. A reversed master is commissioned
- * and not yet delivered (docs/brand/REVERSED-MASTER-BRIEF.md), so the symbol is not rendered here,
- * no background plate is added, and the positive master is not recoloured.
- */
-.wordmark {
-  font-size: var(--text-heading);
-  font-weight: var(--weight-w480);
-  letter-spacing: 0.48px;
-  color: var(--color-ivory-text);
-}
-
-.tagline {
-  color: var(--color-ash-text);
-  font-size: var(--text-body-sm);
+.page-full {
+  max-width: none;
+  padding: 0;
 }
 
 section.band {
   margin-top: var(--section-gap);
 }
 
+section.band:first-child {
+  margin-top: 0;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-heading-lg);
+  font-weight: var(--weight-w480);
+  letter-spacing: 0.42px;
+  line-height: 1.15;
+  margin: 0 0 var(--element-gap);
+}
+
 h2 {
+  font-family: var(--font-display);
   font-size: var(--text-heading-sm);
   font-weight: var(--weight-w480);
   letter-spacing: 0.42px;
+  line-height: 1.2;
   margin: 0 0 var(--element-gap);
 }
 
 h3 {
+  font-family: var(--font-display);
   font-size: var(--text-subheading);
   font-weight: var(--weight-w480);
+  line-height: 1.35;
   margin: 0 0 var(--element-gap);
+}
+
+h4 {
+  font-size: var(--text-body);
+  font-weight: var(--weight-w480);
+  margin: 0 0 8px;
 }
 
 p.lede {
   color: var(--color-ash-text);
   margin: 0 0 24px;
   max-width: 68ch;
+}
+
+p.footnote,
+.note {
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+  max-width: 74ch;
+  margin: var(--element-gap) 0 0;
+}
+
+.eyebrow {
+  display: block;
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+  font-weight: var(--weight-w480);
+  margin-bottom: 8px;
 }
 
 .card {
@@ -143,6 +351,94 @@ p.lede {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
+.grid-wide {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+}
+
+.stack {
+  display: grid;
+  gap: var(--element-gap);
+}
+
+/* ── Landing ────────────────────────────────────────────────────────────────────────────────── */
+
+.hero {
+  min-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 112px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: var(--text-display);
+  line-height: 1.1;
+  letter-spacing: 0;
+  font-weight: var(--weight-w480);
+}
+
+.hero p {
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-w480);
+  line-height: 1.35;
+  color: var(--color-ash-text);
+  margin: 24px 0 40px;
+}
+
+/*
+ * The redacted-curve field behind the hero.
+ *
+ * Structure with no values, drawn by the same component the private-curve panels use, so it cannot
+ * drift into decoration that means something different. It carries no data at all, which is why it
+ * is `aria-hidden` and why there are no axis values to have omitted.
+ */
+.hero-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.landing-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.landing-section {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--section-gap) 24px;
+}
+
+.split {
+  display: grid;
+  gap: var(--card-padding);
+  grid-template-columns: minmax(280px, 1fr) minmax(280px, 1.2fr);
+  align-items: start;
+}
+
+/* ── Controls ───────────────────────────────────────────────────────────────────────────────── */
+
 label {
   display: block;
   font-size: var(--text-body-sm);
@@ -151,7 +447,8 @@ label {
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+select {
   width: 100%;
   padding: 12px 20px;
   background: var(--color-obsidian-button);
@@ -163,10 +460,8 @@ input[type="number"] {
   font-variant-numeric: tabular-nums;
 }
 
-input:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--color-cobalt);
-  outline-offset: 2px;
+input::placeholder {
+  color: var(--color-ash-text);
 }
 
 button {
@@ -190,12 +485,46 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Cobalt: one per page, on the single primary action. */
-button.primary {
-  background: var(--color-cobalt);
-  border-color: var(--color-cobalt);
+/*
+ * The masthead's controls, declared AFTER the base button so the cascade reads in source order.
+ * A more specific rule sitting above the one it overrides is legal and is a trap: the next person to
+ * reorder the file changes the rendering without touching a value.
+ */
+.wallet button {
+  padding: 6px 16px;
+  font-size: var(--text-caption);
+}
+
+/* The ghost outline: Ivory border and Ivory text, never a chromatic secondary. */
+button.ghost,
+a.ghost {
+  background: transparent;
+  border: 1px solid var(--color-ivory-text);
   color: var(--color-ivory-text);
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  display: inline-block;
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+}
+
+/*
+ * Cobalt: one per page, on the single primary action.
+ *
+ * `scripts/verify/design-rules.ts` counts the rendered primary elements per route and fails on more
+ * than one, so this is enforced rather than remembered.
+ */
+button.primary,
+a.primary {
+  background: var(--color-cobalt);
+  border: 1px solid var(--color-cobalt);
+  color: var(--color-on-cobalt);
   font-weight: var(--weight-w480);
+  text-decoration: none;
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
 }
 
 .row {
@@ -209,7 +538,15 @@ button.primary {
   flex: 1 1 200px;
 }
 
-/* ── Confidential state ─────────────────────────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: var(--element-gap);
+  flex-wrap: wrap;
+  margin-top: 24px;
+  align-items: center;
+}
+
+/* ── Confidential state ─────────────────────────────────────────────────────────────────────── */
 
 .confidential {
   display: flex;
@@ -240,6 +577,7 @@ button.primary {
   font-family: var(--font-mono);
   font-size: var(--text-subheading);
   font-variant-numeric: tabular-nums;
+  color: var(--color-ivory-text);
 }
 
 .confidential .explanation {
@@ -281,7 +619,7 @@ button.primary {
   );
 }
 
-/* ── Boundary preview ───────────────────────────────────────────────────────────────────── */
+/* ── Boundary preview ───────────────────────────────────────────────────────────────────────── */
 
 .boundary {
   display: grid;
@@ -321,9 +659,11 @@ button.primary {
  * A reveal warning cannot be collapsed or hidden while a signature is pending.
  *
  * There is deliberately no toggle, no `<details>`, and no dismiss control anywhere in this block.
+ * The border is the Mist hairline `design.md` specifies for it — the one place a light border appears
+ * — so the warning reads as structural rather than as another card.
  */
 .reveal-warning {
-  border: 1px solid var(--color-slate-border);
+  border: 1px solid var(--color-mist-border);
   border-radius: var(--radius-xl);
   padding: 20px;
   margin-top: 24px;
@@ -342,7 +682,7 @@ button.primary {
   font-size: var(--text-body-sm);
 }
 
-/* ── Status and errors ──────────────────────────────────────────────────────────────────── */
+/* ── Status and errors ──────────────────────────────────────────────────────────────────────── */
 
 .status {
   margin-top: 16px;
@@ -360,7 +700,11 @@ button.primary {
 .status .phase {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
+
+/* ── Tables and fact lists ──────────────────────────────────────────────────────────────────── */
 
 table {
   width: 100%;
@@ -372,9 +716,10 @@ td,
 th {
   text-align: left;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(112, 112, 125, 0.2);
+  border-bottom: 1px solid var(--hairline-soft);
   color: var(--color-ash-text);
   font-weight: var(--weight-regular);
+  vertical-align: top;
 }
 
 th {
@@ -382,13 +727,11 @@ th {
   font-weight: var(--weight-w420);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────────────────────
-   The ownership band.
-   
-   Tokens only, no new colour. Cobalt is deliberately ABSENT from this whole section: `design.md`
-   reserves it for the single primary action per page, and an ownership view has no primary action —
-   it reads. Separation comes from the one-step value lift alone, with no shadows.
-   ───────────────────────────────────────────────────────────────────────────────────────────── */
+/* A wide table scrolls inside its own container; the page body never scrolls sideways. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 .band-head {
   display: flex;
@@ -405,6 +748,7 @@ th {
   color: var(--color-ash-text);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+  flex-wrap: wrap;
 }
 
 /*
@@ -447,14 +791,6 @@ th {
   text-underline-offset: 3px;
 }
 
-.note {
-  color: var(--color-ash-text);
-  font-size: var(--text-body-sm);
-  line-height: 1.5;
-  max-width: 74ch;
-  margin: var(--element-gap) 0 0;
-}
-
 /*
   The peer probe. Structurally a card like any other: it is a real action against a real gateway, not
   a warning box, and styling it as an alert would suggest the refusal is an error rather than the
@@ -488,9 +824,9 @@ th {
   margin: var(--element-gap) 0 0;
 }
 
-/*
-  Verify.
+/* ── Verify ─────────────────────────────────────────────────────────────────────────────────── */
 
+/*
   A verdict is a word, not a colour. Cobalt is reserved for the single primary action on the page
   (design.md), so a passing row cannot claim it, and a red-on-green pass/fail pair would make the
   verdict unreadable to anyone who does not distinguish them. The word carries the meaning; the
@@ -543,4 +879,138 @@ th {
 .verify-rows p {
   color: var(--color-ash-text);
   margin: var(--element-gap) 0 0;
+}
+
+/* ── Collections ────────────────────────────────────────────────────────────────────────────── */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--element-gap);
+}
+
+.rows > li {
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+}
+
+.row-link {
+  color: var(--color-ivory-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  overflow-wrap: anywhere;
+}
+
+/*
+  An empty collection. Says what is absent and what would produce it — never a placeholder row and
+  never a zero, because both would read as data.
+*/
+.empty {
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+  color: var(--color-ash-text);
+}
+
+.empty strong {
+  display: block;
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+  margin-bottom: 8px;
+}
+
+/* ── The quote card: the only card permitted a cobalt element ───────────────────────────────── */
+
+.quote-figure {
+  font-family: var(--font-display);
+  font-size: var(--text-heading-lg);
+  font-weight: var(--weight-w480);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.42px;
+  color: var(--color-ivory-text);
+  line-height: 1.15;
+}
+
+.quote-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--card-padding);
+  margin: 24px 0;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────────────────────── */
+
+.site-footer {
+  border-top: 1px solid var(--hairline);
+  background: var(--color-onyx-canvas);
+}
+
+.footer-inner {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--card-padding) 24px 56px;
+  display: grid;
+  gap: 8px;
+}
+
+.disclaimer {
+  margin: 0;
+  font-size: var(--text-caption);
+  letter-spacing: 0.01em;
+  color: var(--color-ash-text);
+  max-width: 90ch;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: var(--text-heading-lg);
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --card-padding: 20px;
+    --section-gap: 56px;
+  }
+
+  .page {
+    padding: 32px 16px 72px;
+  }
+
+  .masthead-inner {
+    padding: 12px 16px;
+  }
+
+  .wordmark {
+    font-size: var(--text-heading-sm);
+  }
+
+  .hero {
+    padding: 96px 16px 56px;
+    min-height: auto;
+  }
+
+  .hero h1 {
+    font-size: var(--text-heading);
+  }
+
+  .quote-figure {
+    font-size: var(--text-heading-sm);
+  }
+
+  .grid,
+  .grid-wide {
+    grid-template-columns: 1fr;
+  }
 }

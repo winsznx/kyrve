@@ -1,0 +1,203 @@
+/**
+ * The one place the terminal learns what it is pointed at, and who is holding it.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * READING AND SIGNING ARE DELIBERATELY SEPARATE
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * `publicClient` exists as soon as the record loads and needs no wallet. `session` exists only once
+ * a wallet has answered. Every proof page, every public panel and the whole of `/` work on the first
+ * alone, because the audience for a verification page is someone checking Kyrve who holds no
+ * position in it — a page that demanded a wallet before it would show a recomputation would be
+ * unusable by exactly the reader it is for.
+ *
+ * Conversely nothing confidential works without a session, and that is structural rather than
+ * policy: `Nox.fromExternal` binds a proof to the wallet that is the DIRECT CALLER, so there is no
+ * read-only mode that could stand in for one and no relayer that could be inserted.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHY CONNECTING IS EXPLICIT
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * A page that opened a wallet session on load would prompt every visitor to `/` for an account, and
+ * would silently re-open one for a provider who had just locked the session to clear a decrypted
+ * balance off the screen. Connecting is an action; reconnecting is the same action.
+ *
+ * The one exception is a local development key injected into the page by the browser demonstration.
+ * That connects immediately, because the demonstration is driving a real Chromium against a real
+ * stack and a click-to-connect step there would test the click rather than the protocol.
+ */
+
+import type { NoxNetwork } from "@kyrve/nox";
+import {
+  createContext,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import type { PublicClient } from "viem";
+import { noxNetworkFor } from "./deployment.js";
+import type { LifecycleState } from "./lifecycle.js";
+import { type KyrveRecord, loadRecord } from "./records.js";
+import { safeErrorMessage } from "./redact.js";
+import { lock, openPublicClient, openSession, type Session } from "./session.js";
+
+/** How the wallet half of the terminal is doing. Four states, none of them a spinner. */
+export type WalletState =
+  | "not-connected"
+  | "connecting"
+  | "connected"
+  /** Ended deliberately. Distinct from never-connected: it must not silently re-open. */
+  | "ended";
+
+export interface Kyrve {
+  readonly record: KyrveRecord;
+  readonly network: NoxNetwork;
+  readonly publicClient: PublicClient;
+  readonly rpcUrl: string;
+  readonly session: Session | undefined;
+  readonly walletState: WalletState;
+  /** Present when connecting failed. Redacted; never carries an RPC credential. */
+  readonly walletFailure: string | undefined;
+  readonly connect: () => Promise<void>;
+  /** Clears every decrypted value from memory. NOT a revocation — Nox has none to offer. */
+  readonly disconnect: () => void;
+}
+
+const KyrveContext = createContext<Kyrve | undefined>(undefined);
+
+/** The terminal's context. Throws rather than returning a plausible empty one. */
+export function useKyrve(): Kyrve {
+  const value = useContext(KyrveContext);
+  if (value === undefined) {
+    throw new Error("useKyrve was called outside the provider, so there is no deployment to read");
+  }
+  return value;
+}
+
+/**
+ * The wallet session, or the reason there is not one.
+ *
+ * Returns `undefined` rather than throwing, so a page can render its public half and name the
+ * missing wallet in place of the confidential half instead of failing whole.
+ */
+export function useSession(): Session | undefined {
+  return useKyrve().session;
+}
+
+/** The lifecycle state a page should show when it needs a wallet and does not have one. */
+export function walletLifecycle(state: WalletState): LifecycleState | undefined {
+  if (state === "connecting") return "waiting-for-wallet";
+  if (state === "not-connected" || state === "ended") return "waiting-for-wallet";
+  return undefined;
+}
+
+export interface BootState {
+  readonly record: KyrveRecord | undefined;
+  readonly error: string | undefined;
+}
+
+export interface KyrveProviderProps {
+  readonly children: ReactNode;
+  /** Rendered while the record is loading, and when it cannot be loaded. */
+  readonly fallback: (boot: BootState) => ReactElement;
+}
+
+export function KyrveProvider({ children, fallback }: KyrveProviderProps): ReactElement {
+  const [boot, setBoot] = useState<BootState>({ record: undefined, error: undefined });
+  const [session, setSession] = useState<Session>();
+  const [walletState, setWalletState] = useState<WalletState>("not-connected");
+  const [walletFailure, setWalletFailure] = useState<string>();
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const record = await loadRecord();
+        if (!cancelled) setBoot({ record, error: undefined });
+      } catch (error) {
+        if (!cancelled) setBoot({ record: undefined, error: safeErrorMessage(error) });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rpcUrl = window.__KYRVE_RPC_URL__ ?? "http://127.0.0.1:8545";
+
+  const network = useMemo(() => {
+    if (boot.record === undefined) return undefined;
+    return noxNetworkFor(
+      boot.record,
+      window.__KYRVE_NOX_GATEWAY__ ?? boot.record.gatewayUrl ?? undefined,
+    );
+  }, [boot.record]);
+
+  const publicClient = useMemo(
+    () => (network === undefined ? undefined : openPublicClient(network, rpcUrl)),
+    [network, rpcUrl],
+  );
+
+  const connect = useCallback(async (): Promise<void> => {
+    if (network === undefined) return;
+    setWalletState("connecting");
+    setWalletFailure(undefined);
+    try {
+      setSession(await openSession(network, rpcUrl));
+      setWalletState("connected");
+    } catch (error) {
+      setWalletFailure(safeErrorMessage(error));
+      setWalletState("not-connected");
+    }
+  }, [network, rpcUrl]);
+
+  /**
+   * Ends the session and clears every decrypted value from memory, immediately.
+   *
+   * NOT A REVOCATION, and no surface in this product may call it one. The wallet keeps every ACL
+   * grant it held — Nox has no `removeAdmin` and no `removeViewer` — so this is a local-display
+   * action. What it does guarantee is that a screenshot taken a moment later cannot contain a
+   * private balance.
+   */
+  const disconnect = useCallback((): void => {
+    lock();
+    setSession(undefined);
+    setWalletState("ended");
+  }, []);
+
+  /**
+   * The injected local key connects without a click.
+   *
+   * Only when the page was handed one, which happens in the browser demonstration and in local
+   * development. A real wallet is never auto-connected.
+   */
+  useEffect(() => {
+    if (network === undefined) return;
+    if (window.__KYRVE_LOCAL_KEY__ === undefined) return;
+    if (walletState !== "not-connected") return;
+    void connect();
+  }, [network, connect, walletState]);
+
+  if (boot.record === undefined || network === undefined || publicClient === undefined) {
+    return fallback(boot);
+  }
+
+  const value: Kyrve = {
+    record: boot.record,
+    network,
+    publicClient,
+    rpcUrl,
+    session,
+    walletState,
+    walletFailure,
+    connect,
+    disconnect,
+  };
+
+  return <KyrveContext.Provider value={value}>{children}</KyrveContext.Provider>;
+}

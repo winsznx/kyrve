@@ -65,7 +65,7 @@ import {
   type SeriesRecord,
   seriesExplorerLink,
 } from "../lib/series.js";
-import { recall, remember, type Session } from "../lib/session.js";
+import { recall, remember, type Session, useRevealed } from "../lib/session.js";
 import { formatUnits } from "../lib/settlement.js";
 import { ConfidentialValue } from "./ConfidentialValue.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "./Status.js";
@@ -100,14 +100,9 @@ interface OnChain {
 export interface OwnershipBandProps {
   readonly session: Session;
   readonly series: SeriesRecord;
-  readonly onDisconnect: () => void;
 }
 
-export function OwnershipBand({
-  session,
-  series,
-  onDisconnect,
-}: OwnershipBandProps): React.ReactElement {
+export function OwnershipBand({ session, series }: OwnershipBandProps): React.ReactElement {
   const [chain, setChain] = useState<OnChain>();
   const [phase, setPhase] = useState<Phase>("idle");
   const [failure, setFailure] = useState<Failure>();
@@ -117,6 +112,9 @@ export function OwnershipBand({
   const [peerRefusal, setPeerRefusal] = useState<Failure>();
   const [peerProbed, setPeerProbed] = useState(false);
 
+  // Subscribes to the decrypted-value store, so locking the session clears this panel's own value
+  // immediately rather than leaving it on screen until something else re-renders.
+  useRevealed();
   const ownValue = recall(chain?.ownHandle);
 
   const read = useCallback(async (): Promise<void> => {
@@ -297,12 +295,13 @@ export function OwnershipBand({
     <section className="band" data-testid="ownership-band">
       <header className="band-head">
         <h2>Confidential series ownership</h2>
-        <div className="band-meta">
-          <span data-testid="connected-account">{session.account}</span>
-          <button type="button" data-testid="disconnect" onClick={onDisconnect}>
-            Disconnect
-          </button>
-        </div>
+        {/*
+          The connected account and the end-session control live in the masthead, once.
+          They used to be duplicated here, which was harmless while the terminal was a single page
+          and becomes a real defect the moment there are nineteen routes: two elements carrying the
+          same `data-testid` make every assertion about them ambiguous, and a reader looking at two
+          "disconnect" buttons cannot tell whether they do the same thing.
+        */}
       </header>
 
       {/* ── The series, and the public position the claims are on ───────────────────────────── */}
