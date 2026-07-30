@@ -9,55 +9,31 @@ about the Worker and have not been discharged — they were carried, not closed.
 
 ---
 
-## P8-0 · Two things Phase 7 was asked for and did NOT deliver
+## P8-0 · Phase 7 IS finished, and here is what it left behind
 
-Stated first, because a prerequisites document that opens with what went well is a document nobody
-reads for what is missing.
+Discharged. `pnpm verify:phase7` reports **24 passed, 0 failed, 0 skipped**. Both conditions this
+document originally opened with are closed:
 
-### The local production stack does not start from one command
+**`pnpm stack:local` starts the whole local product from one command** and does not report READY until
+every health check answers. It owns the gateway port — Docker assigns it, the Hardhat plugin discovers
+it, and the chain host publishes it on one sentinel-prefixed JSON line into `.runtime/local-stack.json`
+so nothing else rediscovers it. `stack:local:status` and `stack:local:stop` are its other two halves,
+and `pnpm verify:stack` proves the whole thing from a clean machine state twice, because teardown
+defects are invisible on a first run.
 
-There is no `pnpm stack:local`. The pieces exist and each runs — `npx hardhat test` in `confidential/`
-boots the real Nox stack through the plugin, `pnpm deploy:confidential local` writes a record,
-`pnpm web:dev` serves the terminal, and `pnpm wrangler:dry-run` compiles the Workers — but nothing
-composes them.
+**The connected Capsule and auditor flow runs in three browser contexts against the live stack.** The
+provider reads their own claim, seals a capsule for the auditor through the interface, and then burns
+part of their own balance — a real holder action, by the holder's own key. The auditor decrypts the
+frozen snapshot and gets the value from before the burn; is refused the provider's current balance on
+chain; and a third wallet is refused the capsule entirely. Refresh restores the public metadata and
+not the plaintext, and ending the session removes it from the DOM.
 
-A `stack:local` entry was added to `package.json` and then **removed**, because the script behind it
-was not written and a package script that fails is worse than an absent one.
-
-What it needs, and why it is not trivial: the Nox stack's host port is assigned at startup and is
-discovered through the Hardhat plugin's `handleGatewayUrl()`, which currently only exists inside a
-Hardhat process. Composing the stack means either driving Hardhat as a long-running node and reading
-that port out, or teaching the deploy script to publish it. Neither is hard; both are a decision about
-where that port's source of truth lives.
-
-### There is no single 15-step connected demonstration
-
-The connected lifecycle **is** demonstrated end to end, in a real Chromium against real Nox and real
-unmodified Midnight — but across four suites rather than one, and they cover thirteen of the fifteen
-required steps:
-
-| Step | Where | State |
-|---|---|---|
-| provider funds a confidential balance | `70-browser-flow.ts` | covered |
-| provider submits a mandate | `70-browser-flow.ts` | covered |
-| borrower submits a request | `70-browser-flow.ts` | covered |
-| curve epoch completes | `80-curve-epoch.ts`, `91-settlement-browser.ts` | covered |
-| one public quote appears | `91-settlement-browser.ts` | covered |
-| partial fill is refused | `91-settlement-browser.ts` | covered |
-| exact settlement succeeds | `91-settlement-browser.ts` | covered |
-| provider receives confidential ownership | `101-series-browser.ts` | covered |
-| another wallet cannot decrypt | `101-series-browser.ts` | covered |
-| Cross match completes | `120-cross.ts` | covered, **not in a browser** |
-| Roll completes between two series | `130-roll.ts` | covered, **not in a browser** |
-| proof pages verify the lifecycle | `130-roll.ts` demonstration 24 | covered |
-| provider creates a Capsule | — | **not demonstrated in a browser** |
-| auditor decrypts the frozen snapshot only | — | **not demonstrated in a browser** |
-| refresh restores public state without leaking private state | `verify:web` refreshes every route | partially — refresh is checked, the private-state half is not |
-
-The Capsule and auditor routes are built and typecheck; nothing drives them in Chromium. Do not
-describe the browser demonstration as complete until they do — and note that the auditor step is the
-one that would catch a real defect, because it is the only place a grant to a *different* wallet is
-exercised through the interface.
+**What Phase 8 inherits that it cannot undo.** The four browser suites each start their own chain on
+port 8545, so they cannot run while a stack is up — `pnpm demo:phase7` refuses to try and says why.
+That is a real constraint rather than an oversight: the suites are reproducible precisely because each
+one owns its stack for the length of its run. The full demonstration is two invocations,
+`--capsule` against a live stack and `--suites` without one, and `verify:phase7` runs both halves and
+reads the evidence each leaves.
 
 ---
 

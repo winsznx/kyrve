@@ -1,9 +1,13 @@
 # Phase 7 gate
 
-`pnpm verify:phase7`. Recorded run: **21 passed, 0 failed, 1 skipped** — the skip being Slither over
-the confidential layer, which by construction can never pass (P7-1).
+`pnpm verify:phase7`. Closing run: **24 passed, 0 failed, 0 skipped.**
 
-> **VERDICT: CONDITIONAL PASS** — every executable gate passed.
+> **VERDICT: PASS** — every gate executed and passed.
+
+The earlier run recorded here was 21 passed, 0 failed, 1 skipped — a CONDITIONAL PASS. Two things
+changed to reach an unconditional one, and neither weakened a check: the local stack and the connected
+Capsule flow became executable gates rather than open conditions, and the Slither entry stopped
+pretending to be a check it could never be (delta W-2).
 
 The three lines the gate prints on every successful run, because each is a claim that would
 otherwise widen by nobody noticing:
@@ -31,6 +35,9 @@ otherwise widen by nobody noticing:
 | Journeys | activation, refused partial fill and exact settlement | 9 passing |
 | Journeys | confidential ownership, and another wallet refused, in two browser contexts | 4 passing |
 | Journeys | the proof page disagrees with a record that lies | 10 passing |
+| Journeys | the Capsule and auditor flow, three browser contexts, live stack | 9 claims |
+| Journeys | the local stack, clean start, stop, and start again | two instances |
+| Hardening | a gate cannot report PASS over a failure, a skip or an empty run | 8 regression tests |
 | Hardening | every route in a real browser: refresh, metadata, keyboard, design rules, links | 19 routes, no finding |
 | Hardening | no secret reaches the client bundle | 0 inlined |
 | Hardening | no decrypted value reaches a record, a log or a metric | pass |
@@ -40,11 +47,20 @@ otherwise widen by nobody noticing:
 | Hardening | the import boundary holds | pass |
 | Hardening | formatting and lint | biome and forge fmt clean |
 | Quality | git identity and a clean working tree | winsznx, no co-author trailers |
-| Quality | Slither over the confidential layer | **SKIP — cannot ever pass** |
 | Quality | Slither over the settlement layer | 0 High/Medium in 7 deployed paths |
 | Quality | every published fact recomputed from chain state, per layer | layer a 12/0/0, layer b 10/0/2 |
 | Not deployed | every Worker compiles, and nothing is published | dry-run only |
 | Not deployed | no Cloudflare resource was created | placeholder ids intact |
+
+---
+
+## Standing declaration
+
+**UNVERIFIED — Slither over the confidential layer.** Printed before the verdict on every run, outside
+the pass/fail/skip tally. crytic-compile will not drive solc 0.8.36 (delta U-5, exact reproduction).
+Not a pass and not a fail: a permanent absence of static-analysis coverage, not a check that might one
+day run. Compensating evidence is direct 0.8.36 compilation, the full suite against real Nox, the
+attack suite, and the contract-size and gas-cap checks — real, and not the same thing.
 
 ---
 
@@ -93,6 +109,26 @@ track collapse instead. Measured, not eyeballed — `verify:web` failed on exact
 one series and has no top-level section of its own. Series now owns it. A route no navigation item
 claims is a route a screen-reader user cannot locate themselves in.
 
+### F7-7 · Three teardown defects, each invisible until the run after the one that caused it
+
+Found by `pnpm verify:stack`, which starts the stack twice. Delta W-4 has the detail. In order: `npx`
+is an intermediate process so SIGTERM left `vite preview` orphaned; group-killing the chain host then
+skipped the plugin's `finally` and left six containers up; and `wrangler dev` is a supervisor that
+respawns a killed `workerd`, so four ports stayed bound after four "killed leftover" lines.
+
+The second start is the assertion. A single-start proof would have passed on all three.
+
+### F7-8 · The check on the tally suite got its own evidence wrong, twice
+
+The gate row that runs the tally regression tests matched `(\d+) passed` — which caught vitest's FILE
+count, reporting "1 regression tests" for a suite of eight. Anchoring on `Tests` then failed to match
+at all, because vitest colourises its summary and the escape codes sit between the label and the
+number.
+
+A gate that miscounts its own evidence is a smaller version of the defect the suite underneath it
+exists to prevent, and it is the argument for parsing counts rather than reading output formatted for
+a human.
+
 ### F7-6 · Two hardening checks were measuring the wrong thing
 
 Both were found by running them, and both would have produced confident nonsense forever:
@@ -117,4 +153,5 @@ Both were found by running them, and both would have produced confident nonsense
   compiled tree a browser does not have.
 - **It does not analyse the confidential layer**, and never will until crytic-compile can drive solc
   0.8.36.
-- **It does not start a local production stack from one command.** See `PHASE-8-PREREQUISITES.md`.
+- **It does not prove the Capsule and auditor flow on a public network.** It is local, against a real
+  Nox stack and real unmodified Midnight, on chain 31337.

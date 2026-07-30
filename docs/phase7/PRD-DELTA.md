@@ -136,3 +136,86 @@ card's 32px padding exceeds the viewport and the **document** scrolls horizontal
 `minmax(min(280px, 100%), 1fr)` lets the track collapse to its container. Applied to every
 `auto-fit` grid in the stylesheet, not only the one that was measured failing, because the others
 differ from it by an arbitrary constant.
+
+---
+
+## W-1 · Two gates shared one broken helper, and neither imported it
+
+**Phase 6 and Phase 7 each carried a private copy** of a function that extracted a node:test tally and
+returned it as a **display string**. The gate then reported PASS with that string beside it, so a run
+printing `8 passing, 1 failing` was recorded as a passing gate with its own failure visible in its own
+output.
+
+Eleven lines, duplicated, imported by nothing and checked by nothing. It was found by reading the
+first real Phase 7 run — there was no test that could have caught it, because there was nothing to
+test.
+
+**Fixed in `scripts/lib/tally.ts`**, which returns COUNTS. The summary is rendered from those counts
+rather than being the thing parsed, so no gate can decide an outcome by looking at prose.
+`scripts/lib/tally.test.ts` proves the five rules, including the historical string verbatim.
+
+**Phase 6's recorded evidence is untouched.** Its gate imports the shared helper now, but
+`docs/phase6/GATE.md` stands as written: repairing an instrument is not the same as re-interpreting
+what it measured, and re-running a closed phase is that phase's decision rather than this one's side
+effect. The historical exposure is: any Phase 6 gate row backed by a Hardhat suite could have shown
+PASS beside a failing test. The Capsule, Cross, Roll and attack rows are the ones affected.
+
+---
+
+## W-2 · A permanent absence of coverage is not a skipped check
+
+**Phase 7 shipped** Slither-over-the-confidential-layer as a gate whose `skipIf` always returned a
+reason, so it always reported SKIP.
+
+That reads as "this check is pending". It is not: crytic-compile cannot drive solc 0.8.36 and will not
+start being able to. A skip means *could have run, did not*; this is a permanent, reproduced absence.
+Dressing it as a pending check also made zero skips unreachable, so the run could never report the
+verdict it was supposed to be able to reach.
+
+**Decision:** it is a **standing declaration**, printed before the verdict on every run, outside the
+pass/fail/skip tally. Nothing about it is softer — P7-1 asks that a green gate must not imply the
+layer is analysed, and a line that prints unconditionally does that better than a row in a skip count
+nobody reads twice.
+
+---
+
+## W-3 · IPC does not survive `npx`, and the gateway port had to leave the process somehow
+
+`NOX_HANDLE_GATEWAY_HOST_PORT` is set by the Nox plugin inside the Hardhat process and is invisible
+outside it. The orchestrator has to learn it.
+
+IPC was the first choice and was **measured not to work**: `spawn(..., stdio: [..., "ipc"])` through
+`npx` and the `hardhat` shell wrapper leaves `process.send` undefined in the process that actually
+runs. Two intermediate processes, and the channel does not cross them.
+
+**Decision:** one sentinel-prefixed JSON line on stdout — `@@KYRVE-STACK-READY@@ {…}`. The orchestrator
+matches the prefix and parses the payload; it never reads prose. This is the "JSON line" option rather
+than a fallback to log scraping, and the distinction is that the line exists solely to be parsed.
+
+---
+
+## W-4 · Three teardown defects, each invisible until the run after the one that caused it
+
+All three were found by `pnpm verify:stack`, which starts the stack **twice**. None would have shown
+on a single run.
+
+- **`npx` is an intermediate process.** SIGTERM to the child reaped `npx` and left `vite preview`
+  holding port 4173 with its parent gone. Children now run in their own process groups.
+- **Then group-killing the chain host skipped the plugin's `finally`**, which is what runs
+  `docker compose down`, leaving six containers up. The host is signalled by pid so its own handler
+  runs; the group kill is the escalation after a timeout.
+- **`wrangler dev` is a supervisor.** Killing the `workerd` child it spawned made it start another, so
+  four ports stayed bound after four "killed leftover" lines. The whole group goes, and the sweep
+  recognises `workerd` — a Worker's command line does not mention wrangler at all.
+
+---
+
+## W-5 · Sequential Worker startup, because a race made one service look broken
+
+Four `wrangler dev` processes racing through their first compile contend for CPU, and the keeper —
+heaviest, because it carries a Durable Object and a Workflow — lost and exited 1. The orchestrator
+discarded child output, so the failure was `keeper exited (code 1)` and nothing else.
+
+**Two fixes, and the second matters more.** Workers start one at a time, gated on health. And every
+child's last forty lines are kept, because a child whose failure is unattributable is worse than one
+that fails loudly: the operator's only move is to run it by hand and hope it fails again.
