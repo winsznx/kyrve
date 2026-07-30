@@ -39,11 +39,15 @@
  */
 
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { before, describe, it } from "node:test";
 
+import { handleGatewayUrl } from "@iexec-nox/nox-hardhat-plugin";
+import { NOX_COMPUTE_BY_CHAIN } from "@kyrve/config";
 import { CURVE_RECOMMENDED_CELLS_PER_TRANSACTION, UNIT } from "@kyrve/curve";
 import type { Handle } from "@kyrve/nox";
+import { type Browser, chromium } from "playwright";
 
 import {
   acl,
@@ -84,6 +88,15 @@ import {
 const WAD = 10n ** 18n;
 /** What one TARGET claim unit costs in loan units. A later maturity at a deeper discount. */
 const TARGET_PRICE_WAD = 940_000_000_000_000_000n;
+/** The terminal's dev server, for demonstration 24. */
+const VERIFY_APP_URL = "http://127.0.0.1:5173/";
+/**
+ * Hardhat's standard account 1, which is `holderIndex`. Committed for the same reason
+ * `101-series-browser.ts` commits its pair: these are the published development keys of a local
+ * node and are worthless anywhere else. Kyrve binds every encrypted input to the submitting wallet,
+ * so a browser with no signer cannot stand in for one.
+ */
+const HOLDER_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
 
 /** `KyrveRollBook.IntentState`, in enum order. */
 const INTENT = { None: 0, Open: 1, ResidualDeclared: 2, Completed: 3, Cancelled: 4 } as const;
@@ -110,6 +123,8 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
   let intentId: `0x${string}`;
   let supplyId: `0x${string}`;
   let conversion = 0n;
+  /** The source market's maturity, for demonstration 24's served record. Public: a Market field. */
+  let sourceMaturity = 0n;
   let intentQty = 0n;
   let supplyQty = 0n;
 
@@ -185,6 +200,7 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
       privacyFloor: 2,
       cellsPerChunk: CURVE_RECOMMENDED_CELLS_PER_TRANSACTION,
     });
+    sourceMaturity = BigInt(first.market.maturity);
 
     /**
      * TWO DISJOINT PROVIDER SETS, EACH CAPPED ONTO ONE MARKET.
@@ -488,6 +504,8 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
       }),
     );
     gas.netRoll = String(receipt.gasUsed);
+    // Kept for demonstration 24's served record, which must name a real transaction.
+    gas["netRollTx"] = receipt.transactionHash;
 
     assert.equal(
       await decryptAs(
@@ -816,6 +834,203 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
       opening.targetSupply,
       "and so is the target series'",
     );
+  });
+
+  /**
+   * Demonstration 24: Kyrve Verify in a real browser, over the fixture this suite already built.
+   *
+   * It lives here rather than in its own file because the thing worth verifying is a two-layer
+   * deployment with a live Roll book, and standing that up a second time would double the most
+   * expensive fixture in the repository to test a page.
+   *
+   * WHAT IS ACTUALLY BEING CHECKED. Not that the page renders — that a page which RECOMPUTES
+   * disagrees with a record when the record is wrong. So the served record is deliberately given a
+   * false series id after the honest pass, and the page must turn that row red on its own.
+   */
+  it("24. Kyrve Verify recomputes in Chromium, and disagrees with a record that lies", async () => {
+    // Read from chain and from the registry, never invented. The terminal refuses to start on a
+    // record it cannot parse, which is the correct behaviour and also why a placeholder here would
+    // have surfaced as an empty page rather than as a wrong number.
+    const sourceBinding = (await source.ownership.read.bindingOf([source.quoteId])) as {
+      graphRoot: `0x${string}`;
+    };
+    const sourceGraphRoot = sourceBinding.graphRoot;
+    const nettingTx = (gas["netRollTx"] ?? `0x${"00".repeat(32)}`) as `0x${string}`;
+    const publicRecord = (seriesId: `0x${string}`) => ({
+      environment: "local",
+      chainId: 31337,
+      noxCompute: NOX_COMPUTE_BY_CHAIN[31337],
+      addresses: {
+        KyrveEmergencyController: h.controller.address,
+        TestUnderlyingERC20: h.underlying.address,
+        KyrveWrappedAsset: h.asset.address,
+        KyrveConfidentialAssetVault: h.custody.address,
+        EncryptedMandateBook: h.mandateBook.address,
+        ConfidentialRequestBook: h.requestBook.address,
+      },
+      disclosure:
+        "Kyrve is open-source software integrating an unmodified, source-available Morpho " +
+        "Midnight testnet replica under its applicable non-production licence.",
+      gatewayUrl: handleGatewayUrl(),
+      series: {
+        addresses: {
+          KyrveCustodyVault: h.custody.address,
+          KyrveSeriesToken: source.token.address,
+          SeriesOwnershipRegistry: source.ownership.address,
+          SeriesAllocator: source.allocator.address,
+          AggregateSolvencyVerifier: source.solvency.address,
+          SeriesResidueAccount: source.residue.address,
+        },
+        seriesId,
+        marketId: source.marketId,
+        vault: source.vault.address,
+        loanToken: s.usdc.address,
+        loanTokenSymbol: "tUSDC",
+        loanTokenDecimals: 6,
+        maturity: sourceMaturity.toString(),
+        quoteId: source.quoteId,
+        epochId: source.epoch.epochId,
+        graphRoot: sourceGraphRoot,
+        // Both are rendered as links only. Naming the netting transaction — a real hash on this
+        // chain — rather than a placeholder keeps the record free of invented identifiers.
+        settlementTx: nettingTx,
+        allocationTx: nettingTx,
+        providers: [holder, supplier],
+      },
+      // The Roll book is here and the Cross book is not, so the page must render one row as a real
+      // verdict and the other as "not deployed here" — the third answer that keeps the other two
+      // honest is exercised rather than described.
+      market: {
+        seriesId: source.seriesId,
+        addresses: {
+          KyrveCapsuleVault: source.capsules.address,
+          KyrveRollBook: roll.address,
+        },
+      },
+    });
+
+    const publicDir = new URL("../../apps/web/public/", import.meta.url);
+    const recordPath = new URL("../../apps/web/public/deployment.json", import.meta.url);
+    mkdirSync(publicDir, { recursive: true });
+
+    // No amount may appear in the served record. Every number the page shows is read from chain.
+    const honest = publicRecord(source.seriesId);
+    for (const amount of [opening.sourceSupply, opening.targetSupply, intentQty, supplyQty]) {
+      assert.equal(
+        JSON.stringify(honest).includes(amount.toString()),
+        false,
+        "the served record must carry no amount; the page reads every number from chain state",
+      );
+    }
+    writeFileSync(recordPath, `${JSON.stringify(honest, null, 2)}\n`);
+
+    const vite = spawn("pnpm", ["--filter", "@kyrve/web", "exec", "vite", "--host", "127.0.0.1"], {
+      cwd: new URL("../../", import.meta.url).pathname,
+      stdio: "ignore",
+      detached: false,
+    });
+    let browser: Browser | undefined;
+    try {
+      const deadline = Date.now() + 60_000;
+      for (;;) {
+        try {
+          if ((await fetch(VERIFY_APP_URL)).ok) break;
+        } catch {
+          // not up yet
+        }
+        if (Date.now() > deadline) throw new Error("the terminal's dev server never came up");
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+
+      browser = await chromium.launch();
+      const context = await browser.newContext();
+      await context.addInitScript(
+        ({ key, rpc, gateway }) => {
+          (window as unknown as Record<string, unknown>).__KYRVE_LOCAL_KEY__ = key;
+          (window as unknown as Record<string, unknown>).__KYRVE_RPC_URL__ = rpc;
+          (window as unknown as Record<string, unknown>).__KYRVE_NOX_GATEWAY__ = gateway;
+        },
+        { key: HOLDER_KEY, rpc: "http://127.0.0.1:8545", gateway: handleGatewayUrl() },
+      );
+      const page = await context.newPage();
+      const crashes: string[] = [];
+      page.on("pageerror", (error) => crashes.push(String(error)));
+      page.on("console", (message) => {
+        if (message.type() === "error") crashes.push(message.text());
+      });
+      await page.goto(VERIFY_APP_URL);
+      const bootError = page.getByTestId("boot-error");
+      if ((await bootError.count()) > 0) {
+        throw new Error(`the terminal refused to start: ${await bootError.innerText()}`);
+      }
+      try {
+        await page.getByTestId("verify-band").waitFor({ timeout: 60_000 });
+      } catch (error) {
+        throw new Error(
+          `verify-band never rendered.\nbody: ${(await page.innerText("body")).slice(0, 600)}\n` +
+            `errors:\n${crashes.slice(0, 6).join("\n")}`,
+          { cause: error },
+        );
+      }
+
+      // ── The honest record. Every deployed surface recomputes; the absent one says so. ──────
+      for (const [row, expected] of [
+        ["series-identity", "pass"],
+        ["published-supply", "pass"],
+        ["capsule", "pass"],
+        ["roll", "pass"],
+        ["cross", "unavailable"],
+      ] as const) {
+        const locator = page.getByTestId(`verify-${row}`);
+        await locator.waitFor({ timeout: 60_000 });
+        assert.equal(
+          await locator.getAttribute("data-verdict"),
+          expected,
+          `the ${row} row must report ${expected} against an honest record`,
+        );
+      }
+
+      // The Roll row must have done the arithmetic, not echoed the getter.
+      // `textContent`, not `innerText`: the assertion is about what the component rendered, and
+      // innerText answers what CSS chose to show — which would make a styling change look like a
+      // missing proof.
+      const rollText = (await page.getByTestId("verify-roll").textContent()) ?? "";
+      const expectedConversion = ((await roll.read.conversionWad()) as bigint).toString();
+      assert.match(
+        rollText,
+        /recomputed here/,
+        "the Roll row must show the conversion it recomputed, not only the one the book reported",
+      );
+      assert.ok(
+        rollText.includes(expectedConversion),
+        `the Roll row must display the conversion ${expectedConversion} it recomputed`,
+      );
+
+      // ── The lying record. One field changed; the page must find it on its own. ────────────
+      const forged = `0x${"ab".repeat(32)}` as `0x${string}`;
+      writeFileSync(recordPath, `${JSON.stringify(publicRecord(forged), null, 2)}\n`);
+      await page.reload();
+      await page.getByTestId("verify-band").waitFor({ timeout: 60_000 });
+      const identity = page.getByTestId("verify-series-identity");
+      await identity.waitFor({ timeout: 60_000 });
+      assert.equal(
+        await identity.getAttribute("data-verdict"),
+        "fail",
+        "A PAGE THAT PASSES A RECORD NAMING THE WRONG SERIES IS DISPLAYING THE RECORD, NOT " +
+          "VERIFYING IT. This is the assertion the whole component exists for.",
+      );
+      assert.match(
+        (await identity.textContent()) ?? "",
+        /on chain[\s\S]*in the record/,
+        "a disagreeing row must show BOTH values, so a reader can see which one is wrong",
+      );
+
+      await context.close();
+      writeFileSync(recordPath, `${JSON.stringify(honest, null, 2)}\n`);
+    } finally {
+      await browser?.close();
+      vite.kill("SIGTERM");
+    }
   });
 
   it("records the Roll gas, for the Sepolia budget", () => {
