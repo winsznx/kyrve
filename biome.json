@@ -19,7 +19,7 @@
       "!packages/generated/src",
       "!**/test/fixtures",
       "!source-lock.json",
-      "!apps/web/src/generated/**"
+      "!apps/web/src/generated"
     ]
   },
   "formatter": {
@@ -37,10 +37,7 @@
         "noConsole": {
           "level": "error",
           "options": {
-            "allow": [
-              "error",
-              "warn"
-            ]
+            "allow": ["error", "warn"]
           }
         }
       },
@@ -70,10 +67,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/test/**/*.ts",
-        "**/*.test.ts"
-      ],
+      "includes": ["**/test/**/*.ts", "**/*.test.ts"],
       "linter": {
         "rules": {
           "style": {
@@ -87,9 +81,7 @@
       }
     },
     {
-      "includes": [
-        "scripts/**/*.ts"
-      ],
+      "includes": ["scripts/**/*.ts"],
       "linter": {
         "rules": {
           "suspicious": {
@@ -99,9 +91,7 @@
       }
     },
     {
-      "includes": [
-        "confidential/stack/**/*.ts"
-      ],
+      "includes": ["confidential/stack/**/*.ts"],
       "linter": {
         "rules": {
           "suspicious": {

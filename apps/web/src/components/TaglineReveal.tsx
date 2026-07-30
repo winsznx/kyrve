@@ -78,8 +78,11 @@ export function TaglineReveal({ children, testId }: TaglineRevealProps): ReactEl
     <p className="tagline-reveal" ref={container} data-testid={testId} data-reduced={reduced}>
       {words.map((word, index) => (
         <span
-          // The index is part of the key because a sentence legitimately repeats words, and two
-          // spans keyed on the same text would collapse into one.
+          /*
+             biome-ignore lint/suspicious/noArrayIndexKey: a sentence legitimately repeats words, so
+             the text alone is not a key — "the" appears twice here. The list is a fixed literal that
+             never reorders, which is the case the rule exists to protect against.
+          */
           key={`${word}-${index}`}
           data-word
           data-index={index}
