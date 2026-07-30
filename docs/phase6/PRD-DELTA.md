@@ -159,6 +159,34 @@ Two maturities of the same collateral are markets **0** (`usdc-30d-weth`) and **
 
 ---
 
+## U-7 · A hand-written ABI with the wrong integer width reverts with no reason at all
+
+**Status:** fixed where it bit; the general hazard is recorded. **Severity:** tooling.
+
+`scripts/deploy/universe.ts` declared `createUniverse`'s `cellsPerChunk` as `uint16`. The contract
+declares `uint32`. That is a **different selector**, so the call reached no function on
+`CurveUniverseRegistry` and reverted with no data — which reads exactly like a rejected argument, and
+sent the first diagnosis at the validation logic rather than at the signature.
+
+The same shape appeared twice more in one sitting. `addMarket`'s grid is `int24[]` (signed Midnight
+ticks), not `uint32[]`. And `KyrveRoleRegistry`'s constructor takes `address[7]`, which
+`deployments/*.json` records as a comma-joined string, so `cast abi-encode` stopped at the first
+comma with `expected [` — the first array argument any Kyrve constructor has taken.
+
+**This is a cost of a deliberate choice, not an accident.** Several scripts declare ABI fragments
+inline rather than importing `packages/generated` — `kyrve-verify` most importantly — precisely so a
+generated-ABI regression cannot make a tool agree with a build that no longer matches the chain. The
+price is that a hand-written fragment can be wrong, and a wrong one fails in the least informative
+way the EVM has.
+
+**Required:** any new hand-written fragment is checked against the compiled artifact before it is
+broadcast against, and a revert with no data on a call that should have matched is diagnosed as a
+selector mismatch FIRST. `verify:curve-abi` and `verify:settlement-abi` already do this for the two
+cross-compiler interfaces; the script fragments are not covered and this delta says so rather than
+implying they are.
+
+---
+
 ## Carried forward, still binding
 
 Everything in `docs/phase5/PRD-DELTA.md` remains in force. Three Phase 5 items are exercised again

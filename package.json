@@ -21,6 +21,7 @@
     "deploy:market": "tsx scripts/deploy/market.ts",
     "deploy:sepolia": "tsx scripts/deploy/sepolia.ts",
     "deploy:series": "tsx scripts/deploy/series.ts",
+    "deploy:universe": "tsx scripts/deploy/universe.ts",
     "deploy:settlement": "tsx scripts/deploy/settlement.ts",
     "dust:generate": "tsx scripts/dust/generate.ts",
     "dust:sweep": "tsx scripts/dust/sweep.ts",

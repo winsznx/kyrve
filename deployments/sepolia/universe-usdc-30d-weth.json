@@ -1,0 +1,18 @@
+{
+  "$comment": "One frozen universe on Ethereum Sepolia. Registered by the LEGACY curator — CurveUniverseRegistry is never redeployed and its curator is an immutable set in Phase 3, so Phase 6's separated curator cannot register one. docs/phase6/ROLES.md, rotation.",
+  "chainId": 11155111,
+  "curator": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "gasUsed": "466890",
+  "label": "kyrve-sepolia-usdc-30d-weth-1785399955",
+  "leaves": 2,
+  "marketId": "0x10e4bf7d5d586cee190fcd15c4ba68fd24a9b738068fbac2534568718678196a",
+  "marketKey": "usdc-30d-weth",
+  "registeredAt": "2026-07-30T08:26:38.634Z",
+  "registry": "0x963afe31279dc011f0f20e7b721d60e998cbb346",
+  "ticks": [
+    6000,
+    5968
+  ],
+  "universeId": "0xd8b26dbc47c34f413c28b110e49ccb4ce103ec154a74293ef0b12a4d250f09b2"
+}
+
