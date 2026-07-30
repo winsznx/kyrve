@@ -1,0 +1,80 @@
+{
+  "chainId": 11155111,
+  "compiler": {
+    "bytecodeHash": "none",
+    "divergenceReason": "nox-protocol-contracts 0.2.4 requires ^0.8.35; the Midnight substrate is pinned at 0.8.34 for bytecode comparability. Recorded as Phase 2 delta Q-1.",
+    "divergesFromSubstrate": true,
+    "evmVersion": "osaka",
+    "optimizer": true,
+    "optimizerRuns": 200,
+    "solc": "0.8.36",
+    "viaIR": true
+  },
+  "contracts": {
+    "KyrveCapsuleVault": {
+      "address": "0x488d9d4348e6de9aad8750eda035968f09bfd896",
+      "block": "11381218",
+      "constructorArgs": [
+        "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+        "0xd3cb37a754429601735a16349771482103c5dc40848b51970c4dcec6241163e6",
+        "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+        "0x61fcb2a7623bb15622b1303d0bf819247078f178",
+        "0x4005e7c3deff06f75c757e578c940f0096475ed3",
+        "0x8c804f7a1e358b258041a7a28d8a2dc5c3f3b842",
+        "0xccbea38b0df7fca0fd16164f24900b6490e9d568",
+        "0x4F5a2fE1741d8b1E89F61F08e265Fcc27334266F",
+        "0x417e9cD3ed81EFEDFdd79b30A1971967f72b711c"
+      ],
+      "deploymentTx": "0x9b41a488b52d407c8e378afe8314a6a9f15e54d633a5c6758255cba690df9797",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0x488d9d4348e6de9aad8750eda035968f09bfd896#code",
+      "gasUsed": "1768692",
+      "runtimeHash": "0xb28662fca0e33e4abc3c74d1d17cae511c4c7ac9251b6da1844fc5d9aae22080",
+      "runtimeSize": 7737
+    },
+    "KyrveCrossBook": {
+      "address": "0xbfae69cee2c1a26e213041475bdfcdcb9ca827ad",
+      "block": "11381219",
+      "constructorArgs": [
+        "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+        "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+        "0x61fcb2a7623bb15622b1303d0bf819247078f178",
+        "0xb5a0c841f6b0cea595bc9913e87d2294fe3fc707",
+        "970000000000000000",
+        "25",
+        "0x120477983Fa87F42cB7103172aC62662e015efDF",
+        "0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af",
+        "0x856d03263a96269a599bc7b1f6d6074a0e153da7"
+      ],
+      "deploymentTx": "0x10b9ee0071620bd6a317544b177b7300ccfd4878d1538f608d86bbd8dc35ad05",
+      "explorerUrl": "https://sepolia.etherscan.io/address/0xbfae69cee2c1a26e213041475bdfcdcb9ca827ad#code",
+      "gasUsed": "2621831",
+      "runtimeHash": "0xfbac68d8f96c24b827a5b814c6c6251b89519198ae968cbe9d0aea697534c3c9",
+      "runtimeSize": 11764
+    }
+  },
+  "crossFeeBeneficiary": "0x120477983Fa87F42cB7103172aC62662e015efDF",
+  "crossFeeBps": 25,
+  "crossPriceWad": "970000000000000000",
+  "deployedAt": "2026-07-30T08:06:36.000Z",
+  "deployer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+  "deploymentBlock": "11381220",
+  "deploymentId": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+  "environment": "sepolia",
+  "ethSpent": "0.00444632750161274",
+  "gasUsed": "4436334",
+  "rollTargetPriceWad": "940000000000000000",
+  "scopeNote": "No roll book. `series-b.json` does not exist, so no second series is deployed and no roll is claimed. This is a complete Capsule and Cross deployment, not a partial Roll one.",
+  "seriesId": "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+  "targetSeriesId": null,
+  "wiringVerified": [
+    "KyrveSeriesToken.capsuleVault -> 0x488d9d4348e6de9aad8750eda035968f09bfd896",
+    "KyrveCapsuleVault.SERIES_ID -> 0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+    "KyrveCapsuleVault.DEPLOYMENT_ID -> 0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+    "KyrveCapsuleVault.CURATOR -> 0x417e9cD3ed81EFEDFdd79b30A1971967f72b711c",
+    "KyrveCrossBook.SERIES_ID -> 0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+    "KyrveCrossBook.KEEPER -> 0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af",
+    "KyrveCrossBook.FEE_BENEFICIARY -> 0x120477983Fa87F42cB7103172aC62662e015efDF",
+    "KyrveCrossBook.LOAN_TOKEN -> 0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9"
+  ]
+}
+

@@ -205,9 +205,24 @@ function settlementGradeDraft(label: string, registry: Hex): UniverseDraft {
     }[];
   }>(repoPath("deployments/sepolia/markets.json"));
 
-  // The 90-day WETH market: one collateral leg, the same shape the local harness settles against.
-  const chosen = record.markets.find((entry) => entry.key === "usdc-90d-weth") ?? record.markets[0];
-  if (chosen === undefined) throw new Error("deployments/sepolia/markets.json records no market");
+  /**
+   * WHICH MARKET THIS EPOCH QUOTES INTO.
+   *
+   * The 90-day WETH market by default: one collateral leg, the same shape the local harness settles
+   * against. `KYRVE_MARKET_KEY` selects another, and Phase 6's layer B uses `usdc-30d-weth` — the
+   * SAME collateral at an EARLIER maturity, which is what a roll actually is. Fixture market
+   * `usdc-90d-multi` is a sorted collateral PAIR and is deliberately not reachable this way:
+   * `supplyCollateral` supplies index 0 of whatever the market declares, and pointing an epoch at it
+   * dies inside Midnight naming a balance and not a cause. Delta U-6.
+   */
+  const marketKey = process.env["KYRVE_MARKET_KEY"] ?? "usdc-90d-weth";
+  const chosen = record.markets.find((entry) => entry.key === marketKey);
+  if (chosen === undefined) {
+    throw new Error(
+      `deployments/sepolia/markets.json records no market keyed ${marketKey}. Known keys: ` +
+        record.markets.map((m) => m.key).join(", "),
+    );
+  }
 
   const ticks = [6000, 5968];
   const pricesWad = ticks.map((tick) => tickToPrice(BigInt(tick)));
@@ -327,6 +342,13 @@ async function main(): Promise<void> {
    * modes — providers keep their mandates across the migration and re-grant the new engine (T-8).
    */
   const seriesLayer = process.env["KYRVE_SERIES_LAYER"] === "true";
+  /**
+   * WHICH layer. `KYRVE_SERIES_RECORD=series-b.json` runs this epoch against the SECOND complete
+   * confidential stack — its own custody vault, engine, epoch controller, graph registry and ledger.
+   * A Kyrve deployment serves exactly one series (delta U-1), so a roll needs two, and each needs an
+   * epoch of its own against its own contracts. Defaults to the primary layer.
+   */
+  const seriesRecordName = process.env["KYRVE_SERIES_RECORD"] ?? "series.json";
 
   let curve: {
     readonly CurveUniverseRegistry: Address;
@@ -349,10 +371,10 @@ async function main(): Promise<void> {
       loanToken: Address;
       reused: Record<string, Address>;
       contracts: Record<string, { address: Address }>;
-    }>(repoPath("deployments/sepolia/series.json"));
+    }>(repoPath(`deployments/sepolia/${seriesRecordName}`));
     const at = (name: string): Address => {
       const entry = record.contracts[name];
-      if (entry === undefined) throw new Error(`series.json does not name ${name}`);
+      if (entry === undefined) throw new Error(`${seriesRecordName} does not name ${name}`);
       return entry.address;
     };
     curve = {
@@ -444,7 +466,7 @@ async function main(): Promise<void> {
     maxRateIndexes: [1],
   });
 
-  const label = `kyrve-sepolia-epoch-${Date.now()}`;
+  const label = `kyrve-sepolia-epoch-${process.env["KYRVE_MARKET_KEY"] ?? "usdc-90d-weth"}-${Date.now()}`;
   const draft = settlementUniverse
     ? settlementGradeDraft(label, curve.CurveUniverseRegistry)
     : makeUniverseDraft({
