@@ -178,3 +178,51 @@ balance is the Q-5 mechanism. Delta T-7.
 Run `pnpm verify:phase5`. Read `docs/phase5/PHASE-6-PREREQUISITES.md` before starting Cross, Roll, Capsule
 or Cloudflare — P6-0 records the two PASS conditions this phase did not execute and what stands in their
 place.
+
+## Phase 6 — market operations
+
+Seven operational roles, pulled apart into seven addresses before any value-bearing feature shipped.
+`KyrveRoleRegistry`'s constructor rejects a zero holder and **every duplicate pair**, on chain — separation
+is a deployment-time property, not a modifier someone can forget on one function. `docs/phase6/ROLES.md`
+carries the authority, rotation, loss and compromise story per role; `pnpm roles:reconcile` proves what the
+keys actually **did** by walking receipts, because that is a different claim from what a deploy script
+intended.
+
+Three features live in `confidential/contracts/` at solc 0.8.36: `KyrveCapsuleVault` (frozen selective
+disclosure), `KyrveCrossBook` (confidential secondary transfer) and `KyrveRollBook` (confidential migration
+between maturities). The market layer is its own deployment record because a Roll book cannot exist until a
+**second complete series** does.
+
+Six things that are easy to violate and hard to notice:
+
+- **A roll needs two complete stacks, not two quotes.** `bindSettler` is one-shot and the settler holds its
+  series, token, ownership registry, vault and market as immutables, so one custody vault serves exactly
+  one series — which cascades into a second engine, epoch controller, graph registry, ledger and settlement
+  layer. The first attempt failed with `SettlerAlreadyBound`, the correct refusal, naming nothing about the
+  cause. Delta U-1.
+- **A roll TRANSFERS; it does not burn and mint.** `Nox.mint` and `Nox.burn` are the only operations that
+  touch `confidentialTotalSupply` and both produce a **new handle**, so an unchanged supply handle proves
+  the operation never happened — stronger than an equal plaintext. Delta U-2.
+- **`SupplyState.Open` is public and says nothing about remaining inventory.** A drained supply stays Open
+  forever because the contract cannot say otherwise without leaking a balance, and netting leaves
+  floor-division dust — so even a nonzero escrow may move nothing. Two Sepolia runs netted zero and passed
+  every public check. Delta U-9.
+- **A bare `try/catch` around a simulation proves nothing.** The first complete Sepolia roll reported that
+  over-unwinding a residual was refused; it was refused with `IntentNotOpen` because the intent had already
+  completed and the call never reached the ceiling. Assert every refusal **by decoded error name**, and run
+  the attempt in the window where the defence can actually bind. Delta U-10.
+- **A capsule's expiry stops it asserting, not its recipient decrypting.** Nox has no `removeViewer`. Use
+  "live access ended" / "future snapshots disabled" / "this historical snapshot remains available", never
+  "revoked". Delta U-3.
+- **Two capsules over one balance are ONE handle unless the recipient is mixed into the isolation domain.**
+  Proven by removing the defence: the handles come back byte-identical. Delta R-6 is why the negative was
+  executed rather than assumed.
+
+`KYRVE_EVIDENCE_TAG` threads the layer through every path in `scripts/lib/layer.ts`. A successful layer A
+flow must never silently satisfy a layer B check, and `pnpm verify:phase6` runs `kyrve-verify` for both.
+
+The Slither gate for the confidential layer can only ever SKIP — `crytic-compile` will not drive solc
+0.8.36 (delta U-5). It is reported `UNVERIFIED BY SLITHER` on every run, never as a pass.
+
+Run `pnpm verify:phase6`. Read `docs/phase6/PHASE-7-PREREQUISITES.md` before starting Cloudflare or final
+web work — P7-2 and P7-3 are the two that bite.
