@@ -104,6 +104,73 @@ export function modelMatch(
   };
 }
 
+/**
+ * Deploys a SECOND, independent confidential layer beside the harness's own.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHY THIS HAS TO EXIST, AND WHAT IT DISCOVERED
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * A Kyrve deployment supports exactly ONE series, and nothing before Phase 6 needed to notice.
+ * `KyrveCustodyVault.bindSettler` is one-shot; the settler is a `SeriesAllocator`; a
+ * `SeriesAllocator` holds `SERIES_ID`, `TOKEN`, `OWNERSHIP`, `VAULT` and `MARKET_ID` as immutables.
+ * So a second series needs a second allocator, which needs a second custody vault it can be the
+ * settler of — and `NoxCurveEngine` holds the custody vault as an `immutable`, so a second vault
+ * needs a second engine, and `bindEngine` is one-shot on the epoch controller, the graph registry
+ * and the reservation ledger.
+ *
+ * That is the same cascade `scripts/deploy/series.ts` documents for a new engine, arrived at from
+ * the other direction. Attempting the second series without it fails with
+ * `SettlerAlreadyBound`, which is the correct refusal and says nothing about the cause — this
+ * comment is the cause.
+ *
+ * A roll needs two series, so a roll needs two layers. What they SHARE is deliberate and is what
+ * makes the fixture honest: one emergency controller, one wrapped asset, one mandate book, one
+ * request book, one universe registry and one Midnight substrate. Providers hold their mandates in
+ * the same book and both series redeem in the same loan token, which is what
+ * `KyrveRollBook`'s constructor checks.
+ */
+export async function deployParallelCurveLayer(h: CurveHarness): Promise<CurveHarness> {
+  const asDeployer = { account: h.wallets[ROLE_INDEX.deployer].account };
+
+  const custody = await h.connection.viem.deployContract("KyrveCustodyVault", [
+    h.asset.address,
+    h.controller.address,
+  ]);
+  const epochs = await h.connection.viem.deployContract("QuoteEpochController", [
+    h.universes.address,
+    h.mandateBook.address,
+    h.requestBook.address,
+  ]);
+  const graph = await h.connection.viem.deployContract("CurveGraphRegistry", [epochs.address]);
+  const ledger = await h.connection.viem.deployContract("ReservationLedger", [
+    custody.address,
+    h.controller.address,
+  ]);
+  const engine = await h.connection.viem.deployContract("NoxCurveEngine", [
+    h.universes.address,
+    epochs.address,
+    graph.address,
+    ledger.address,
+    h.mandateBook.address,
+    h.requestBook.address,
+    custody.address,
+    h.controller.address,
+  ]);
+  const verifier = await h.connection.viem.deployContract("CurveResultVerifier", [
+    graph.address,
+    engine.address,
+    epochs.address,
+  ]);
+
+  await mine(h, await epochs.write.bindEngine([engine.address], asDeployer));
+  await mine(h, await graph.write.bindEngine([engine.address], asDeployer));
+  await mine(h, await ledger.write.bindEngine([engine.address], asDeployer));
+  await mine(h, await custody.write.bindReserver([ledger.address], asDeployer));
+
+  return { ...h, custody, epochs, graph, ledger, engine, verifier };
+}
+
 /** Mints public loan tokens to a wallet and wraps them into the confidential asset. */
 export async function fundWrapped(
   h: CurveHarness,
