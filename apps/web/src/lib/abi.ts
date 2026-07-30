@@ -546,3 +546,163 @@ export const MIDNIGHT_SETTLEMENT_ABI = [
     outputs: [{ type: "uint128" }],
   },
 ] as const;
+
+/**
+ * The Phase 5 confidential series claim.
+ *
+ * Only the READ surface, and deliberately so. This page never mints, never burns and never redeems —
+ * `mintClaim` is `onlyAllocator` and `redeem` is a holder action that belongs on a redemption
+ * surface, not on an ownership view. A terminal that could not perform an action cannot be tricked
+ * into performing it.
+ *
+ * `confidentialBalanceOf` returns a HANDLE, never a value. The plaintext exists only after a real
+ * gateway round trip that NoxCompute authorised against the connected wallet, which is what makes
+ * "only its owner can read it" a chain fact rather than a UI convention.
+ */
+export const SERIES_TOKEN_ABI = [
+  {
+    type: "function",
+    name: "confidentialBalanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "publishedSupply",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "redemptionFactorWad",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "SERIES_ID",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "symbol",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "string" }],
+  },
+  {
+    type: "function",
+    name: "decimals",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+  },
+] as const;
+
+/** The provenance a balance cannot carry: which epoch, which sealed root, which lock. */
+export const SERIES_OWNERSHIP_ABI = [
+  {
+    type: "function",
+    name: "bindingOf",
+    stateMutability: "view",
+    inputs: [{ name: "quoteId", type: "bytes32" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "bound", type: "bool" },
+          { name: "closed", type: "bool" },
+          { name: "epochId", type: "bytes32" },
+          { name: "graphRoot", type: "bytes32" },
+          { name: "aggregateFillAmount", type: "uint256" },
+          { name: "allocatedCount", type: "uint32" },
+          { name: "unwoundCount", type: "uint32" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "claimOf",
+    stateMutability: "view",
+    inputs: [
+      { name: "quoteId", type: "bytes32" },
+      { name: "provider", type: "address" },
+    ],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "state", type: "uint8" },
+          { name: "provider", type: "address" },
+          { name: "lockId", type: "bytes32" },
+          { name: "allocatedAt", type: "uint64" },
+          { name: "changedAt", type: "uint64" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "providersOf",
+    stateMutability: "view",
+    inputs: [{ name: "quoteId", type: "bytes32" }],
+    outputs: [{ type: "address[]" }],
+  },
+] as const;
+
+/**
+ * PRD §19.1 as one published bit.
+ *
+ * `latestSnapshot` carries the PUBLIC inputs the verdict was computed from, so the page shows the
+ * numbers as they stood at that block rather than as they are now — a coverage ratio recomputed from
+ * live state beside a verdict computed from an older one would be two claims presented as one.
+ */
+export const SOLVENCY_VERIFIER_ABI = [
+  {
+    type: "function",
+    name: "latestSnapshot",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "blockNumber", type: "uint64" },
+          { name: "takenAt", type: "uint64" },
+          { name: "credit", type: "uint128" },
+          { name: "pendingFee", type: "uint128" },
+          { name: "vaultReserves", type: "uint256" },
+          { name: "residueReserves", type: "uint256" },
+          { name: "publicCoverage", type: "uint256" },
+          { name: "verdictHandle", type: "bytes32" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "function",
+    name: "snapshotCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ type: "uint32" }],
+  },
+  {
+    type: "function",
+    name: "publicCoverage",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "credit", type: "uint128" },
+      { name: "pendingFee", type: "uint128" },
+      { name: "vaultReserves", type: "uint256" },
+      { name: "residueReserves", type: "uint256" },
+      { name: "total", type: "uint256" },
+    ],
+  },
+] as const;

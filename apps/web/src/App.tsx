@@ -27,10 +27,12 @@ import { formatEther, parseUnits } from "viem";
 
 import { BoundaryPreview } from "./components/BoundaryPreview.js";
 import { ConfidentialValue } from "./components/ConfidentialValue.js";
+import { OwnershipBand } from "./components/OwnershipBand.js";
 import { QuoteBand } from "./components/QuoteBand.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "./components/Status.js";
 import { ERC20_ABI, MANDATE_BOOK_ABI, REQUEST_BOOK_ABI, WRAPPED_ASSET_ABI } from "./lib/abi.js";
 import { type Deployment, loadDeployment, noxNetworkFor } from "./lib/deployment.js";
+import type { SeriesDeployment, SeriesRecord } from "./lib/series.js";
 import {
   lock,
   openSession,
@@ -55,6 +57,7 @@ export function App(): React.ReactElement {
   const [deployment, setDeployment] = useState<Deployment>();
   const [session, setSession] = useState<Session>();
   const [bootError, setBootError] = useState<string>();
+  const [disconnected, setDisconnected] = useState(false);
   const [, forceRender] = useState(0);
 
   useEffect(() => subscribe(() => forceRender((n) => n + 1)), []);
@@ -72,6 +75,31 @@ export function App(): React.ReactElement {
       }
     })();
   }, []);
+
+  /**
+   * Ends the session and clears every decrypted value from memory, immediately.
+   *
+   * NOT A REVOCATION, and the interface must never call it one. The wallet keeps every ACL grant it
+   * held — Nox has no `removeAdmin` and no `removeViewer` — so this is a local-display action and the
+   * ownership panel's copy says exactly that. What it does guarantee is that a screenshot taken a
+   * moment later cannot contain a private balance.
+   */
+  const disconnect = useCallback((): void => {
+    lock();
+    setSession(undefined);
+    // Distinct from "not connected yet". Both have no session, and conflating them would show the
+    // boot spinner to someone who had just deliberately ended their session — which reads as a page
+    // reconnecting on its own, the opposite of what disconnecting is for.
+    setDisconnected(true);
+  }, []);
+
+  const reconnect = useCallback(async (): Promise<void> => {
+    if (deployment === undefined) return;
+    setDisconnected(false);
+    const network = noxNetworkFor(deployment, window.__KYRVE_NOX_GATEWAY__ ?? undefined);
+    const rpcUrl = window.__KYRVE_RPC_URL__ ?? "http://127.0.0.1:8545";
+    setSession(await openSession(network, rpcUrl));
+  }, [deployment]);
 
   if (bootError !== undefined) {
     return (
@@ -97,6 +125,41 @@ export function App(): React.ReactElement {
     );
   }
 
+  if (disconnected) {
+    /**
+     * The session ended, and the page says so rather than silently re-connecting.
+     *
+     * Re-opening automatically would make "disconnect" mean "briefly disconnect", and a provider who
+     * clicked it to clear a decrypted balance from the screen would watch it come back. Reconnecting
+     * is an explicit action, and it is the same action as the first connection: `openSession` binds
+     * to whatever wallet the page has, because Kyrve binds every encrypted input to the wallet that
+     * submits it.
+     */
+    return (
+      <main className="page">
+        <header className="masthead">
+          <div>
+            <div className="wordmark">kyrve</div>
+            <div className="tagline">One quote. The curve stays private.</div>
+          </div>
+        </header>
+        <section className="band" data-testid="session-ended">
+          <div className="card">
+            <h3>Session ended</h3>
+            <p className="lede">
+              Every value decrypted in this browser has been cleared from memory. Nothing was
+              revoked — the wallet keeps every grant it held, because Nox has no way to withdraw
+              one. Reconnect to read your own balance again.
+            </p>
+            <button type="button" data-testid="reconnect" onClick={() => void reconnect()}>
+              Reconnect
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   if (deployment === undefined || session === undefined) {
     return (
       <main className="page">
@@ -115,17 +178,20 @@ export function App(): React.ReactElement {
     );
   }
 
-  return <Terminal deployment={deployment} session={session} />;
+  return <Terminal deployment={deployment} session={session} onDisconnect={disconnect} />;
 }
 
 function Terminal({
   deployment,
   session,
+  onDisconnect,
 }: {
   deployment: Deployment;
   session: Session;
+  onDisconnect: () => void;
 }): React.ReactElement {
   const settlement = settlementOf(deployment);
+  const series = seriesOf(deployment);
 
   return (
     <main className="page">
@@ -145,6 +211,9 @@ function Terminal({
       <MandateBand deployment={deployment} session={session} />
       <RequestBand deployment={deployment} session={session} />
       {settlement !== undefined ? <QuoteBand settlement={settlement} session={session} /> : null}
+      {series !== undefined ? (
+        <OwnershipBand series={series} session={session} onDisconnect={onDisconnect} />
+      ) : null}
 
       <section className="band">
         <div className="card">
@@ -168,6 +237,19 @@ function Terminal({
  */
 function settlementOf(deployment: Deployment) {
   return (deployment as SettlementDeployment).settlement;
+}
+
+/**
+ * The confidential-ownership block, or nothing.
+ *
+ * Claims exist only after a quote has settled through Midnight and the allocator has minted against
+ * the credit it created. The band therefore appears when the served record names a real allocated
+ * quote and is absent otherwise — a panel rendered with a placeholder balance would be exactly the
+ * fake metric `.claude/rules/frontend.md` forbids, and in a confidential product it would be a page
+ * confidently displaying ownership nobody holds.
+ */
+function seriesOf(deployment: Deployment): SeriesRecord | undefined {
+  return (deployment as SeriesDeployment).series;
 }
 
 function PrivacyLock(): React.ReactElement {

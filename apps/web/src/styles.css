@@ -381,3 +381,109 @@ th {
   color: var(--color-ivory-text);
   font-weight: var(--weight-w420);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────────────────────
+   The ownership band.
+   
+   Tokens only, no new colour. Cobalt is deliberately ABSENT from this whole section: `design.md`
+   reserves it for the single primary action per page, and an ownership view has no primary action —
+   it reads. Separation comes from the one-step value lift alone, with no shadows.
+   ───────────────────────────────────────────────────────────────────────────────────────────── */
+
+.band-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--card-padding);
+  flex-wrap: wrap;
+}
+
+.band-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--element-gap);
+  color: var(--color-ash-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+/*
+  A fact list, not a table. Every row is one public identifier or one public amount read from chain
+  state, and the value column is monospace because an address a reader might compare by eye must not
+  be kerned into looking like a different address.
+*/
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--element-gap) var(--card-padding);
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+  margin: var(--element-gap) 0 0;
+}
+
+.facts > div {
+  min-width: 0;
+}
+
+.facts dt {
+  color: var(--color-ash-text);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.facts dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  overflow-wrap: anywhere;
+}
+
+.facts dd a {
+  color: var(--color-ivory-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.note {
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+  max-width: 74ch;
+  margin: var(--element-gap) 0 0;
+}
+
+/*
+  The peer probe. Structurally a card like any other: it is a real action against a real gateway, not
+  a warning box, and styling it as an alert would suggest the refusal is an error rather than the
+  correct outcome.
+*/
+.probe {
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+  margin-top: var(--element-gap);
+}
+
+.probe input {
+  background: var(--color-obsidian-button);
+  border: 1px solid var(--color-slate-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-ivory-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  padding: 12px 20px;
+  width: min(100%, 46ch);
+  margin-right: var(--element-gap);
+}
+
+.peers {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--element-gap);
+  padding: 0;
+  margin: var(--element-gap) 0 0;
+}

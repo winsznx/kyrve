@@ -1,0 +1,14 @@
+{
+  "$comment": "Demonstration 13, measured in a real Chromium against the real Nox stack and real unmodified Midnight. Two separate browser contexts, two separate wallet identities. No amount appears in this record for the same reason none appears in the served deployment record: every amount is read from chain state or decrypted in the browser.",
+  "chainId": 31337,
+  "decryptedInBrowser": true,
+  "outsiderRefused": true,
+  "supplyMatchesAggregate": true,
+  "providerCount": 2,
+  "aggregateFillAmount": "499999999",
+  "quoteId": "0xbc7e0ee5f5136f7e8856259ecc350e156e6862779475d83841aab6156f5465c3",
+  "epochId": "0x10c3d0dc222266d65f72a177c34e21b768e028782a7c57b8fb897ff4beade44e",
+  "refusalKind": "not-authorised",
+  "creditUnits": "500000999",
+  "solvency": "verified solvent"
+}
