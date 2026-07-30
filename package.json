@@ -79,6 +79,7 @@
     "verify:phase4": "tsx scripts/phase4/gate.ts",
     "verify:phase5": "tsx scripts/phase5/gate.ts",
     "verify:privacy-scan": "tsx scripts/verify/privacy-scan.ts",
+    "verify:kyrve": "tsx scripts/verify/kyrve-verify.ts",
     "verify:roles": "tsx scripts/verify/roles.ts",
     "verify:secrets": "tsx scripts/verify/secrets.ts",
     "verify:security": "pnpm verify:secrets && pnpm verify:licence && pnpm verify:slither && pnpm audit:deps && pnpm lint:imports && pnpm verify:bundles",

@@ -5,9 +5,9 @@
   "consumeChunk": "1006680",
   "unwrapFunding": "320119",
   "finalizeUnwrap": "76910",
-  "take": "332394",
-  "allocateChunk": "1412311",
-  "closeQuote": "137634",
+  "take": "332370",
+  "allocateChunk": "1412299",
+  "closeQuote": "137622",
   "proveSolvency": "294636",
   "seriesDeployment": "272285"
 }

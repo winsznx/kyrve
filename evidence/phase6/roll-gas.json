@@ -1,10 +1,10 @@
 {
-  "submitIntent": "495522",
-  "supplyTarget": "478726",
-  "netRoll": "871491",
-  "declareResidual": "178139",
-  "settleResidual": "399220",
-  "cancelIntent": "227712",
+  "submitIntent": "495510",
+  "supplyTarget": "478714",
+  "netRoll": "871479",
+  "declareResidual": "178127",
+  "settleResidual": "399196",
+  "cancelIntent": "227700",
   "proveSolvency:source": "294636",
   "proveSolvency:target": "294636"
 }
