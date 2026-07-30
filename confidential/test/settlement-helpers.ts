@@ -50,6 +50,7 @@ import {
   foundryArtifact,
   foundryArtifactAbi,
   mine,
+  ROLE_INDEX,
   SUITE_POLL,
 } from "./helpers.js";
 
@@ -125,8 +126,8 @@ export async function deploySettlement(
   options: { keeperIndex?: number; operatorIndex?: number } = {},
 ): Promise<SettlementHarness> {
   let deploymentGas = 0n;
-  const keeper = h.wallets[options.keeperIndex ?? 9];
-  const operatorWallet = h.wallets[options.operatorIndex ?? 8];
+  const keeper = h.wallets[options.keeperIndex ?? ROLE_INDEX.keeper];
+  const operatorWallet = h.wallets[options.operatorIndex ?? ROLE_INDEX.operator];
   const operator = operatorWallet.account.address as `0x${string}`;
 
   // Reuse the substrate the harness already deployed, when it did. Phase 5 asks for one FIRST,
@@ -191,7 +192,12 @@ export async function deploySettlement(
   const factory = await deployFoundry(
     h,
     "KyrveSeriesFactory",
-    [registry.address, activator.address, expiryController.address, h.wallets[0].account.address],
+    [
+      registry.address,
+      activator.address,
+      expiryController.address,
+      h.wallets[ROLE_INDEX.curator].account.address,
+    ],
     0,
     addGas,
   );
@@ -219,7 +225,7 @@ export async function deploySettlement(
     factory,
     keeper,
     operator,
-    curator: h.wallets[0],
+    curator: h.wallets[ROLE_INDEX.curator],
   };
 }
 

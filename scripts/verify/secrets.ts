@@ -32,6 +32,17 @@ const SENSITIVE = [
   "DUST_PRIVATE_KEY_2",
   "DUST_PRIVATE_KEY_3",
   "ETHERSCAN_API_KEY",
+  // Phase 6 operational role keys (`pnpm roles:generate`). The keeper and the curator sign in
+  // normal operation, so these are live authority rather than funding plumbing: a leaked curator
+  // key can create series and publish the aggregate supply snapshot IRREVERSIBLY. Scanned for
+  // exactly like the deployer key, and listed individually rather than by prefix so a role added
+  // later fails the scan until it is named here.
+  "KYRVE_KEEPER_PRIVATE_KEY",
+  "KYRVE_OPERATOR_PRIVATE_KEY",
+  "KYRVE_CURATOR_PRIVATE_KEY",
+  "KYRVE_GUARDIAN_PRIVATE_KEY",
+  "KYRVE_RESIDUE_PRIVATE_KEY",
+  "KYRVE_AUDITOR_PRIVATE_KEY",
   "CLOUDFLARE_API_TOKEN",
   "CLOUDFLARE_ACCOUNT_ID",
   "NOX_GATEWAY_URL",

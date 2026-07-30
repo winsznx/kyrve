@@ -21,7 +21,7 @@ import type { Handle } from "@kyrve/nox";
 import { getContract } from "viem";
 
 import type { CurveHarness, PollOptions } from "./curve-helpers.js";
-import { clientFor, mine, SUITE_POLL } from "./helpers.js";
+import { clientFor, mine, ROLE_INDEX, SUITE_POLL } from "./helpers.js";
 import { foundryArtifactAbi, type SettlementHarness } from "./settlement-helpers.js";
 
 export interface SeriesLayer {
@@ -73,9 +73,18 @@ export async function deploySeriesLayer(
   },
 ): Promise<SeriesLayer> {
   let deploymentGas = 0n;
-  const curator = h.wallets[0];
-  const keeper = h.wallets[args.keeperIndex ?? 9];
-  const beneficiary = h.wallets[args.beneficiaryIndex ?? 7].account.address as `0x${string}`;
+  /**
+   * THE DEPLOYER AND THE CURATOR ARE DIFFERENT WALLETS FROM PHASE 6.
+   *
+   * Every `bind*` call below is `onlyDeployer`; `setRedemptionFactor` and `publishAggregateSupply`
+   * are `onlyCurator`. Through Phase 5 both were wallet 0, so the suite could not have detected a
+   * contract that gated the wrong one — and it would have passed either way. It cannot now.
+   */
+  const deployerWallet = h.wallets[ROLE_INDEX.deployer];
+  const curator = h.wallets[ROLE_INDEX.curator];
+  const keeper = h.wallets[args.keeperIndex ?? ROLE_INDEX.keeper];
+  const beneficiary = h.wallets[args.beneficiaryIndex ?? ROLE_INDEX.residueBeneficiary].account
+    .address as `0x${string}`;
 
   const record = async (hash: `0x${string}`): Promise<any> => {
     const receipt = await mine(h, hash);
@@ -126,27 +135,20 @@ export async function deploySeriesLayer(
     h.controller.address,
   ]);
 
-  await record(await token.write.bindAllocator([allocator.address], { account: curator.account }));
-  await record(
-    await token.write.bindSolvencyVerifier([solvency.address], { account: curator.account }),
-  );
-  await record(
-    await ownership.write.bindAllocator([allocator.address], { account: curator.account }),
-  );
-  await record(
-    await allocator.write.bindResidueAccount([residue.address], { account: curator.account }),
-  );
+  const asDeployer = { account: deployerWallet.account };
+  await record(await token.write.bindAllocator([allocator.address], asDeployer));
+  await record(await token.write.bindSolvencyVerifier([solvency.address], asDeployer));
+  await record(await ownership.write.bindAllocator([allocator.address], asDeployer));
+  await record(await allocator.write.bindResidueAccount([residue.address], asDeployer));
   // The custody vault's settler. Bound once, to the allocator, and never again — the settler is the
   // only address that can consume a lock, so a mutable one would be an arbitrary-spend surface over
   // every locked balance (threat T-B).
-  await record(
-    await h.custody.write.bindSettler([allocator.address], { account: curator.account }),
-  );
+  await record(await h.custody.write.bindSettler([allocator.address], asDeployer));
 
   const vault = getContract({
     address: args.vaultAddress,
     abi: foundryArtifactAbi("KyrveSeriesVault"),
-    client: { public: h.publicClient, wallet: h.wallets[0] },
+    client: { public: h.publicClient, wallet: h.wallets[ROLE_INDEX.deployer] },
   });
 
   return {

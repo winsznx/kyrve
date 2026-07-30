@@ -662,7 +662,7 @@ describe("Phase 3 attacks: chunk lifecycle, staleness, replay, aliasing and canc
   it("a universe is immutable once activated", async () => {
     const { universeId } = await createUniverse(h, { ...SMALL, label: `frozen-${Date.now()}` });
     await assertRevertsWith(
-      () => h.universes.write.activateUniverse([universeId], { account: h.wallets[0].account }),
+      () => h.universes.write.activateUniverse([universeId], { account: h.curator.account }),
       "UniverseIsActive",
       "an activated universe was activated again",
     );
@@ -684,7 +684,10 @@ describe("Phase 3 attacks: chunk lifecycle, staleness, replay, aliasing and canc
             [4_000],
             [10n ** 17n],
           ],
-          { account: h.wallets[0].account },
+          // AS THE CURATOR. Wallet 0 is the deployer from Phase 6 and would be refused
+          // `NotCurator` here — which would make this test pass for the wrong reason and stop
+          // proving anything about universe immutability.
+          { account: h.curator.account },
         ),
       "UniverseIsActive",
       "a market was added to an activated universe",

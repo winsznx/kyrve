@@ -11,8 +11,8 @@
   "stages": {
     "sealProvider": {
       "calls": 16,
-      "total": 22884328,
-      "max": 1446292
+      "total": 22452168,
+      "max": 1419294
     },
     "sealRequest": {
       "calls": 1,
@@ -51,13 +51,13 @@
     },
     "proveWinner": {
       "calls": 1,
-      "total": 112665,
-      "max": 112665
+      "total": 112653,
+      "max": 112653
     },
     "allocateChunk": {
       "calls": 1,
-      "total": 8439036,
-      "max": 8439036
+      "total": 12667040,
+      "max": 12667040
     },
     "publishAggregate": {
       "calls": 1,
@@ -70,7 +70,7 @@
     "cacheUnit": 468262,
     "finalizeLeaf": 294974,
     "reduceLeaf": 345739,
-    "allocateProvider": 527440
+    "allocateProvider": 791690
   },
   "limits": {
     "transactionGasCeiling": 16777216,

@@ -50,6 +50,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia } from "viem/chains";
 
 import { assertBroadcastArmed, assertNoSecrets, deployer, sepoliaRpc } from "../lib/env.js";
+import { resolveRoles } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 const LOCAL_RPC = "http://127.0.0.1:8545";
@@ -336,17 +337,28 @@ export async function deploySettlement(environment: Environment): Promise<Settle
   }
 
   /**
-   * The keeper, the operator and the curator.
+   * The keeper, the operator and the curator — THREE ADDRESSES, not one.
    *
-   * All three are the deployer in this release, and that is stated rather than hidden. The keeper
-   * activates quotes (which commits the maker's capital), the operator cancels and recovers
-   * funding, and the curator creates series. Separating them is a key-management change, not a
-   * contract change: every one of the three is an immutable constructor argument, so splitting them
-   * is a redeployment away and needs no code.
+   * Through Phase 5 all three were `account.address`, which was stated rather than hidden and was
+   * still the largest unmitigated risk in the deployment: one key could activate quotes (committing
+   * the maker's capital), cancel and recover funding, and create series.
+   *
+   * {resolveRoles} throws before any transport is built if two roles coincide, and
+   * `KyrveRoleRegistry`'s constructor refuses the same set on chain. Both refusals exist because the
+   * off-chain one can be bypassed by deploying by hand.
    */
-  const keeper = account.address;
-  const operator = account.address;
-  const curator = account.address;
+  const roles = resolveRoles(environment, { requireKeys: isSepolia ? ["deployer"] : [] });
+  const keeper = roles.accounts.keeper.address;
+  const operator = roles.accounts.operator.address;
+  const curator = roles.accounts.curator.address;
+
+  if (roles.accounts.deployer.address.toLowerCase() !== account.address.toLowerCase()) {
+    throw new Error(
+      `the resolved deployer role is ${roles.accounts.deployer.address} but this run signs as ` +
+        `${account.address}. A layer whose bind-once functions are gated on an address that is not ` +
+        "the deployer cannot be bound at all.",
+    );
+  }
 
   const registry = await deploy("KyrveQuoteRegistry", [midnight]);
   const ratifier = await deploy("KyrveSettlementRatifier", [midnight, registry]);

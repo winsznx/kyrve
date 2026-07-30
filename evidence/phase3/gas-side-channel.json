@@ -20,20 +20,6 @@
     },
     {
       "group": "no-fill",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "fillable",
-      "finalizeGas": 738942,
-      "accumulateGas": 620355,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "no-fill",
       "finalizeGas": 738942,
       "accumulateGas": 620355,
       "logCount": 35,
@@ -55,43 +41,57 @@
     },
     {
       "group": "fillable",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "no-fill",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "fillable",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "no-fill",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "fillable",
-      "finalizeGas": 738954,
-      "accumulateGas": 620367,
-      "logCount": 35,
-      "quoteReady": true
-    },
-    {
-      "group": "no-fill",
       "finalizeGas": 738942,
       "accumulateGas": 620355,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "fillable",
+      "finalizeGas": 738942,
+      "accumulateGas": 620355,
+      "logCount": 35,
+      "quoteReady": true
+    },
+    {
+      "group": "no-fill",
+      "finalizeGas": 738954,
+      "accumulateGas": 620367,
       "logCount": 35,
       "quoteReady": true
     }

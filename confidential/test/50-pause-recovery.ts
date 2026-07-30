@@ -23,6 +23,7 @@ import {
   type Harness,
   LOCAL_NOX_NETWORK,
   mine,
+  ROLE_INDEX,
   SUITE_POLL,
   sampleMandate,
   sampleRequest,
@@ -45,7 +46,7 @@ describe("Phase 2: emergency pause stops entry and never blocks recovery", () =>
 
   before(async () => {
     h = await deployHarness();
-    guardian = h.wallets[0];
+    guardian = h.wallets[ROLE_INDEX.emergencyAuthority];
     provider = h.wallets[1];
 
     // Put the provider into every position a pause could strand: wrapped tokens, a vault balance,

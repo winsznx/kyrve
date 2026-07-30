@@ -96,6 +96,7 @@ import {
   etherscanApiKey,
   sepoliaRpc,
 } from "../lib/env.js";
+import { describeRoles, resolveRoles, signingKey } from "../lib/roles.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 import { SETTLEMENT_COMPILER } from "./settlement.js";
 
@@ -162,8 +163,11 @@ export interface SeriesDeployment {
   readonly keeper: Address;
   readonly operator: Address;
   readonly curator: Address;
+  readonly emergencyAuthority: Address;
   /** The declared, immutable destination for the funding residue. PRD §19.8. */
   readonly residueBeneficiary: Address;
+  /** The declared Kyrve Capsule recipient. Read-only, and never holds a live balance handle. */
+  readonly auditor: Address;
   readonly deployedAt: string;
   readonly deploymentBlock: string;
   readonly noxCompute: Address;
@@ -235,11 +239,44 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
   const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
   const wallet = createWalletClient({ account, chain, transport: http(rpcUrl) });
 
+  /**
+   * SEVEN ADDRESSES, AND THE RESOLVER REFUSES ANY COLLAPSED PAIR.
+   *
+   * Phase 5 wrote `keeper: account.address, operator: account.address, curator: account.address,
+   * residueBeneficiary: account.address` into the manifest and said so in a comment. That was one
+   * key holding every authority in the layer, and `docs/phase5/PHASE-6-PREREQUISITES.md` P6-0 named
+   * it as the thing to fix before anything held value that mattered.
+   *
+   * The deployer needs the CURATOR's signature to complete this deployment — `createSeries` is
+   * `onlyCurator` — so the separation is exercised by the deployment itself rather than only
+   * declared by it.
+   */
+  const roles = resolveRoles(environment, {
+    requireKeys: isSepolia ? ["deployer", "curator"] : ["deployer", "curator"],
+  });
+  if (roles.accounts.deployer.address.toLowerCase() !== account.address.toLowerCase()) {
+    throw new Error(
+      `the resolved deployer role is ${roles.accounts.deployer.address} but this run signs as ` +
+        `${account.address}. Every bind-once function on this layer is gated on the deployer, so a ` +
+        "mismatch produces a layer that can never be bound.",
+    );
+  }
+  const curatorAccount = privateKeyToAccount(signingKey(roles, "curator"));
+  const curatorWallet = createWalletClient({
+    account: curatorAccount,
+    chain,
+    transport: http(rpcUrl),
+  });
+
   const onChainId = await publicClient.getChainId();
   if (onChainId !== chainId)
     throw new Error(`the RPC is on chain ${onChainId}, expected ${chainId}`);
 
   console.log(`\ndeploy:series — ${environment} — ${redacted}\n`);
+  for (const role of describeRoles(roles)) {
+    console.log(`  ${role.role.padEnd(20)} ${role.address}`);
+  }
+  console.log();
 
   // ── What this builds on, all of it already deployed ────────────────────────────────────────
   const curveRecord = readJson<{
@@ -540,14 +577,17 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     resultVerifier,
     reused["CurveUniverseRegistry"],
     ratifier,
-    account.address,
+    roles.accounts.keeper.address,
   ]);
-  const expiryController = await deploy("KyrveQuoteExpiryController", [registry, account.address]);
+  const expiryController = await deploy("KyrveQuoteExpiryController", [
+    registry,
+    roles.accounts.operator.address,
+  ]);
   const factory = await deploy("KyrveSeriesFactory", [
     registry,
     activator,
     expiryController,
-    account.address,
+    roles.accounts.curator.address,
   ]);
 
   console.log("\n  one-shot bindings (irreversible)");
@@ -601,12 +641,18 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
   })) as Address;
 
   if (seriesVault === "0x0000000000000000000000000000000000000000") {
-    const createHash = await wallet.writeContract({
+    /**
+     * SENT BY THE CURATOR, NOT THE DEPLOYER. `KyrveSeriesFactory.createSeries` is `onlyCurator`, and
+     * from Phase 6 the curator is a different key — so this is the first deployment step the
+     * deployer cannot perform alone. That is the separation working rather than an inconvenience:
+     * bringing a series into existence now needs two keys.
+     */
+    const createHash = await curatorWallet.writeContract({
       address: factory,
       abi: factoryAbi as never,
       functionName: "createSeries" as never,
-      args: [marketId, settlementRecord.loanToken, account.address] as never,
-      account,
+      args: [marketId, settlementRecord.loanToken, roles.accounts.operator.address] as never,
+      account: curatorAccount,
       chain,
     });
     const createReceipt = await publicClient.waitForTransactionReceipt({ hash: createHash });
@@ -657,7 +703,7 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     "",
     seriesId,
     settlementRecord.loanToken,
-    account.address,
+    roles.accounts.curator.address,
     reused["KyrveEmergencyController"],
   ]);
   const ownership = await deploy("SeriesOwnershipRegistry", [
@@ -675,7 +721,7 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     registry,
     seriesVault,
     marketId,
-    account.address,
+    roles.accounts.keeper.address,
     reused["KyrveEmergencyController"],
   ]);
   // The residue account's RECORDER is `immutable` and set here, so the allocator must exist first —
@@ -684,7 +730,7 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
   const residue = await deploy("SeriesResidueAccount", [
     seriesId,
     settlementRecord.loanToken,
-    account.address,
+    roles.accounts.residueBeneficiary.address,
     allocator,
   ]);
   const solvency = await deploy("AggregateSolvencyVerifier", [
@@ -742,7 +788,20 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     { contract: "AggregateSolvencyVerifier", getter: "CUSTODY", expected: custody },
     { contract: "AggregateSolvencyVerifier", getter: "RESIDUE", expected: residue },
     { contract: "SeriesResidueAccount", getter: "RECORDER", expected: allocator },
-    { contract: "SeriesResidueAccount", getter: "DECLARED_BENEFICIARY", expected: account.address },
+    {
+      contract: "SeriesResidueAccount",
+      getter: "DECLARED_BENEFICIARY",
+      expected: roles.accounts.residueBeneficiary.address,
+    },
+    { contract: "QuoteActivator", getter: "KEEPER", expected: roles.accounts.keeper.address },
+    { contract: "SeriesAllocator", getter: "KEEPER", expected: roles.accounts.keeper.address },
+    {
+      contract: "KyrveQuoteExpiryController",
+      getter: "OPERATOR",
+      expected: roles.accounts.operator.address,
+    },
+    { contract: "KyrveSeriesToken", getter: "CURATOR", expected: roles.accounts.curator.address },
+    { contract: "KyrveSeriesFactory", getter: "CURATOR", expected: roles.accounts.curator.address },
   ];
 
   for (const rule of rules) {
@@ -769,10 +828,12 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     environment,
     chainId,
     deployer: account.address,
-    keeper: account.address,
-    operator: account.address,
-    curator: account.address,
-    residueBeneficiary: account.address,
+    keeper: roles.accounts.keeper.address,
+    operator: roles.accounts.operator.address,
+    curator: roles.accounts.curator.address,
+    emergencyAuthority: roles.accounts.emergencyAuthority.address,
+    residueBeneficiary: roles.accounts.residueBeneficiary.address,
+    auditor: roles.accounts.auditor.address,
     deployedAt: new Date(Number(timestamp) * 1000).toISOString(),
     deploymentBlock: block.toString(),
     noxCompute,

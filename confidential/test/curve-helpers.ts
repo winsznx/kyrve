@@ -46,6 +46,7 @@ import {
   type Harness,
   LOCAL_NOX_NETWORK,
   mine,
+  ROLE_INDEX,
   SUITE_POLL,
 } from "./helpers.js";
 
@@ -115,7 +116,10 @@ export async function deployCurveHarness(
   options: { substrate?: boolean } = {},
 ): Promise<CurveHarness> {
   const base = await deployHarness(options);
-  const curator = base.wallets[0];
+  // The curator registers reviewed universes and markets. Wallet 10 from Phase 6 — not the
+  // deployer, and not the guardian. `CurveUniverseRegistry.curator` is immutable, so this address
+  // is fixed for the life of every universe this harness registers.
+  const curator = base.wallets[ROLE_INDEX.curator];
 
   const universes = await base.connection.viem.deployContract("CurveUniverseRegistry", [
     curator.account.address,
@@ -148,15 +152,18 @@ export async function deployCurveHarness(
 
   // One-shot bindings. The three contracts reference the engine and the engine references them, so
   // one side of the cycle cannot be a constructor argument; `bindEngine` reverts forever after.
-  await mine(base, await epochs.write.bindEngine([engine.address], { account: curator.account }));
-  await mine(base, await graph.write.bindEngine([engine.address], { account: curator.account }));
-  await mine(base, await ledger.write.bindEngine([engine.address], { account: curator.account }));
+  //
+  // SENT BY THE DEPLOYER, NOT THE CURATOR. Every one of these is `onlyDeployer`. They read as
+  // `curator.account` through Phase 5 only because the two were the same wallet, and separating
+  // them turned that into a real `NotDeployer` revert on the first run — which is the separation
+  // finding a latent confusion rather than creating one.
+  const asDeployer = { account: base.wallets[ROLE_INDEX.deployer].account };
+  await mine(base, await epochs.write.bindEngine([engine.address], asDeployer));
+  await mine(base, await graph.write.bindEngine([engine.address], asDeployer));
+  await mine(base, await ledger.write.bindEngine([engine.address], asDeployer));
   // The custody vault's reserver. Bound once, to the ledger, and never again — a mutable reserver
   // would be an arbitrary-spend surface over every balance the vault holds (threat T-B).
-  await mine(
-    base,
-    await base.custody.write.bindReserver([ledger.address], { account: curator.account }),
-  );
+  await mine(base, await base.custody.write.bindReserver([ledger.address], asDeployer));
 
   return { ...base, universes, epochs, graph, ledger, engine, verifier, curator };
 }

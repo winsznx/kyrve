@@ -25,6 +25,29 @@ import {
 } from "@kyrve/nox";
 import { getContract } from "viem";
 
+/**
+ * Which local wallet holds which operational role.
+ *
+ * MIRRORS `scripts/lib/roles.ts` `LOCAL_INDEX` EXACTLY, and must keep doing so — the suite and the
+ * deployment scripts derive from the same published Hardhat mnemonic, so a divergence here would
+ * mean the local demonstrations exercise a different role model from the one that gets deployed.
+ *
+ * Everything at index 10 and above is new in Phase 6. Through Phase 5 the curator, the emergency
+ * guardian and the deployer were all wallet 0, so a suite that passed proved nothing about whether
+ * the curator's authority was actually separable from the deployer's. Indices 0-7 stay with the
+ * participants (providers, borrowers, buyers, sellers) so a role key and a user key can never be
+ * the same wallet in a demonstration.
+ */
+export const ROLE_INDEX = {
+  deployer: 0,
+  residueBeneficiary: 7,
+  operator: 8,
+  keeper: 9,
+  curator: 10,
+  emergencyAuthority: 11,
+  auditor: 12,
+} as const;
+
 export const LOCAL_NOX_NETWORK = (): NoxNetwork => ({
   chainId: 31337,
   name: "hardhat-local",
@@ -126,7 +149,10 @@ export async function deployHarness(
   const publicClient = await connection.viem.getPublicClient();
   const wallets = await connection.viem.getWalletClients();
 
-  const guardian = wallets[0].account.address as `0x${string}`;
+  // The emergency authority is NOT the deployer from Phase 6 onward. It can pause protocol entries
+  // and nothing else, and every suite that asserts a recovery path still works under a pause is now
+  // asserting it against a key that cannot also deploy, bind or curate.
+  const guardian = wallets[ROLE_INDEX.emergencyAuthority].account.address as `0x${string}`;
   // The reservation capability belongs to the curve engine and quote activator, which are Phase 3.
   // Until they exist a test wallet holds it, so the safe-reservation mechanism is exercised for
   // real rather than deferred behind an address nobody can call.
