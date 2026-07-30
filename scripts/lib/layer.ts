@@ -43,6 +43,8 @@ export interface LayerPaths {
   readonly epoch: string;
   readonly epochProofs: string;
   readonly settlement: string;
+  /** Where the activated quote id is recorded. Separate from settlement: activation precedes it. */
+  readonly activation: string;
   readonly allocation: string;
   readonly capsule: string;
   readonly cross: string;
@@ -73,6 +75,7 @@ export function layerPaths(): LayerPaths {
       epoch: "evidence/phase5/sepolia-epoch.json",
       epochProofs: "evidence/phase5/sepolia-epoch-proofs.json",
       settlement: "evidence/phase5/sepolia-settlement.json",
+      activation: "evidence/phase5/sepolia-activation.json",
       allocation: "evidence/phase5/sepolia-allocation.json",
       capsule: "evidence/phase6/sepolia-capsule.json",
       cross: "evidence/phase6/sepolia-cross.json",
@@ -92,6 +95,7 @@ export function layerPaths(): LayerPaths {
     epoch: `evidence/phase6/sepolia-epoch${suffix}.json`,
     epochProofs: `evidence/phase6/sepolia-epoch-proofs${suffix}.json`,
     settlement: `evidence/phase6/sepolia-settlement${suffix}.json`,
+    activation: `evidence/phase6/sepolia-activation${suffix}.json`,
     allocation: `evidence/phase6/sepolia-allocation${suffix}.json`,
     capsule: "evidence/phase6/sepolia-capsule.json",
     cross: "evidence/phase6/sepolia-cross.json",

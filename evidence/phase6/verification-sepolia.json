@@ -1,5 +1,5 @@
 {
-  "blockNumber": "11381281",
+  "blockNumber": "11382314",
   "chainId": 11155111,
   "environment": "sepolia",
   "findings": [
@@ -7,8 +7,8 @@
       "detail": "deployment id, Midnight address and chain all agree with the chain",
       "evidence": {
         "chainId": "11155111",
-        "deploymentId (chain)": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
-        "deploymentId (record)": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+        "deploymentId (chain)": "0x86c0e4b0a6eb2dcdc07124cc07d656d701e09228dfcba8e5c2acb44cbc26a67d",
+        "deploymentId (record)": "0x86c0e4b0a6eb2dcdc07124cc07d656d701e09228dfcba8e5c2acb44cbc26a67d",
         "midnight (chain)": "0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7"
       },
       "id": "deployment-identity",
@@ -27,7 +27,7 @@
     {
       "detail": "5 enforced roles are pairwise distinct on chain",
       "evidence": {
-        "KyrveRoleRegistry": "0xe3c19460afc9d37d1e322a1862dc0241cbde3765",
+        "KyrveRoleRegistry": "0x987e8f34e56e49cc9925e12a7d73b38c7cc716be",
         "curator": "0x417e9cD3ed81EFEDFdd79b30A1971967f72b711c",
         "declared holders": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2, 0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af, 0x981bB416b875Ea3Fb68Bb68C0A2aF004F4C1CaBE, 0x417e9cD3ed81EFEDFdd79b30A1971967f72b711c, 0x253645C32B15bF4bb17C457ac8E45d8536aC570D, 0x120477983Fa87F42cB7103172aC62662e015efDF, 0xdE252d52b31EeA91836F4CE6F22f413871d386Ec",
         "deployer": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
@@ -40,64 +40,73 @@
       "title": "the operational roles are separate addresses, on chain"
     },
     {
-      "detail": "the epoch's operation graph is not sealed",
+      "detail": "the graph is sealed, its root matches, and all five published handles are bound to their roles",
       "evidence": {
-        "epochId": "0x760d32611ed96e975f1555808f7f49a4d3c418054de646d85f64f2504571ea42",
-        "graph sealed": "false"
+        "aggregateFill": "0x0000aa36a72301d2b44feb6bd68df1da7c683316573bd0d02f0bb12c96e31b90",
+        "epochId": "0x85771a10b8e599c80f12de842886e7c4582ff96200fc38900ecdb2399bd15e28",
+        "floorPassed": "0x0000aa36a7050145f1527c187257de25c1228d4ea67eb5ddb433e156c5d71b7f",
+        "graph sealed": "true",
+        "graphRoot (chain)": "0xd5186321f675f3babf72fec60e1c3dcd30df202fd93d0102cee265bd3b7f546c",
+        "graphRoot (record)": "0xd5186321f675f3babf72fec60e1c3dcd30df202fd93d0102cee265bd3b7f546c",
+        "marketIndex": "0x0000aa36a705018210e437cb9a8977939f3a3108090763fc0f44d45c67a7f01d",
+        "quoteReady": "0x0000aa36a70501649a57188abe8451ad6fb740b8c54b12b19c0a01c5868c3d93",
+        "rateIndex": "0x0000aa36a705011e6025ef6dab5697bee7dcf3037fb51f7585923cddeb82201b"
       },
       "id": "public-result-proof",
-      "status": "fail",
+      "status": "pass",
       "title": "every published handle is the one the sealed graph registered for its role"
     },
     {
-      "detail": "the registry has never heard of this quote",
+      "detail": "the quote is Consumed, against this series' vault, at the recorded size",
       "evidence": {
-        "exactUnits": "0",
-        "expectedBuyerAssets": "0",
-        "quoteId": "0xf05e7d39495491c591595e71ec2df81336a65c925b759ec0aa1c94ea1dc5b869",
-        "status": "0",
-        "vault": "0x0000000000000000000000000000000000000000"
+        "exactUnits": "300000599",
+        "expectedBuyerAssets": "299999998",
+        "quoteId": "0x74236d47e071f62d06ddac84f82ed439b7b895add8b97b726052626331fefe9e",
+        "status": "2",
+        "vault": "0xcB1ddCd6793016502173eD97dA7fd242dD6eA1fF"
       },
       "id": "quote-activation",
-      "status": "fail",
+      "status": "pass",
       "title": "the quote exists in the registry and is bound to this deployment"
     },
     {
-      "detail": "the registry has never heard of this quote — nothing to compare",
+      "detail": "Midnight's own group accounting agrees with the quote's exact units, to the unit",
       "evidence": {
-        "consumed (Midnight)": "0",
-        "exactUnits (Kyrve)": "0",
-        "quoteId": "0xf05e7d39495491c591595e71ec2df81336a65c925b759ec0aa1c94ea1dc5b869",
-        "status": "0"
+        "consumed (Midnight)": "300000599",
+        "exactUnits (Kyrve)": "300000599",
+        "quoteId": "0x74236d47e071f62d06ddac84f82ed439b7b895add8b97b726052626331fefe9e",
+        "status": "2"
       },
       "id": "exact-settlement",
-      "status": "fail",
+      "status": "pass",
       "title": "Midnight consumed exactly the quoted units, and no more"
     },
     {
-      "detail": "the series has never published its aggregate supply",
+      "detail": "supply is bound to the published aggregate 299999999, over 2 sealed claims",
       "evidence": {
-        "aggregate (ownership binding)": "0",
-        "allocatedCount": "0",
-        "closed": "false",
-        "publishedSupply handle": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        "aggregate (ownership binding)": "299999999",
+        "allocatedCount": "2",
+        "buyer assets": "unknown",
+        "closed": "true",
+        "publishedSupply handle": "0x0000aa36a72301c1d2e63999927d8669116d434bcb696952f3983de7ac36cd4b",
+        "units settled": "300000599"
       },
       "id": "confidential-supply",
-      "status": "fail",
+      "status": "pass",
       "title": "the series' confidential supply is the published aggregate, not the units"
     },
     {
-      "detail": "the series reports zero public coverage",
+      "detail": "public coverage is 300000596, entirely from public terms, over 1 published verdict(s)",
       "evidence": {
-        "midnight credit": "0",
-        "pending fee": "0",
+        "midnight credit": "300000599",
+        "pending fee": "4",
         "residue reserves": "0",
-        "solvency snapshots": "0",
-        "total coverage": "0",
-        "vault reserves": "0"
+        "solvency snapshots": "1",
+        "total coverage": "300000596",
+        "vault reserves": "1"
       },
       "id": "vault-coverage",
-      "status": "fail",
+      "status": "pass",
       "title": "the vault's public Midnight credit covers the confidential claims"
     },
     {
@@ -106,58 +115,53 @@
         "declared beneficiary": "0x120477983Fa87F42cB7103172aC62662e015efDF",
         "held": "0",
         "loan token": "0x0257E18aA1a631864aaF1DCedC6b5741C96A1eF9",
-        "recorder": "0xd19a781eAb8FEcF90E5589192eA8FED7e926A2AA",
+        "recorder": "0xb8960Bb27760915B8e6b6965e10C107E4C511B5D",
         "total distributed": "0",
-        "total recorded": "0",
-        "unsettled": "0"
+        "total recorded": "1",
+        "unsettled": "1"
       },
       "id": "residue-policy",
       "status": "pass",
       "title": "the residue has one declared destination and it cannot be changed"
     },
     {
-      "detail": "every capsule here is bound to this series and this deployment",
-      "evidence": {
-        "capsuleVault": "0x488d9d4348e6de9aad8750eda035968f09bfd896",
-        "capsules issued": "0",
-        "deployment": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
-        "series": "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce"
-      },
+      "detail": "no KyrveCapsuleVault is deployed for this layer yet",
+      "evidence": {},
       "id": "capsule",
-      "status": "pass",
+      "status": "unavailable",
       "title": "capsules are bound to this chain, deployment and series"
     },
     {
-      "detail": "price, fee and beneficiary are immutables readable by anyone",
-      "evidence": {
-        "crossBook": "0xbfae69cee2c1a26e213041475bdfcdcb9ca827ad",
-        "fee (bps)": "25",
-        "fee beneficiary": "0x120477983Fa87F42cB7103172aC62662e015efDF",
-        "orders": "0",
-        "price (wad)": "970000000000000000"
-      },
+      "detail": "no KyrveCrossBook is deployed for this layer yet",
+      "evidence": {},
       "id": "cross",
-      "status": "pass",
+      "status": "unavailable",
       "title": "the Cross book's price, fee and beneficiary are immutable and declared"
     },
     {
-      "detail": "no KyrveRollBook is deployed for this layer yet",
-      "evidence": {},
+      "detail": "the conversion is exactly the two public numbers, recomputed here",
+      "evidence": {
+        "conversion (chain)": "1063831914893624112",
+        "conversion (recomputed)": "1063831914893624112",
+        "rollBook": "0x3c1e083c538ecaba5cd449e4393755dcc8bdfc8e",
+        "source redemption factor": "1000002000000006666",
+        "target price (wad)": "940000000000000000"
+      },
       "id": "roll",
-      "status": "unavailable",
+      "status": "pass",
       "title": "the Roll conversion is reproducible from two public numbers"
     }
   ],
   "proofSemantics": "A Nox decryption proof is an EIP-712 signature by the Nox KMS attesting that a handle decrypts to a value. It is NOT a zero-knowledge proof. validateDecryptionProof is a pure signature check with no ACL, no nonce, no expiry and no caller binding, so a proof is replayable by anyone forever; what binds a value to a computation is the handle registered in CurveGraphRegistry, a capsule, or a Cross or Roll order — checked here BEFORE any signature is considered.",
   "summary": {
-    "exitCode": 1,
-    "failed": 5,
-    "passed": 6,
-    "unavailable": 1,
-    "verdict": "FAIL"
+    "exitCode": 2,
+    "failed": 0,
+    "passed": 10,
+    "unavailable": 2,
+    "verdict": "UNAVAILABLE"
   },
   "tool": "kyrve-verify",
-  "verifiedAt": "2026-07-30T08:19:27.334Z",
+  "verifiedAt": "2026-07-30T11:54:21.280Z",
   "version": 1
 }
 

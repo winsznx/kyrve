@@ -86,6 +86,7 @@
     "verify:phase2": "tsx scripts/phase2/gate.ts",
     "verify:phase3": "tsx scripts/phase3/gate.ts",
     "verify:phase4": "tsx scripts/phase4/gate.ts",
+    "verify:phase6": "tsx scripts/phase6/gate.ts",
     "verify:phase5": "tsx scripts/phase5/gate.ts",
     "verify:privacy-scan": "tsx scripts/verify/privacy-scan.ts",
     "verify:kyrve": "tsx scripts/verify/kyrve-verify.ts",

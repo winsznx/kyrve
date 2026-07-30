@@ -49,6 +49,7 @@ import { type Address, createPublicClient, type Hex, http, keccak256 } from "vie
 import { hardhat, sepolia } from "viem/chains";
 
 import { assertNoSecrets, safeErrorMessage, sepoliaRpc } from "../lib/env.js";
+import { layerPaths } from "../lib/layer.js";
 import { readJson, repoPath, stableStringify } from "../lib/shell.js";
 
 export const EXIT = { PASS: 0, FAIL: 1, UNAVAILABLE: 2, USAGE: 3 } as const;
@@ -179,9 +180,15 @@ async function main(): Promise<void> {
     process.exit(EXIT.USAGE);
   }
 
-  const recordPath = repoPath(`deployments/${environment}/series.json`);
+  // The deployment record follows KYRVE_EVIDENCE_TAG, exactly as the evidence does. Reading layer
+  // A's contracts while checking layer B's epoch would let a passing layer A silently satisfy a
+  // layer B check — the one failure `scripts/lib/layer.ts` exists to prevent.
+  const layerFiles = layerPaths();
+  const recordPath = repoPath(
+    environment === "sepolia" ? layerFiles.deployment : `deployments/${environment}/series.json`,
+  );
   if (!existsSync(recordPath)) {
-    console.error(`\nno deployment record at deployments/${environment}/series.json\n`);
+    console.error(`\nno deployment record at ${recordPath}\n`);
     process.exit(EXIT.UNAVAILABLE);
   }
   const record = readJson<SeriesRecord>(recordPath);
@@ -194,10 +201,24 @@ async function main(): Promise<void> {
   const marketPath = repoPath(`deployments/${environment}/market.json`);
   const market = existsSync(marketPath)
     ? readJson<{
+        seriesId?: Hex;
+        targetSeriesId?: Hex;
         contracts: Record<string, { readonly address: Address }>;
       }>(marketPath)
     : null;
-  const marketAt = (name: string): Address | undefined => market?.contracts[name]?.address;
+
+  /**
+   * The Capsule vault and the Cross book are deployed over ONE series. There is a single
+   * `market.json`, so merging them into whichever layer is being checked would hand layer B layer
+   * A's capsule vault, and the binding check would then correctly report that the vault serves a
+   * different series — a FAIL that means "you attached the wrong contract", not "the binding is
+   * broken". The Roll book spans both by construction and is attached either way.
+   */
+  const ownsMarketLayer =
+    market?.seriesId !== undefined &&
+    market.seriesId.toLowerCase() === record.seriesId.toLowerCase();
+  const marketAt = (name: string): Address | undefined =>
+    name === "KyrveRollBook" || ownsMarketLayer ? market?.contracts[name]?.address : undefined;
   const layer: SeriesRecord = {
     ...record,
     ...(marketAt("KyrveCapsuleVault") === undefined
@@ -497,7 +518,7 @@ async function checkPublicResult(
 ): Promise<Finding> {
   const id = "public-result-proof";
   const title = "every published handle is the one the sealed graph registered for its role";
-  const evidencePath = repoPath(`evidence/phase5/sepolia-epoch.json`);
+  const evidencePath = repoPath(layerPaths().epoch);
   if (environment !== "sepolia" || !existsSync(evidencePath)) {
     return unavailable(id, title, "no recorded epoch to verify against for this environment");
   }
@@ -614,7 +635,7 @@ async function checkActivation(
 ): Promise<Finding> {
   const id = "quote-activation";
   const title = "the quote exists in the registry and is bound to this deployment";
-  const path = repoPath("evidence/phase5/sepolia-activation.json");
+  const path = repoPath(layerPaths().activation);
   if (environment !== "sepolia" || !existsSync(path)) {
     return unavailable(id, title, "no recorded activation to verify against for this environment");
   }
@@ -693,7 +714,7 @@ async function checkSettlement(
 ): Promise<Finding> {
   const id = "exact-settlement";
   const title = "Midnight consumed exactly the quoted units, and no more";
-  const path = repoPath("evidence/phase5/sepolia-activation.json");
+  const path = repoPath(layerPaths().activation);
   if (environment !== "sepolia" || !existsSync(path)) {
     return unavailable(id, title, "no recorded settlement to verify against for this environment");
   }
@@ -794,7 +815,7 @@ async function checkSupply(
 ): Promise<Finding> {
   const id = "confidential-supply";
   const title = "the series' confidential supply is the published aggregate, not the units";
-  const path = repoPath("evidence/phase5/sepolia-activation.json");
+  const path = repoPath(layerPaths().activation);
   const ownership = record.contracts["SeriesOwnershipRegistry"];
   const token = record.contracts["KyrveSeriesToken"];
   if (ownership === undefined || token === undefined) {
