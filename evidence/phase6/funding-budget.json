@@ -1,0 +1,500 @@
+{
+  "$comment": "Append-only funding predictions for the Phase 6 Sepolia sequence, attributed PER ROLE. Earlier samples are never edited: a prediction quietly corrected after execution is not a prediction, and the point is to learn the safety multiplier from real public samples.",
+  "samples": [
+    {
+      "actualCostEth": null,
+      "baseFeePerGasWei": "1033601270",
+      "components": [
+        {
+          "gas": 490066,
+          "kind": "estimated",
+          "name": "KyrveRoleRegistry",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode and the real seven role addresses"
+        },
+        {
+          "gas": 1783909,
+          "kind": "estimated",
+          "name": "KyrveCapsuleVault",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode, Phase 5 contracts standing in"
+        },
+        {
+          "gas": 2643806,
+          "kind": "estimated",
+          "name": "KyrveCrossBook",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode and the real declared price and fee"
+        },
+        {
+          "gas": 2643806,
+          "kind": "estimated",
+          "name": "KyrveRollBook",
+          "payer": "deployer",
+          "source": "bounded by KyrveCrossBook's live eth_estimateGas — the roll book's constructor refuses SameSeries so it cannot be estimated before a second series token exists, and its runtime is 447 bytes SMALLER, so this over-states"
+        },
+        {
+          "gas": 28318988,
+          "kind": "measured",
+          "name": "layer A: the role-separated series layer, 18 contracts and 12 bindings",
+          "payer": "deployer",
+          "source": "evidence/phase5/GATE.md — the Phase 5 Sepolia deployment, executed"
+        },
+        {
+          "gas": 26931546,
+          "kind": "measured",
+          "name": "layer A: provider funding, mandates, ACL grants and one full confidential epoch",
+          "payer": "deployer",
+          "source": "evidence/phase5/funding-budget.json — the deployer stands in for providers and the borrower on a public network, so this is its cost rather than the keeper's"
+        },
+        {
+          "gas": 4284765,
+          "kind": "measured",
+          "name": "layer A: activation, one exact Midnight take, allocation, close, solvency",
+          "payer": "keeper",
+          "source": "evidence/phase5/funding-budget.json — the keeper's own transactions"
+        },
+        {
+          "gas": 1936085,
+          "kind": "measured",
+          "name": "layer A: universe checks and createSeries",
+          "payer": "curator",
+          "source": "evidence/phase5/funding-budget.json — createSeries is onlyCurator from Phase 6"
+        },
+        {
+          "gas": 816394,
+          "kind": "measured",
+          "name": "Capsule: one ownership capsule and one public capsule",
+          "payer": "curator",
+          "source": "evidence/phase6/capsule-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 3032766,
+          "kind": "measured",
+          "name": "Cross: submit, submit, match, cancel, publish, settle residual",
+          "payer": "keeper",
+          "source": "evidence/phase6/cross-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 28318988,
+          "kind": "measured",
+          "name": "layer B: a SECOND complete layer, for the smallest coherent Roll",
+          "payer": "deployer",
+          "source": "delta U-1 — one custody vault serves one series, so a roll needs a second complete layer. Same shape as layer A, so the same measured figure"
+        },
+        {
+          "gas": 26931546,
+          "kind": "measured",
+          "name": "layer B: providers, mandates, grants and a second confidential epoch",
+          "payer": "deployer",
+          "source": "the same Phase 5 measurement — a second epoch is not cheaper than the first"
+        },
+        {
+          "gas": 4284765,
+          "kind": "measured",
+          "name": "layer B: activation, take, allocation, close",
+          "payer": "keeper",
+          "source": "evidence/phase5/funding-budget.json"
+        },
+        {
+          "gas": 2000000,
+          "kind": "measured",
+          "name": "layer B: createSeries and the source redemption factor",
+          "payer": "curator",
+          "source": "createSeries measured, plus setRedemptionFactor which the roll conversion needs"
+        },
+        {
+          "gas": 2650810,
+          "kind": "measured",
+          "name": "Roll: intent, supply, net, declare, settle, cancel",
+          "payer": "keeper",
+          "source": "evidence/phase6/roll-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 400000,
+          "kind": "measured",
+          "name": "recovery paths: one cancel and one recoverFunding",
+          "payer": "operator",
+          "source": "evidence/phase4 — exercised so the operator's authority is proven, not assumed"
+        }
+      ],
+      "effectiveGasPriceWei": "1035101270",
+      "estimatedGas": 137468240,
+      "funded": false,
+      "perRole": [
+        {
+          "balanceEth": "0.164292994276565896",
+          "funded": false,
+          "gas": 118062655,
+          "requiredEth": "0.164979185575596997",
+          "role": "deployer",
+          "shortfallEth": "0.000686191299031101"
+        },
+        {
+          "balanceEth": "0.0297867694113",
+          "funded": true,
+          "gas": 14253106,
+          "requiredEth": "0.019917100964760237",
+          "role": "keeper",
+          "shortfallEth": "0"
+        },
+        {
+          "balanceEth": "0.00676972032075",
+          "funded": true,
+          "gas": 4752479,
+          "requiredEth": "0.006641051015540245",
+          "role": "curator",
+          "shortfallEth": "0"
+        },
+        {
+          "balanceEth": "0.0027078881283",
+          "funded": true,
+          "gas": 400000,
+          "requiredEth": "0.0005589546858",
+          "role": "operator",
+          "shortfallEth": "0"
+        }
+      ],
+      "phase": "phase6",
+      "predictedCostEth": "0.1422935498086648",
+      "predictedCostWithMarginEth": "0.19209629224169748",
+      "predictionErrorPercent": null,
+      "priorityFeePerGasWei": "1500000",
+      "recordedAt": "2026-07-30T07:38:49.784Z",
+      "safetyMargin": 0.35,
+      "scope": "The smallest real coherent public proof: role registry, Capsule, Cross and Roll deployed and verified; one real Capsule; one real Cross match; one minimal Roll across TWO real series, each with its own complete confidential issuance stack. No production-scale throughput is claimed and no part of the second series is simulated."
+    },
+    {
+      "actualCostEth": null,
+      "baseFeePerGasWei": "1067381497",
+      "components": [
+        {
+          "gas": 490066,
+          "kind": "estimated",
+          "name": "KyrveRoleRegistry",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode and the real seven role addresses"
+        },
+        {
+          "gas": 1783909,
+          "kind": "estimated",
+          "name": "KyrveCapsuleVault",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode, Phase 5 contracts standing in"
+        },
+        {
+          "gas": 2643806,
+          "kind": "estimated",
+          "name": "KyrveCrossBook",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode and the real declared price and fee"
+        },
+        {
+          "gas": 2643806,
+          "kind": "estimated",
+          "name": "KyrveRollBook",
+          "payer": "deployer",
+          "source": "bounded by KyrveCrossBook's live eth_estimateGas — the roll book's constructor refuses SameSeries so it cannot be estimated before a second series token exists, and its runtime is 447 bytes SMALLER, so this over-states"
+        },
+        {
+          "gas": 28318988,
+          "kind": "measured",
+          "name": "layer A: the role-separated series layer, 18 contracts and 12 bindings",
+          "payer": "deployer",
+          "source": "evidence/phase5/GATE.md — the Phase 5 Sepolia deployment, executed"
+        },
+        {
+          "gas": 26931546,
+          "kind": "measured",
+          "name": "layer A: provider funding, mandates, ACL grants and one full confidential epoch",
+          "payer": "deployer",
+          "source": "evidence/phase5/funding-budget.json — the deployer stands in for providers and the borrower on a public network, so this is its cost rather than the keeper's"
+        },
+        {
+          "gas": 4284765,
+          "kind": "measured",
+          "name": "layer A: activation, one exact Midnight take, allocation, close, solvency",
+          "payer": "keeper",
+          "source": "evidence/phase5/funding-budget.json — the keeper's own transactions"
+        },
+        {
+          "gas": 1936085,
+          "kind": "measured",
+          "name": "layer A: universe checks and createSeries",
+          "payer": "curator",
+          "source": "evidence/phase5/funding-budget.json — createSeries is onlyCurator from Phase 6"
+        },
+        {
+          "gas": 816394,
+          "kind": "measured",
+          "name": "Capsule: one ownership capsule and one public capsule",
+          "payer": "curator",
+          "source": "evidence/phase6/capsule-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 3032766,
+          "kind": "measured",
+          "name": "Cross: submit, submit, match, cancel, publish, settle residual",
+          "payer": "keeper",
+          "source": "evidence/phase6/cross-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 28318988,
+          "kind": "measured",
+          "name": "layer B: a SECOND complete layer, for the smallest coherent Roll",
+          "payer": "deployer",
+          "source": "delta U-1 — one custody vault serves one series, so a roll needs a second complete layer. Same shape as layer A, so the same measured figure"
+        },
+        {
+          "gas": 26931546,
+          "kind": "measured",
+          "name": "layer B: providers, mandates, grants and a second confidential epoch",
+          "payer": "deployer",
+          "source": "the same Phase 5 measurement — a second epoch is not cheaper than the first"
+        },
+        {
+          "gas": 4284765,
+          "kind": "measured",
+          "name": "layer B: activation, take, allocation, close",
+          "payer": "keeper",
+          "source": "evidence/phase5/funding-budget.json"
+        },
+        {
+          "gas": 2000000,
+          "kind": "measured",
+          "name": "layer B: createSeries and the source redemption factor",
+          "payer": "curator",
+          "source": "createSeries measured, plus setRedemptionFactor which the roll conversion needs"
+        },
+        {
+          "gas": 2650810,
+          "kind": "measured",
+          "name": "Roll: intent, supply, net, declare, settle, cancel",
+          "payer": "keeper",
+          "source": "evidence/phase6/roll-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 400000,
+          "kind": "measured",
+          "name": "recovery paths: one cancel and one recoverFunding",
+          "payer": "operator",
+          "source": "evidence/phase4 — exercised so the operator's authority is proven, not assumed"
+        }
+      ],
+      "effectiveGasPriceWei": "1068881497",
+      "estimatedGas": 137468240,
+      "funded": false,
+      "perRole": [
+        {
+          "balanceEth": "0.177302269018807077",
+          "funded": true,
+          "gas": 118062655,
+          "requiredEth": "0.170363233011862622",
+          "role": "deployer",
+          "shortfallEth": "0"
+        },
+        {
+          "balanceEth": "0.01918634325377965",
+          "funded": false,
+          "gas": 14253106,
+          "requiredEth": "0.02056708972554257",
+          "role": "keeper",
+          "shortfallEth": "0.00138074647176292"
+        },
+        {
+          "balanceEth": "0.006397391094992169",
+          "funded": false,
+          "gas": 4752479,
+          "requiredEth": "0.006857779771774435",
+          "role": "curator",
+          "shortfallEth": "0.000460388676782266"
+        },
+        {
+          "balanceEth": "0.00053844665868",
+          "funded": false,
+          "gas": 400000,
+          "requiredEth": "0.00057719600838",
+          "role": "operator",
+          "shortfallEth": "0.0000387493497"
+        }
+      ],
+      "phase": "phase6",
+      "predictedCostEth": "0.14693725816115528",
+      "predictedCostWithMarginEth": "0.198365298517559628",
+      "predictionErrorPercent": null,
+      "priorityFeePerGasWei": "1500000",
+      "recordedAt": "2026-07-30T07:42:01.638Z",
+      "safetyMargin": 0.35,
+      "scope": "The smallest real coherent public proof: role registry, Capsule, Cross and Roll deployed and verified; one real Capsule; one real Cross match; one minimal Roll across TWO real series, each with its own complete confidential issuance stack. No production-scale throughput is claimed and no part of the second series is simulated."
+    },
+    {
+      "actualCostEth": null,
+      "baseFeePerGasWei": "1000270305",
+      "components": [
+        {
+          "gas": 490066,
+          "kind": "estimated",
+          "name": "KyrveRoleRegistry",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode and the real seven role addresses"
+        },
+        {
+          "gas": 1783909,
+          "kind": "estimated",
+          "name": "KyrveCapsuleVault",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode, Phase 5 contracts standing in"
+        },
+        {
+          "gas": 2643806,
+          "kind": "estimated",
+          "name": "KyrveCrossBook",
+          "payer": "deployer",
+          "source": "eth_estimateGas against Sepolia, real bytecode and the real declared price and fee"
+        },
+        {
+          "gas": 2643806,
+          "kind": "estimated",
+          "name": "KyrveRollBook",
+          "payer": "deployer",
+          "source": "bounded by KyrveCrossBook's live eth_estimateGas — the roll book's constructor refuses SameSeries so it cannot be estimated before a second series token exists, and its runtime is 447 bytes SMALLER, so this over-states"
+        },
+        {
+          "gas": 28318988,
+          "kind": "measured",
+          "name": "layer A: the role-separated series layer, 18 contracts and 12 bindings",
+          "payer": "deployer",
+          "source": "evidence/phase5/GATE.md — the Phase 5 Sepolia deployment, executed"
+        },
+        {
+          "gas": 26931546,
+          "kind": "measured",
+          "name": "layer A: provider funding, mandates, ACL grants and one full confidential epoch",
+          "payer": "deployer",
+          "source": "evidence/phase5/funding-budget.json — the deployer stands in for providers and the borrower on a public network, so this is its cost rather than the keeper's"
+        },
+        {
+          "gas": 4284765,
+          "kind": "measured",
+          "name": "layer A: activation, one exact Midnight take, allocation, close, solvency",
+          "payer": "keeper",
+          "source": "evidence/phase5/funding-budget.json — the keeper's own transactions"
+        },
+        {
+          "gas": 1936085,
+          "kind": "measured",
+          "name": "layer A: universe checks and createSeries",
+          "payer": "curator",
+          "source": "evidence/phase5/funding-budget.json — createSeries is onlyCurator from Phase 6"
+        },
+        {
+          "gas": 816394,
+          "kind": "measured",
+          "name": "Capsule: one ownership capsule and one public capsule",
+          "payer": "curator",
+          "source": "evidence/phase6/capsule-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 3032766,
+          "kind": "measured",
+          "name": "Cross: submit, submit, match, cancel, publish, settle residual",
+          "payer": "keeper",
+          "source": "evidence/phase6/cross-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 28318988,
+          "kind": "measured",
+          "name": "layer B: a SECOND complete layer, for the smallest coherent Roll",
+          "payer": "deployer",
+          "source": "delta U-1 — one custody vault serves one series, so a roll needs a second complete layer. Same shape as layer A, so the same measured figure"
+        },
+        {
+          "gas": 26931546,
+          "kind": "measured",
+          "name": "layer B: providers, mandates, grants and a second confidential epoch",
+          "payer": "deployer",
+          "source": "the same Phase 5 measurement — a second epoch is not cheaper than the first"
+        },
+        {
+          "gas": 4284765,
+          "kind": "measured",
+          "name": "layer B: activation, take, allocation, close",
+          "payer": "keeper",
+          "source": "evidence/phase5/funding-budget.json"
+        },
+        {
+          "gas": 2000000,
+          "kind": "measured",
+          "name": "layer B: createSeries and the source redemption factor",
+          "payer": "curator",
+          "source": "createSeries measured, plus setRedemptionFactor which the roll conversion needs"
+        },
+        {
+          "gas": 2650810,
+          "kind": "measured",
+          "name": "Roll: intent, supply, net, declare, settle, cancel",
+          "payer": "keeper",
+          "source": "evidence/phase6/roll-gas.json — measured against the real Nox stack"
+        },
+        {
+          "gas": 400000,
+          "kind": "measured",
+          "name": "recovery paths: one cancel and one recoverFunding",
+          "payer": "operator",
+          "source": "evidence/phase4 — exercised so the operator's authority is proven, not assumed"
+        }
+      ],
+      "effectiveGasPriceWei": "1001770305",
+      "estimatedGas": 137468240,
+      "funded": true,
+      "perRole": [
+        {
+          "balanceEth": "0.167635593721034903",
+          "funded": true,
+          "gas": 118062655,
+          "requiredEth": "0.159666743576420696",
+          "role": "deployer",
+          "shortfallEth": "0"
+        },
+        {
+          "balanceEth": "0.026236406870279754",
+          "funded": true,
+          "gas": 14253106,
+          "requiredEth": "0.019275756765503395",
+          "role": "keeper",
+          "shortfallEth": "0"
+        },
+        {
+          "balanceEth": "0.008748126386379239",
+          "funded": true,
+          "gas": 4752479,
+          "requiredEth": "0.006427204655403728",
+          "role": "curator",
+          "shortfallEth": "0"
+        },
+        {
+          "balanceEth": "0.00073630005615",
+          "funded": true,
+          "gas": 400000,
+          "requiredEth": "0.0005409559647",
+          "role": "operator",
+          "shortfallEth": "0"
+        }
+      ],
+      "phase": "phase6",
+      "predictedCostEth": "0.1377116007126132",
+      "predictedCostWithMarginEth": "0.18591066096202782",
+      "predictionErrorPercent": null,
+      "priorityFeePerGasWei": "1500000",
+      "recordedAt": "2026-07-30T07:43:38.350Z",
+      "safetyMargin": 0.35,
+      "scope": "The smallest real coherent public proof: role registry, Capsule, Cross and Roll deployed and verified; one real Capsule; one real Cross match; one minimal Roll across TWO real series, each with its own complete confidential issuance stack. No production-scale throughput is claimed and no part of the second series is simulated."
+    }
+  ],
+  "standIns": [
+    "KyrveCapsuleVault, KyrveCrossBook: the deployed Phase 5 series contracts stand in for the ones a Phase 6 layer will deploy; every argument is an address or a bytes32 either way",
+    "KyrveRollBook: NOT estimated. Its constructor refuses SameSeries, so the single series token on chain cannot stand in for both sides and eth_estimateGas fails rather than returning a number. Bounded by KyrveCrossBook's live estimate, which over-states by 447 runtime bytes",
+    "KyrveRoleRegistry: the seven real role addresses, which is not a stand-in at all"
+  ]
+}
+

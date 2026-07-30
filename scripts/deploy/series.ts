@@ -130,6 +130,9 @@ const SETTLEMENT = [
   "QuoteActivator",
   "KyrveQuoteExpiryController",
   "KyrveSeriesFactory",
+  // Phase 6. Declares this layer's seven role holders on chain, and its constructor refuses to
+  // exist unless they are seven distinct addresses. Foundry-built: it imports nothing from Nox.
+  "KyrveRoleRegistry",
 ] as const;
 
 type ConfidentialContract = (typeof CONFIDENTIAL)[number];
@@ -178,6 +181,8 @@ export interface SeriesDeployment {
   readonly seriesId: Hex;
   readonly seriesVault: Address;
   readonly deploymentId: Hex;
+  /** The on-chain declaration of this layer's seven role holders. Phase 6. */
+  readonly roleRegistry: Address;
   /** Reused, not redeployed. Each is still Etherscan-verified from an earlier phase. */
   readonly reused: Readonly<Record<string, Address>>;
   /** Superseded by this deployment, and still on chain. */
@@ -222,8 +227,31 @@ function isSettlement(name: Contract): name is SettlementContract {
   return (SETTLEMENT as readonly string[]).includes(name);
 }
 
-export async function deploySeries(environment: Environment): Promise<SeriesDeployment> {
+/**
+ * Options that make a SECOND, independent layer deployable.
+ *
+ * Delta [U-1](../../docs/phase6/PRD-DELTA.md): a Kyrve deployment serves exactly one series, because
+ * `KyrveCustodyVault.bindSettler` is one-shot and its settler is a `SeriesAllocator` whose series,
+ * token, ownership registry, vault and market are all immutables. A Roll spans two series, so it
+ * needs two complete layers — and this run has to be able to produce the second one without
+ * overwriting the record describing the first.
+ */
+export interface SeriesDeployOptions {
+  /** Which universe to quote into. Defaults to the one the phase record names. */
+  readonly universeId?: Hex;
+  /**
+   * Record suffix. `undefined` writes `series.json`; `"b"` writes `series-b.json` and keeps its own
+   * resume file, so the two layers never share progress state.
+   */
+  readonly suffix?: string;
+}
+
+export async function deploySeries(
+  environment: Environment,
+  options: SeriesDeployOptions = {},
+): Promise<SeriesDeployment> {
   const isSepolia = environment === "sepolia";
+  const suffix = options.suffix === undefined ? "" : `-${options.suffix}`;
   const chain = isSepolia ? sepolia : hardhat;
   const chainId = isSepolia ? 11_155_111 : 31_337;
   const explorer = isSepolia ? "https://sepolia.etherscan.io" : null;
@@ -339,7 +367,7 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
    * Gitignored on purpose. It exists so a run that fails after a broadcast can be finished instead of
    * repaid, and `series.json` remains the only record anything else reads.
    */
-  const rawPath = repoPath(`deployments/${environment}/.raw-deployment.json`);
+  const rawPath = repoPath(`deployments/${environment}/.raw-deployment${suffix}.json`);
   const raw: { addresses: Record<string, Address>; seriesVault?: Address } = existsSync(rawPath)
     ? readJson(rawPath)
     : { addresses: {} };
@@ -607,6 +635,23 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     functionName: "DEPLOYMENT_ID",
   })) as Hex;
 
+  /**
+   * THE ROLE DECLARATION, AND IT IS A CHECK RATHER THAN A NOTE.
+   *
+   * `KyrveRoleRegistry`'s constructor reverts `DuplicateRoleHolder(first, second, holder)` on any
+   * collapsed pair, so a deployment that reused one key for two roles cannot produce this contract
+   * at all. `resolveRoles` already refused the same set before a transport was built; both exist
+   * because the off-chain refusal can be bypassed by deploying by hand and this one cannot.
+   *
+   * Deployed AFTER the quote registry because it binds to that registry's `DEPLOYMENT_ID`, so a
+   * role table can never be read against the wrong layer.
+   */
+  const roleRegistry = await deploy("KyrveRoleRegistry", [
+    deploymentId,
+    BigInt(chainId),
+    roles.holders,
+  ]);
+
   // ── 3. The series vault, created before the contracts that read it ─────────────────────────
   //
   // `SeriesAllocator` checks `vault.SERIES_ID()` against its own series id and
@@ -617,6 +662,7 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     publicClient,
     reused["CurveUniverseRegistry"] as Address,
     environment,
+    options.universeId,
   );
   const factoryAbi = settlementArtifact("KyrveSeriesFactory").abi;
   const seriesId = (await publicClient.readContract({
@@ -844,6 +890,7 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
     seriesId,
     seriesVault,
     deploymentId,
+    roleRegistry,
     reused,
     superseded,
     contracts,
@@ -857,14 +904,14 @@ export async function deploySeries(environment: Environment): Promise<SeriesDepl
   };
 
   const payload = `${stableStringify(deployment)}\n`;
-  assertNoSecrets(payload, `deployments/${environment}/series.json`);
+  assertNoSecrets(payload, `deployments/${environment}/series${suffix}.json`);
   mkdirSync(repoPath(`deployments/${environment}`), { recursive: true });
-  writeFileSync(repoPath(`deployments/${environment}/series.json`), payload);
+  writeFileSync(repoPath(`deployments/${environment}/series${suffix}.json`), payload);
 
   console.log(`\n  ${deployment.contractCreationGas} gas of contract creations`);
   console.log(`  ${gasUsed} gas broadcast by this run, ${deployment.ethSpentThisRun} ETH`);
   console.log(`  balance   ${formatEther(balanceAfter)} ETH remaining`);
-  console.log(`  recorded in deployments/${environment}/series.json\n`);
+  console.log(`  recorded in deployments/${environment}/series${suffix}.json\n`);
   return deployment;
 }
 
@@ -889,7 +936,14 @@ async function resolveMarketId(
   client: ReturnType<typeof createPublicClient>,
   universes: Address,
   environment: Environment,
+  override?: Hex,
 ): Promise<{ universeId: Hex; marketId: Hex }> {
+  if (override !== undefined) {
+    // A second layer quotes into a universe registered for a DIFFERENT market, so the phase record
+    // — which names the first — cannot be the source. The override is still validated below against
+    // the live registry rather than trusted.
+    return resolveFromUniverse(client, universes, override);
+  }
   const evidencePath = repoPath(
     environment === "sepolia"
       ? "evidence/phase4/sepolia-epoch.json"
@@ -907,7 +961,15 @@ async function resolveMarketId(
   if (universeId === undefined) {
     throw new Error(`${evidencePath} does not name a universeId`);
   }
+  return resolveFromUniverse(client, universes, universeId);
+}
 
+/** Reads one universe from the live registry and returns its first market. Never trusts a record. */
+async function resolveFromUniverse(
+  client: ReturnType<typeof createPublicClient>,
+  universes: Address,
+  universeId: Hex,
+): Promise<{ universeId: Hex; marketId: Hex }> {
   const abi = [
     {
       type: "function",
@@ -980,7 +1042,18 @@ async function resolveMarketId(
 }
 
 const environment: Environment = process.argv[2] === "sepolia" ? "sepolia" : "local";
-deploySeries(environment).catch((error: unknown) => {
+const argOf = (flag: string): string | undefined => {
+  const index = process.argv.indexOf(flag);
+  return index === -1 ? undefined : process.argv[index + 1];
+};
+const universeArg = argOf("--universe");
+if (universeArg !== undefined && !/^0x[0-9a-fA-F]{64}$/.test(universeArg)) {
+  throw new Error(`--universe must be a 32-byte hex universe id, received ${universeArg}`);
+}
+deploySeries(environment, {
+  ...(universeArg === undefined ? {} : { universeId: universeArg as Hex }),
+  ...(argOf("--suffix") === undefined ? {} : { suffix: argOf("--suffix") as string }),
+}).catch((error: unknown) => {
   console.error(
     `\ndeploy:series FAILED: ${error instanceof Error ? error.message : String(error)}`,
   );

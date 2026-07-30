@@ -34,6 +34,7 @@
  * this repository. No private key is ever printed.
  */
 
+import { existsSync } from "node:fs";
 import {
   type Address,
   createPublicClient,
@@ -47,6 +48,7 @@ import { sepolia } from "viem/chains";
 
 import { assertBroadcastArmed, sepoliaRpc } from "../lib/env.js";
 import { type RoleName, resolveRoles, signingKey } from "../lib/roles.js";
+import { readJson, repoPath } from "../lib/shell.js";
 
 const CHAIN_ID = 11_155_111;
 const TRANSFER_GAS = 21_000n;
@@ -69,14 +71,55 @@ const TRANSFER_GAS = 21_000n;
  * The deployer keeps the remainder: it pays for every contract creation and it stands in for the
  * providers and the borrower on a public network.
  */
-const GAS_CEILING: Readonly<Record<string, bigint>> = {
+const FALLBACK_CEILING: Readonly<Record<string, bigint>> = {
   keeper: 22_000_000n,
   curator: 5_000_000n,
   operator: 2_000_000n,
 };
 
+/**
+ * The preflight's own per-role gas, when it has run.
+ *
+ * ONE SOURCE OF TRUTH, and the first version did not have it. `roles:fund` carried its own ceilings
+ * and `sepolia-market-budget` computed its own, so they disagreed: the keeper was funded a third
+ * more than the sequence needs and the deployer came out 0.00069 ETH short of its own share. The
+ * numbers were not wrong, they were two different numbers for one question.
+ *
+ * The budget attributes every component to the role that will actually send it, priced from real
+ * `eth_estimateGas` and real measured runs. This reads the newest sample and funds against it, so a
+ * change to the sequence moves both together. The fallback stands only until the preflight has run.
+ */
+function gasCeilings(): Readonly<Record<string, bigint>> {
+  const path = repoPath("evidence/phase6/funding-budget.json");
+  if (!existsSync(path)) return FALLBACK_CEILING;
+  const ledger = readJson<{
+    samples: readonly { perRole: readonly { role: string; gas: number }[] }[];
+  }>(path);
+  const latest = ledger.samples.at(-1);
+  if (latest === undefined) return FALLBACK_CEILING;
+
+  const ceilings: Record<string, bigint> = {};
+  for (const entry of latest.perRole) {
+    // The deployer funds itself and is never a destination here.
+    if (entry.role === "deployer") continue;
+    ceilings[entry.role] = BigInt(entry.gas);
+  }
+  return Object.keys(ceilings).length === 0 ? FALLBACK_CEILING : ceilings;
+}
+
 /** The same 35% floor Phase 3 and Phase 5 both under-predicted against. Never lowered. */
 const SAFETY_MARGIN_BPS = 13_500n;
+
+/**
+ * Headroom for gas-price DRIFT between funding and spending. Distinct from the 35% margin above,
+ * which covers gas ESTIMATION error.
+ *
+ * Without it the two are a moving target: fund at the base fee of block N and the preflight re-prices
+ * at block N+k, so a few percent of drift flips a role from funded to short and the loop never
+ * settles. Observed directly — a 1.033 to 1.072 gwei move left all three roles short by fractions of
+ * a milliether immediately after they were funded to the penny.
+ */
+const PRICE_DRIFT_BPS = 12_500n;
 
 /** Below this the deployer cannot finish its own work, so the transfer is refused rather than made. */
 const DEPLOYER_FLOOR_ETH = parseEther("0.04");
@@ -118,17 +161,20 @@ async function main(): Promise<void> {
   console.log(`  base fee    ${Number(baseFee) / 1e9} gwei`);
   console.log(`  priority    ${Number(priority) / 1e9} gwei`);
   console.log(`  budgeted at ${Number(gasPrice) / 1e9} gwei effective`);
-  console.log(`  margin      ${Number(SAFETY_MARGIN_BPS - 10_000n) / 100}%`);
+  console.log(
+    `  margin      ${Number(SAFETY_MARGIN_BPS - 10_000n) / 100}% gas + ${Number(PRICE_DRIFT_BPS - 10_000n) / 100}% price drift`,
+  );
   console.log(`  mode        ${execute ? "EXECUTE" : "dry run (nothing is signed)"}\n`);
 
   let balance = await publicClient.getBalance({ address: deployer.address });
   let total = 0n;
   const plan: { role: RoleName; to: Address; top: bigint; have: bigint }[] = [];
 
-  for (const [role, ceiling] of Object.entries(GAS_CEILING)) {
+  const ceilings = gasCeilings();
+  for (const [role, ceiling] of Object.entries(ceilings)) {
     const name = role as RoleName;
     const to = roles.accounts[name].address;
-    const target = (ceiling * gasPrice * SAFETY_MARGIN_BPS) / 10_000n;
+    const target = (ceiling * gasPrice * SAFETY_MARGIN_BPS * PRICE_DRIFT_BPS) / 100_000_000n;
     const have = await publicClient.getBalance({ address: to });
     // Top UP rather than send a fixed amount, so a re-run after a partial failure does not
     // double-fund and a role that already holds enough is skipped rather than topped again.
@@ -159,8 +205,8 @@ async function main(): Promise<void> {
     console.error(
       `\n  REFUSED: funding these roles would leave the deployer with ` +
         `${formatEther(balance - total - fees)} ETH, below the ${formatEther(DEPLOYER_FLOOR_ETH)} ETH ` +
-        "floor it needs for its own contract creations. Fund the deployer first, or lower a ceiling " +
-        "in GAS_CEILING and say in the phase record which part of the sequence was cut.\n",
+        "floor it needs for its own contract creations. Fund the deployer first, or narrow the " +
+        "sequence in sepolia-market-budget and say in the phase record which part was cut.\n",
     );
     process.exitCode = 1;
     return;
