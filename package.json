@@ -36,6 +36,7 @@
     "preflight:sepolia": "tsx scripts/deploy/preflight.ts",
     "roles:fund": "tsx scripts/roles/fund.ts",
     "roles:generate": "tsx scripts/roles/generate.ts",
+    "roles:reconcile": "tsx scripts/roles/reconcile.ts",
     "roles:refund": "tsx scripts/roles/refund.ts",
     "roles:status": "tsx scripts/roles/status.ts",
     "test": "pnpm test:contracts && pnpm test:unit && pnpm test:workers",

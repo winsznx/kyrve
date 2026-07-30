@@ -1,0 +1,164 @@
+{
+  "$comment": "Per-role reconciliation recomputed from RECEIPTS, not from the gas each script reported. Attribution is by the address that actually signed. Balances are live at measuredAt. NO PRIVATE KEY, MNEMONIC OR RPC CREDENTIAL APPEARS HERE.",
+  "abandonedEpochCostUnknown": "`gasUsedThisRun` is per INVOCATION. The surviving record for the abandoned synthetic epoch is a resumed run that did no new work, so it reports 0. The epoch really did cost a full epoch's gas; that number is not recoverable from these records and is not invented here.",
+  "byCampaign": {
+    "abandoned": {
+      "feeEth": "0",
+      "feeWei": "0",
+      "gasUsed": "0",
+      "transactions": 0
+    },
+    "phase6": {
+      "feeEth": "0.096535113153099571",
+      "feeWei": "96535113153099571",
+      "gasUsed": "91080115",
+      "transactions": 103
+    },
+    "superseded": {
+      "feeEth": "0.030372820143832244",
+      "feeWei": "30372820143832244",
+      "gasUsed": "28318988",
+      "transactions": 18
+    }
+  },
+  "campaignNote": "phase6 is this phase's own work. superseded is contracts earlier phases deployed whose records this repository still keeps. abandoned is the synthetic-universe epoch of delta U-8 — real gas spent on an epoch that could never settle.",
+  "chainId": 11155111,
+  "fundingReconciliation": "Attributed spend plus current balance does NOT equal funding, and is not asserted to. Roles were funded and swept across the campaign and inbound transfers are not recoverable from receipts. This file measures what each role SPENT and what it holds NOW.",
+  "hashesWithoutReceipt": 0,
+  "measuredAt": "2026-07-30T11:14:34.597Z",
+  "method": "Every 0x-64 in evidence/phase6 and deployments/sepolia that is a bare hash or an explorer /tx/ link was dialled with eth_getTransactionReceipt; fee is gasUsed * effectiveGasPrice.",
+  "nonRoleSigners": [
+    {
+      "address": "0x2442854c750c88168be342c771827566c071f7a2",
+      "transactions": 10
+    },
+    {
+      "address": "0xacdcfb704ac3321ed80efbbfc304c18801a36bee",
+      "transactions": 9
+    }
+  ],
+  "receiptsFound": 121,
+  "recordReportedGasNote": "The curve-epoch driver records an aggregate `gasUsedThisRun` and no per-transaction hashes, so this gas is REPORTED BY THE RECORD and is NOT confirmed by the receipt walk above. It is listed separately rather than folded into a total that would then overstate what was verified.",
+  "recordReportedGasWithoutHashes": [
+    {
+      "bucket": "abandoned",
+      "gasUsed": "0",
+      "record": "sepolia-epoch-a-synthetic-abandoned.json"
+    },
+    {
+      "bucket": "phase6",
+      "gasUsed": "27197686",
+      "record": "sepolia-epoch-a.json"
+    },
+    {
+      "bucket": "phase6",
+      "gasUsed": "27422554",
+      "record": "sepolia-epoch-b.json"
+    }
+  ],
+  "recordedHashes": 121,
+  "roles": [
+    {
+      "address": "0x36C3d1AF18b9186A662B1e277c80Ab54bE2765C2",
+      "authority": "deploys contracts and performs the one-shot bindings; holds no runtime authority afterwards",
+      "balanceEth": "0.18131684113135966",
+      "balanceWei": "181316841131359660",
+      "feeEth": "0.113707051099388696",
+      "feeWei": "113707051099388696",
+      "gasUsed": "107150815",
+      "role": "deployer",
+      "signedNothing": false,
+      "signsInNormalOperation": true,
+      "transactionsSigned": 85
+    },
+    {
+      "address": "0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af",
+      "authority": "advances computation: curve stages, quote activation, chunk consumption and allocation; cannot choose inputs or change outcomes",
+      "balanceEth": "0.016048950190842211",
+      "balanceWei": "16048950190842211",
+      "feeEth": "0.008564146217457053",
+      "feeWei": "8564146217457053",
+      "gasUsed": "7973751",
+      "role": "keeper",
+      "signedNothing": false,
+      "signsInNormalOperation": true,
+      "transactionsSigned": 14
+    },
+    {
+      "address": "0x981bB416b875Ea3Fb68Bb68C0A2aF004F4C1CaBE",
+      "authority": "retires a live quote before expiry and recovers UNCOMMITTED funding from a series vault; cannot reach committed capital",
+      "balanceEth": "0.00073630005615",
+      "balanceWei": "736300056150000",
+      "feeEth": "0",
+      "feeWei": "0",
+      "gasUsed": "0",
+      "role": "operator",
+      "signedNothing": true,
+      "signsInNormalOperation": true,
+      "transactionsSigned": 0
+    },
+    {
+      "address": "0x417e9cD3ed81EFEDFdd79b30A1971967f72b711c",
+      "authority": "registers reviewed universes and markets, creates series, sets the public redemption factor, publishes the aggregate supply snapshot; moves no funds",
+      "balanceEth": "0.005082298104292564",
+      "balanceWei": "5082298104292564",
+      "feeEth": "0.00080705330507364",
+      "feeWei": "807053305073640",
+      "gasUsed": "719061",
+      "role": "curator",
+      "signedNothing": false,
+      "signsInNormalOperation": true,
+      "transactionsSigned": 3
+    },
+    {
+      "address": "0x253645C32B15bF4bb17C457ac8E45d8536aC570D",
+      "authority": "pauses and unpauses protocol ENTRIES; cannot pause any recovery path and cannot seize a confidential balance",
+      "balanceEth": "0",
+      "balanceWei": "0",
+      "feeEth": "0",
+      "feeWei": "0",
+      "gasUsed": "0",
+      "role": "emergencyAuthority",
+      "signedNothing": true,
+      "signsInNormalOperation": false,
+      "transactionsSigned": 0
+    },
+    {
+      "address": "0x120477983Fa87F42cB7103172aC62662e015efDF",
+      "authority": "receives the funding residue; a destination, never an authority — holds no privilege anywhere",
+      "balanceEth": "0",
+      "balanceWei": "0",
+      "feeEth": "0",
+      "feeWei": "0",
+      "gasUsed": "0",
+      "role": "residueBeneficiary",
+      "signedNothing": true,
+      "signsInNormalOperation": false,
+      "transactionsSigned": 0
+    },
+    {
+      "address": "0xdE252d52b31EeA91836F4CE6F22f413871d386Ec",
+      "authority": "receives Kyrve Capsule snapshots; read-only, and never holds access to a live balance handle",
+      "balanceEth": "0",
+      "balanceWei": "0",
+      "feeEth": "0",
+      "feeWei": "0",
+      "gasUsed": "0",
+      "role": "auditor",
+      "signedNothing": true,
+      "signsInNormalOperation": false,
+      "transactionsSigned": 0
+    }
+  ],
+  "rolesThatSignedNothing": {
+    "auditor": "read-only; it receives capsule snapshots and can sign nothing that changes state",
+    "emergencyAuthority": "pause was never invoked, and pause is the only thing it can do",
+    "operator": "no quote was retired before expiry and no uncommitted funding was recovered; the Cross match is onlyKeeper, so nothing on this campaign was the operator's to sign",
+    "residueBeneficiary": "a destination, never an authority — it holds no privilege anywhere and was deliberately not swept"
+  },
+  "separationViolations": [],
+  "totalFeeEth": "0.126907933296931815",
+  "totalFeeWei": "126907933296931815",
+  "totalGasUsed": "119399103"
+}
+
