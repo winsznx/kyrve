@@ -22,7 +22,9 @@ spikes/**/types/
 
 .DS_Store
 *.log
-deployments/**/.raw-deployment.json
+# Deployment scaffolding, written the moment an address lands so an interrupted run can be
+# finished rather than repaid. The *.json records are the committed truth; these are not.
+deployments/**/.raw-*.json
 workers/*/dist/
 slither-report.json
 
