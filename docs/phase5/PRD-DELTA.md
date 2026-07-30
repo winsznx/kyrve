@@ -341,3 +341,64 @@ requires the keeper to act adversarially after a week of silence, and the keeper
 non-open role in this release for exactly that reason (`docs/phase4/SECURITY.md`). Closing it fully needs
 the activator to consult the allocator, which would make activation depend on the confidential layer —
 a coupling Phase 4 deliberately does not have.
+
+## T-12 · The Sepolia wrapper wrapped a different token than the market lends
+
+**Severity: was blocking on the public network. Caught before a single contract was deployed.**
+
+Delta T-10 established that the ERC-7984 wrapper's underlying and the Midnight market's `loanToken` must
+be the same ERC-20, because Phase 5 unwraps confidential capital back into that token to pay Midnight.
+T-10 was found and fixed in the local harness. **Sepolia had the same mismatch, in the deployed
+contracts.**
+
+```
+KyrveWrappedAsset(0x9e1e…).underlying()  = 0xd3F224Ae…  ("tUSDC", the Phase 2 test token)
+the market's loanToken                   = 0x0257E18a…  ("tUSDC", what Midnight lends)
+```
+
+Two different ERC-20s, both called tUSDC, both six decimals. Phases 2 to 4 never noticed because nothing
+ever crossed back: the wrapper wrapped its own token and the series vault was funded by minting the
+market's.
+
+`deploy:series` refuses to broadcast anything when they differ, and that guard fired on the first Sepolia
+attempt before the first contract was deployed — which is the only reason this cost nothing.
+
+**The fix.** `KyrveWrappedAsset` is part of the coherent set and is redeployed over the market's loan
+token. It is the only Phase 2 contract this phase replaces beyond the vault, and it is replaced because
+the alternative is a funding path that moves the wrong asset.
+
+**What that costs providers, stated rather than glossed.** Confidential balances in the old wrapper are
+not reachable from the new custody vault. They are not lost either: `unwrap` has no pause flag in
+`KyrveEmergencyController` and can never acquire one, so any holder can always take the underlying back
+out and wrap it into the new one. That is the same non-pausable recovery guarantee PRD invariant 20
+requires, doing exactly the job it exists for.
+
+## T-13 · A deployment must record each address the moment it lands
+
+**Severity: was 0.0324 ETH at risk. Recovered, then made structural.**
+
+The first Sepolia run deployed all eighteen contracts, sent all twelve one-shot bindings, created the
+series vault — and then died in the read-back loop on a **stale reference in the deploy script itself**,
+left behind when a formatter reflowed a line a patch had matched on. Nothing on chain was wrong. The
+manifest had not been written, so 28,318,988 gas of correct deployment existed with no record of it.
+
+This is delta [S-9](../phase4/PRD-DELTA.md) in a different costume. S-9 was an activation that could not
+be recovered afterwards, discovered on a resume, when the alternative was paying for another epoch. The
+lesson was "write the record the moment it lands, before anything else can fail", and it had been applied
+to activation and not to deployment.
+
+**The fix, in three parts, all in `deploy:series`.**
+
+- Every address is appended to `.raw-deployment.json` **immediately after the receipt**, before the code
+  read-back and before anything else can throw. The file is gitignored: it is scaffolding, and
+  `series.json` remains the record.
+- A recorded address that still holds code is **reused**, not redeployed. A resumed run costs nothing.
+- A binding whose getter already points at the expected address is **skipped**. Every one of the twelve
+  is one-shot and would revert on a second call, so a resume that re-sent them would fail the whole
+  deployment on a step that had already succeeded.
+
+A resumed contract's creation transaction is recovered from Etherscan's `getcontractcreation` and its gas
+from the receipt, so a resumed manifest is identical to a fresh one. And because a resumed run broadcasts
+nothing, its own balance delta is zero — which is why the record carries `contractCreationGas` as the
+durable figure alongside `gasUsedThisRun`. Reporting the latter as what the deployment cost would
+understate it by the whole deployment.

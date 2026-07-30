@@ -19,6 +19,7 @@
     "deploy:curve": "tsx scripts/deploy/curve.ts",
     "deploy:local": "tsx scripts/deploy/local.ts",
     "deploy:sepolia": "tsx scripts/deploy/sepolia.ts",
+    "deploy:series": "tsx scripts/deploy/series.ts",
     "deploy:settlement": "tsx scripts/deploy/settlement.ts",
     "dust:generate": "tsx scripts/dust/generate.ts",
     "dust:sweep": "tsx scripts/dust/sweep.ts",
