@@ -348,13 +348,13 @@ p.footnote,
 .grid {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
 }
 
 .grid-wide {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
 }
 
 .stack {
@@ -512,7 +512,7 @@ a.ghost {
 /*
  * Cobalt: one per page, on the single primary action.
  *
- * `scripts/verify/design-rules.ts` counts the rendered primary elements per route and fails on more
+ * `pnpm verify:web` counts the rendered primary elements per route and fails on more
  * than one, so this is enforced rather than remembered.
  */
 button.primary,
@@ -624,7 +624,7 @@ a.primary {
 .boundary {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
 }
 
 .boundary ul {
@@ -758,7 +758,15 @@ th {
 */
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /*
+   * `min(280px, 100%)`, not a bare 280px.
+   *
+   * A fixed minimum track cannot shrink below its floor, so on a 360px viewport a 280px track plus
+   * the card's own padding pushes the grid wider than its container and the whole PAGE scrolls
+   * sideways. The `min()` lets the track collapse to the container instead. Measured at 360px by
+   * `pnpm verify:web`, which failed on exactly 16px of overflow before this.
+   */
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: var(--element-gap) var(--card-padding);
   background: var(--color-graphite-card);
   border-radius: var(--radius-xl);
@@ -938,7 +946,7 @@ th {
 
 .quote-figures {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: var(--card-padding);
   margin: 24px 0;
 }

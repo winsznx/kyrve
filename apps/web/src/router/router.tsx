@@ -23,7 +23,7 @@
  *   is why the parameter is in the path rather than in a store — a refresh check that passes for
  *   a route reached by clicking and fails for one reached by typing is the bug this shape avoids.
  *   The dev server, the preview server and the local production server all need an SPA fallback
- *   for this, and `scripts/verify/routes.ts` checks that they have one.
+ *   for this, and `pnpm verify:web` enters every route directly to check that they do.
  *
  *   NO PRIVATE VALUE IN A PATH. A route parameter is always a public identifier — a series id, a
  *   quote id, a capsule id. Never an amount, never a handle paired with a plaintext, never a
@@ -169,7 +169,7 @@ export function Router({ routes, notFound, children }: RouterProps): ReactElemen
    * The document title and description follow the route.
    *
    * Set here rather than in each page so a route cannot ship without them: the table requires both
-   * fields, and this effect is the only writer. `scripts/verify/metadata.ts` checks every route's
+   * fields, and this effect is the only writer. `pnpm verify:web` checks every route's
    * rendered title against the table.
    */
   useEffect(() => {

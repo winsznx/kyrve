@@ -75,6 +75,13 @@ import {
 } from "./settlement-helpers.js";
 
 const APP_URL = "http://127.0.0.1:5173/";
+/**
+ * The ownership panel lives on its series' own route since Phase 7.
+ *
+ * Built from the series id rather than from an index, so navigating to it is also a REFRESH check:
+ * a detail route that only worked when clicked through would fail on the first `page.goto` here.
+ */
+const seriesUrl = (seriesId: string): string => `${APP_URL}app/series/${seriesId}`;
 
 /**
  * The two provider keys, which are Hardhat's standard accounts 1 and 2.
@@ -342,7 +349,7 @@ describe("Phase 5 demonstration 13: confidential ownership in a real browser", (
 
     const page = await context.newPage();
     page.on("request", (request) => origins.add(new URL(request.url()).origin));
-    await page.goto(APP_URL);
+    await page.goto(seriesUrl(series.seriesId));
 
     const bootError = page.getByTestId("boot-error");
     if ((await bootError.count()) > 0) {

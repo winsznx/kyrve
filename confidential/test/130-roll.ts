@@ -91,6 +91,14 @@ const TARGET_PRICE_WAD = 940_000_000_000_000_000n;
 /** The terminal's dev server, for demonstration 24. */
 const VERIFY_APP_URL = "http://127.0.0.1:5173/";
 /**
+ * Kyrve Verify lives on the subject's own proof route since Phase 7.
+ *
+ * The forged half of this demonstration navigates to the FORGED id, because the served record's
+ * series id is what changed — which is the point: the page resolves the record by that id, reads the
+ * chain for what the token actually serves, and has to disagree with the file it was handed.
+ */
+const proofSeriesUrl = (seriesId: string): string => `${VERIFY_APP_URL}proof/series/${seriesId}`;
+/**
  * Hardhat's standard account 1, which is `holderIndex`. Committed for the same reason
  * `101-series-browser.ts` commits its pair: these are the published development keys of a local
  * node and are worthless anywhere else. Kyrve binds every encrypted input to the submitting wallet,
@@ -958,7 +966,7 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
       page.on("console", (message) => {
         if (message.type() === "error") crashes.push(message.text());
       });
-      await page.goto(VERIFY_APP_URL);
+      await page.goto(proofSeriesUrl(source.seriesId));
       const bootError = page.getByTestId("boot-error");
       if ((await bootError.count()) > 0) {
         throw new Error(`the terminal refused to start: ${await bootError.innerText()}`);
@@ -974,11 +982,15 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
       }
 
       // ── The honest record. Every deployed surface recomputes; the absent one says so. ──────
+      // Phase 7 renamed the two decided verdicts to `verified` and `failed`, so the downloadable
+      // artefact can carry all four labels it has to — the third, `unavailable`, and the fourth,
+      // `reported-not-verified`, which is what a record asserts that no browser checked. The claims
+      // below are unchanged; only the words are.
       for (const [row, expected] of [
-        ["series-identity", "pass"],
-        ["published-supply", "pass"],
-        ["capsule", "pass"],
-        ["roll", "pass"],
+        ["series-identity", "verified"],
+        ["published-supply", "verified"],
+        ["capsule", "verified"],
+        ["roll", "verified"],
         ["cross", "unavailable"],
       ] as const) {
         const locator = page.getByTestId(`verify-${row}`);
@@ -1009,13 +1021,13 @@ describe("Phase 6 demonstrations 16-23: confidential migration between maturitie
       // ── The lying record. One field changed; the page must find it on its own. ────────────
       const forged = `0x${"ab".repeat(32)}` as `0x${string}`;
       writeFileSync(recordPath, `${JSON.stringify(publicRecord(forged), null, 2)}\n`);
-      await page.reload();
+      await page.goto(proofSeriesUrl(forged));
       await page.getByTestId("verify-band").waitFor({ timeout: 60_000 });
       const identity = page.getByTestId("verify-series-identity");
       await identity.waitFor({ timeout: 60_000 });
       assert.equal(
         await identity.getAttribute("data-verdict"),
-        "fail",
+        "failed",
         "A PAGE THAT PASSES A RECORD NAMING THE WRONG SERIES IS DISPLAYING THE RECORD, NOT " +
           "VERIFYING IT. This is the assertion the whole component exists for.",
       );

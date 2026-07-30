@@ -9,7 +9,7 @@
  * header would put a second one on every page that has its own primary action, and would put one on
  * pages that have no action at all. So the shell is entirely monochrome and each route declares its
  * own single primary action — which makes the rule checkable rather than aspirational, and
- * `scripts/verify/design-rules.ts` counts the cobalt elements per rendered route to prove it.
+ * `pnpm verify:web` counts the cobalt elements per rendered route to prove it.
  *
  * ════════════════════════════════════════════════════════════════════════════════════════════
  * THE WORDMARK IS TEXT, AND THAT IS A BRAND DECISION WITH A DATE ON IT
@@ -29,7 +29,7 @@
  * Every nav item is a real `<a href>` inside a `<nav aria-label>`, the active one carries
  * `aria-current="page"`, and the first focusable element on every page is a skip link to `#main`.
  * A terminal whose ten sections can only be reached by mouse is a terminal a keyboard user cannot
- * operate, and `scripts/verify/accessibility.ts` walks the tab order of every route to check it.
+ * operate, and `pnpm verify:web` walks the tab order of every route to check it.
  */
 
 import type { ReactElement, ReactNode } from "react";
@@ -62,9 +62,17 @@ const NAV: readonly NavItem[] = [
   { to: "/proof", label: "Proof" },
 ];
 
-/** Whether a nav item owns the current path. `/app` only matches itself; the rest match prefixes. */
+/**
+ * Whether a nav item owns the current path.
+ *
+ * `/app` only matches itself, or it would own every application route. `/app/cross/:seriesId` has no
+ * nav item of its own — a Cross order is always against ONE series and is reached from that series'
+ * page — so Series owns it. Leaving it unowned would put a whole route outside the navigation, with
+ * nothing carrying `aria-current` and a screen-reader user unable to tell where they are.
+ */
 function isActive(pathname: string, to: string): boolean {
   if (to === "/app") return pathname === "/app";
+  if (to === "/app/series" && pathname.startsWith("/app/cross/")) return true;
   return pathname === to || pathname.startsWith(`${to}/`);
 }
 
@@ -137,7 +145,14 @@ export function Shell({ match, children }: ShellProps): ReactElement {
           <p className="disclaimer" data-testid="disclosure">
             {record.disclosure}
           </p>
-          <p className="disclaimer">
+          {/*
+            Which chain, on every page.
+
+            It used to live beside the connected account, which meant it disappeared for anyone who
+            had not connected a wallet — including every reader of a proof page, who is exactly the
+            person who needs to know which deployment they are looking at.
+          */}
+          <p className="disclaimer" data-testid="environment">
             Environment <span className="mono">{record.environment}</span> · chain{" "}
             <span className="mono">{record.chainId}</span>. Not an offer of securities and not
             investment advice. Values published through the Nox handle gateway carry decryption

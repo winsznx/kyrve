@@ -7,7 +7,7 @@
  *
  * Because a route cannot then ship without them. `Router` is the only writer of `document.title` and
  * of the description meta tag, both fields are required by `RouteDefinition`, and
- * `scripts/verify/metadata.ts` walks every path in this table in a real browser and compares what the
+ * `pnpm verify:web` walks every path in this table in a real browser and compares what the
  * document ended up with against what is declared here. A page carrying a stale title from the
  * previous navigation is the classic single-page-application defect, and it is invisible from inside
  * the page until somebody shares a link.

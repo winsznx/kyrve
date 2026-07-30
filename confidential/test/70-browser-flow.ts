@@ -38,6 +38,17 @@ import { deployConfidential } from "../../scripts/deploy/confidential.js";
 /** Hardhat/Anvil account zero — a published development key with no value on any public network. */
 const LOCAL_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
 const APP_URL = "http://127.0.0.1:5173";
+/**
+ * The three routes this flow walks, since Phase 7 gave the terminal nineteen of them.
+ *
+ * Each was one band of a single page and is now its own path. Every assertion below is unchanged —
+ * what changed is that the page under test is reached by navigating rather than by scrolling, which
+ * is also what makes each `page.goto` here a REFRESH check: a route that only worked when clicked
+ * would fail on the first of these.
+ */
+const FUND_URL = `${APP_URL}/app/fund`;
+const MANDATES_URL = `${APP_URL}/app/mandates`;
+const REQUEST_URL = `${APP_URL}/app/request`;
 const WRAP_AMOUNT = "1000";
 /** 1,000 tUSDC at 6 decimals, as the terminal formats it. */
 const WRAPPED_DISPLAY = "1000";
@@ -96,7 +107,7 @@ describe("Phase 2: the local terminal, in a real browser, against the real stack
       { key: LOCAL_KEY, rpc: "http://127.0.0.1:8545", gateway: handleGatewayUrl() },
     );
 
-    await page.goto(APP_URL);
+    await page.goto(FUND_URL);
     await page.getByTestId("session").waitFor({ timeout: 30_000 });
   });
 
@@ -106,9 +117,16 @@ describe("Phase 2: the local terminal, in a real browser, against the real stack
   });
 
   it("opens against the deployed local layer and states the licence", async () => {
-    const session = await page.getByTestId("session").textContent();
-    assert.ok(session?.includes("local"), "the terminal must say which environment it is on");
-    assert.ok(session?.includes("chain 31337"));
+    // The environment moved from beside the connected account into the footer, so it renders on
+    // every page with or without a wallet — including the proof pages, whose reader is exactly the
+    // person who needs to know which deployment they are looking at. The assertion is unchanged.
+    const environment = await page.getByTestId("environment").textContent();
+    assert.ok(environment?.includes("local"), "the terminal must say which environment it is on");
+    assert.ok(environment?.includes("chain 31337"));
+    assert.ok(
+      (await page.getByTestId("session").textContent())?.startsWith("0x"),
+      "the masthead must name the wallet the page is bound to",
+    );
 
     const disclosure = await page.getByTestId("disclosure").textContent();
     assert.ok(
@@ -168,6 +186,9 @@ describe("Phase 2: the local terminal, in a real browser, against the real stack
   });
 
   it("names the public and private halves of a mandate before it is signed", async () => {
+    await page.goto(MANDATES_URL);
+    await page.getByTestId("mandate-boundary-public").waitFor({ timeout: 30_000 });
+
     const publicFields = await page
       .getByTestId("mandate-boundary-public")
       .locator("li")
@@ -204,6 +225,9 @@ describe("Phase 2: the local terminal, in a real browser, against the real stack
   });
 
   it("keeps a borrower's bond public and their price limit private", async () => {
+    await page.goto(REQUEST_URL);
+    await page.getByTestId("request-boundary-public").waitFor({ timeout: 30_000 });
+
     const publicFields = await page
       .getByTestId("request-boundary-public")
       .locator("li")

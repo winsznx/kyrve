@@ -62,7 +62,15 @@ import {
   supplyCollateral,
 } from "./settlement-helpers.js";
 
-const APP_URL = "http://127.0.0.1:5173";
+/**
+ * The quote lifecycle lives on `/app/quotes` since Phase 7 split the terminal into routes.
+ *
+ * It is the collection page AND the action page on purpose: before activation there is no quote id
+ * to route to, so a `/app/quotes/:quoteId` page that had to exist first would either invent an
+ * identifier or route on the epoch id and call it a quote — and the difference between an epoch's
+ * leaf and an activated quote is the entire reason the settlement ratifier exists.
+ */
+const APP_URL = "http://127.0.0.1:5173/app/quotes";
 /** Hardhat/Anvil account zero's key — published, and worthless on any public network. */
 const LOCAL_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
 /** Hardhat/Anvil account zero — a published development key with no value on any public network. */

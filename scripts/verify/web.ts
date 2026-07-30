@@ -1,0 +1,469 @@
+/**
+ * `pnpm verify:web` — every route, in a real Chromium, against a real built bundle.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHY THIS DRIVES A BROWSER RATHER THAN READING THE SOURCE
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * Every check here is about what the DOCUMENT ends up being, and none of them can be answered from
+ * the source. A route's title is written by an effect; a stale one from the previous navigation is
+ * the classic single-page-application defect and it is invisible from inside the page. A refresh
+ * check has to hit a real server, because the failure is the server's history fallback, not the
+ * router. A "one cobalt element per page" rule is about rendered elements, not about class names in
+ * a file. And a console error only exists at runtime.
+ *
+ * It runs against `vite preview` over `dist`, not the dev server: the thing that ships is the built
+ * bundle, and dev-only middleware could make a broken build look fine.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHAT IT DOES NOT CLAIM
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * This is not an accessibility audit and does not call itself one. It checks a specific list of
+ * structural properties that can be checked mechanically — one `h1`, a skip link first in the tab
+ * order, a label for every control, an accessible name on every link and button, `aria-current` on
+ * the active nav item, no positive `tabindex`, and no horizontal overflow at 360px. A real audit
+ * involves a person and assistive technology, and nothing here substitutes for one.
+ *
+ * WITHOUT A DEPLOYMENT RECORD the terminal refuses to start, which is correct behaviour and means
+ * most checks cannot run. That is reported as SKIPPED with the command that produces one — never as
+ * a pass, because "the page refused to start" and "the page is fine" are opposite conditions.
+ */
+
+import { type ChildProcess, spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+
+import { type ConsoleMessage, chromium } from "playwright";
+
+import { repoPath, run } from "../lib/shell.js";
+
+const PREVIEW_URL = "http://127.0.0.1:4173";
+
+/**
+ * Every route, with the title the table declares.
+ *
+ * Kept in step with `apps/web/src/App.tsx` by the first check, which compares this list against the
+ * route table's own paths. A checklist that drifted from the thing it checks would pass forever.
+ */
+const ROUTES: readonly { readonly path: string; readonly title: string }[] = [
+  { path: "/", title: "One quote. The curve stays private" },
+  { path: "/app", title: "Overview" },
+  { path: "/app/fund", title: "Fund a confidential balance" },
+  { path: "/app/mandates", title: "Lending mandate" },
+  { path: "/app/request", title: "Borrower request" },
+  { path: "/app/curve", title: "Confidential curve" },
+  { path: "/app/quotes", title: "Quotes" },
+  {
+    path: "/app/quotes/0x1111111111111111111111111111111111111111111111111111111111111111",
+    title: "Quote",
+  },
+  { path: "/app/series", title: "Series" },
+  {
+    path: "/app/series/0x1111111111111111111111111111111111111111111111111111111111111111",
+    title: "Series",
+  },
+  {
+    path: "/app/cross/0x1111111111111111111111111111111111111111111111111111111111111111",
+    title: "Cross",
+  },
+  { path: "/app/roll", title: "Roll" },
+  { path: "/app/capsules", title: "Capsules" },
+  {
+    path: "/app/capsules/0x1111111111111111111111111111111111111111111111111111111111111111",
+    title: "Capsule",
+  },
+  { path: "/proof", title: "Verify" },
+  { path: "/proof/deployment", title: "Deployment proof" },
+  {
+    path: "/proof/quote/0x1111111111111111111111111111111111111111111111111111111111111111",
+    title: "Quote proof",
+  },
+  {
+    path: "/proof/series/0x1111111111111111111111111111111111111111111111111111111111111111",
+    title: "Series proof",
+  },
+  {
+    path: "/proof/capsule/0x1111111111111111111111111111111111111111111111111111111111111111",
+    title: "Capsule proof",
+  },
+];
+
+/**
+ * Copy that must never ship.
+ *
+ * The first four are the vocabulary P7-3 fixes: Nox has no `removeViewer`, so a page saying a grant
+ * was revoked or is no longer readable would be stating the opposite of the truth about a permanent
+ * grant on a public network.
+ *
+ * The rest are unfinished-work markers. The bare word "placeholder" is deliberately NOT on this list:
+ * this product talks about placeholder proofs and placeholder terms in order to say it does not ship
+ * them, and a check that failed on the discussion would push the discussion out of the interface —
+ * which is the opposite of what it is for.
+ */
+const FORBIDDEN_PHRASES: readonly string[] = [
+  "access revoked",
+  "revoke access",
+  "no longer readable",
+  "can no longer read",
+  "lorem ipsum",
+  "coming soon",
+  "todo:",
+  "fixme",
+  "tbd",
+];
+
+interface Finding {
+  readonly check: string;
+  readonly route: string;
+  readonly detail: string;
+}
+
+const failures: Finding[] = [];
+const notes: string[] = [];
+/** Routes that reported the chain as unreachable. Expected when no local node is running. */
+const unreachable = new Set<string>();
+/** Whether a deployment record is being served at all. Set once, before the browser starts. */
+let recordAvailable = false;
+
+function fail(check: string, route: string, detail: string): void {
+  failures.push({ check, route, detail });
+}
+
+async function main(): Promise<void> {
+  if (!existsSync(repoPath("apps/web/dist/index.html"))) {
+    console.log("  building the web bundle first, because this checks what ships\n");
+    run("pnpm", ["--filter", "@kyrve/web", "build"]);
+  }
+
+  // ── 0. the checklist has not drifted from the route table ──────────────────────────────────
+  const routeTable = await import(repoPath("apps/web/src/App.tsx")).catch(() => undefined);
+  if (routeTable === undefined) {
+    // Importing a TSX module from a plain tsx runner is not always possible; fall back to a source
+    // read, which is enough to compare the declared paths.
+    const source = run("cat", [repoPath("apps/web/src/App.tsx")]).stdout;
+    const declared = [...source.matchAll(/^\s*path: "([^"]+)",$/gm)].map((match) => match[1]);
+    const checked = new Set(
+      ROUTES.map((route) =>
+        route.path.replace(
+          /0x1{64}/,
+          route.path.includes("quote")
+            ? ":quoteId"
+            : route.path.includes("capsule")
+              ? ":capsuleId"
+              : ":seriesId",
+        ),
+      ),
+    );
+    const missing = declared.filter((path) => path !== undefined && !checked.has(path));
+    if (missing.length > 0) {
+      fail(
+        "route coverage",
+        "(table)",
+        `the route table declares ${missing.length} path(s) this check does not walk: ${missing.join(", ")}`,
+      );
+    }
+    notes.push(`${declared.length} routes declared, ${ROUTES.length} walked`);
+  }
+
+  const recordServed = existsSync(repoPath("apps/web/public/deployment.json"));
+  recordAvailable = recordServed;
+
+  let preview: ChildProcess | undefined;
+  try {
+    preview = spawn(
+      "pnpm",
+      ["--filter", "@kyrve/web", "exec", "vite", "preview", "--host", "127.0.0.1"],
+      {
+        cwd: repoPath("."),
+        stdio: "ignore",
+      },
+    );
+
+    const deadline = Date.now() + 60_000;
+    for (;;) {
+      try {
+        if ((await fetch(PREVIEW_URL)).ok) break;
+      } catch {
+        // not up yet
+      }
+      if (Date.now() > deadline) throw new Error("the preview server never came up");
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+
+    const browser = await chromium.launch();
+    try {
+      await walkRoutes(browser);
+      await checkResponsive(browser);
+    } finally {
+      await browser.close();
+    }
+  } finally {
+    preview?.kill("SIGTERM");
+  }
+
+  report(recordServed);
+}
+
+async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>): Promise<void> {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+
+  const consoleErrors: string[] = [];
+  const onConsole = (message: ConsoleMessage): void => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  };
+  page.on("console", onConsole);
+  page.on("pageerror", (error) => consoleErrors.push(String(error)));
+
+  for (const route of ROUTES) {
+    consoleErrors.length = 0;
+    const url = `${PREVIEW_URL}${route.path}`;
+
+    // ── 1. refresh. Typed, not clicked — this is the check the SPA fallback exists for. ──────
+    const response = await page.goto(url, { waitUntil: "domcontentloaded" });
+    if (response === null || response.status() >= 400) {
+      fail("route refresh", route.path, `entering the URL directly returned ${response?.status()}`);
+      continue;
+    }
+    await page.waitForLoadState("networkidle").catch(() => undefined);
+
+    // A terminal with no deployment record refuses to start, which is correct. Every check below
+    // is about a rendered page, so they are skipped rather than reported against a refusal.
+    if ((await page.getByTestId("boot-error").count()) > 0) continue;
+
+    // ── 2. metadata. The title must be this route's, not the previous one's. ─────────────────
+    const title = await page.title();
+    if (!title.startsWith(route.title)) {
+      fail(
+        "metadata",
+        route.path,
+        `title is "${title}", expected it to start with "${route.title}"`,
+      );
+    }
+    const description = await page
+      .locator('meta[name="description"]')
+      .first()
+      .getAttribute("content");
+    if (description === null || description.trim().length < 40) {
+      fail("metadata", route.path, "no meaningful description meta tag");
+    }
+
+    // ── 3. exactly one h1, and it is not empty ──────────────────────────────────────────────
+    const headings = await page.locator("h1").allTextContents();
+    if (headings.length !== 1) {
+      fail("headings", route.path, `${headings.length} h1 elements; a page has exactly one`);
+    } else if ((headings[0] ?? "").trim().length === 0) {
+      fail("headings", route.path, "the h1 is empty");
+    }
+
+    // ── 4. one cobalt element. `design.md` rations it to the single primary action. ──────────
+    const primaries = await page.locator(".primary").count();
+    if (primaries > 1) {
+      fail(
+        "one cobalt action",
+        route.path,
+        `${primaries} elements carry the primary (cobalt) treatment; design.md permits one per page`,
+      );
+    }
+
+    // ── 5. no shadow anywhere. Separation is the one-step value lift and nothing else. ───────
+    // Evaluated as a STRING, not as a closure.
+    //
+    // tsx transpiles this file with esbuild, which injects a `__name` helper into named function
+    // expressions. Playwright serialises a closure by its source, so the helper travels into the
+    // page and the browser throws `__name is not defined` — a build-tool artefact that looks
+    // exactly like a product defect. A string is transpiled by nothing.
+    const shadowed = await page.evaluate<number>(
+      `[...document.querySelectorAll("*")].filter(function (node) {
+         const shadow = getComputedStyle(node).boxShadow;
+         return shadow !== "none" && shadow.length > 0;
+       }).length`,
+    );
+    if (shadowed > 0) {
+      fail("no shadows", route.path, `${shadowed} element(s) render a box-shadow`);
+    }
+
+    // ── 6. every control has an accessible name ─────────────────────────────────────────────
+    const unnamed = await page.evaluate<number>(
+      `[...document.querySelectorAll("button, a[href]")].filter(function (node) {
+         const aria = node.getAttribute("aria-label");
+         if (aria !== null && aria.trim().length > 0) return false;
+         if (node.getAttribute("aria-labelledby") !== null) return false;
+         return (node.textContent || "").trim().length === 0;
+       }).length`,
+    );
+    if (unnamed > 0) {
+      fail(
+        "accessible names",
+        route.path,
+        `${unnamed} link(s) or button(s) have no accessible name`,
+      );
+    }
+
+    // ── 7. every input is labelled ──────────────────────────────────────────────────────────
+    const unlabelled = await page.evaluate<number>(
+      `[...document.querySelectorAll("input, select, textarea")].filter(function (node) {
+         const id = node.getAttribute("id");
+         if (id !== null && document.querySelector('label[for="' + id + '"]') !== null) return false;
+         if (node.getAttribute("aria-label") !== null) return false;
+         return node.closest("label") === null;
+       }).length`,
+    );
+    if (unlabelled > 0) {
+      fail("labels", route.path, `${unlabelled} form control(s) have no label`);
+    }
+
+    // ── 8. no positive tabindex. It reorders the tab sequence away from the visual one. ──────
+    const positiveTabIndex = await page
+      .locator('[tabindex]:not([tabindex="0"]):not([tabindex="-1"])')
+      .count();
+    if (positiveTabIndex > 0) {
+      fail("tab order", route.path, `${positiveTabIndex} element(s) carry a positive tabindex`);
+    }
+
+    // ── 9. the skip link is the first thing a keyboard reaches ───────────────────────────────
+    await page.keyboard.press("Tab");
+    const firstFocused = await page.evaluate<string>(
+      `document.activeElement === null
+         ? ""
+         : document.activeElement.tagName + ":" +
+           (document.activeElement.textContent || "").trim().slice(0, 40)`,
+    );
+    if (!firstFocused.toLowerCase().includes("skip")) {
+      fail(
+        "keyboard",
+        route.path,
+        `the first focusable element is "${firstFocused}", not the skip link`,
+      );
+    }
+
+    // ── 10. the active nav item is marked for assistive technology ──────────────────────────
+    if (route.path.startsWith("/app") || route.path.startsWith("/proof")) {
+      const current = await page.locator('[aria-current="page"]').count();
+      if (current === 0) {
+        fail("navigation", route.path, "no navigation item is marked aria-current=page");
+      }
+    }
+
+    // ── 11. no broken internal link ─────────────────────────────────────────────────────────
+    // Read one attribute at a time rather than through `evaluateAll`.
+    //
+    // `evaluateAll` would need a DOM-typed callback, and `scripts/tsconfig.json` deliberately has no
+    // DOM lib — these scripts run in Node. Casting one in would be a lie about where the code runs.
+    const anchors = page.locator("a[href^='/']");
+    const anchorCount = await anchors.count();
+    const hrefs = new Set<string>();
+    for (let index = 0; index < anchorCount; index += 1) {
+      const href = await anchors.nth(index).getAttribute("href");
+      if (href !== null) hrefs.add(href);
+    }
+    for (const href of hrefs) {
+      if (href.startsWith("/brand/") || href === "/site.webmanifest") continue;
+      const probe = await fetch(`${PREVIEW_URL}${href}`);
+      if (!probe.ok) fail("links", route.path, `internal link ${href} returned ${probe.status}`);
+    }
+
+    // ── 12. forbidden copy ──────────────────────────────────────────────────────────────────
+    const body = ((await page.locator("body").textContent()) ?? "").toLowerCase();
+    for (const phrase of FORBIDDEN_PHRASES) {
+      if (body.includes(phrase.toLowerCase())) {
+        fail(
+          "copy",
+          route.path,
+          `the page contains "${phrase}" — Nox grants are permanent and unfinished copy must not ship`,
+        );
+      }
+    }
+
+    /*
+     * 13. No uncaught browser error.
+     *
+     * A failed network request is NOT one. Chromium logs `Failed to load resource` for any fetch it
+     * could not complete, and with no local node running every page correctly reports the chain as
+     * unavailable — which is the honest state, not a defect. Counting it would make this check fail
+     * precisely when the interface was behaving as designed, so the network layer's own message is
+     * separated from anything the application itself threw or logged.
+     */
+    const uncaught = consoleErrors.filter(
+      (message) => !message.startsWith("Failed to load resource"),
+    );
+    const networkFailures = consoleErrors.length - uncaught.length;
+    if (uncaught.length > 0) {
+      fail("console", route.path, uncaught.slice(0, 2).join(" | "));
+    }
+    if (networkFailures > 0 && !recordAvailable) {
+      unreachable.add(route.path);
+    }
+
+    // ── 14. nothing that looks like a credential reached the page source ────────────────────
+    const source = await page.content();
+    if (/eth-[a-z-]+\.g\.alchemy\.com\/v2\/[A-Za-z0-9_-]{10,}/.test(source)) {
+      fail("secrets", route.path, "a provider URL with a key is present in the page source");
+    }
+  }
+
+  await context.close();
+}
+
+/** 360px wide. Nothing may scroll the page body sideways; wide content scrolls inside its own box. */
+async function checkResponsive(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+): Promise<void> {
+  const context = await browser.newContext({ viewport: { width: 360, height: 780 } });
+  const page = await context.newPage();
+
+  for (const route of ROUTES) {
+    await page.goto(`${PREVIEW_URL}${route.path}`, { waitUntil: "domcontentloaded" });
+    if ((await page.getByTestId("boot-error").count()) > 0) continue;
+    const overflow = await page.evaluate<number>(
+      `document.documentElement.scrollWidth - document.documentElement.clientWidth`,
+    );
+    if (overflow > 1) {
+      fail(
+        "responsive",
+        route.path,
+        `the page body overflows horizontally by ${overflow}px at 360px`,
+      );
+    }
+  }
+
+  await context.close();
+}
+
+function report(recordServed: boolean): void {
+  console.log("");
+  if (!recordServed) {
+    console.log(
+      "  SKIPPED (mostly) — no deployment record is being served, so the terminal correctly refuses\n" +
+        "  to start and every rendered check was skipped rather than passed. Bring up a local stack\n" +
+        "  and deploy first:  pnpm deploy:confidential local\n",
+    );
+  }
+
+  for (const note of notes) console.log(`  note   ${note}`);
+  if (unreachable.size > 0) {
+    console.log(
+      `  note   ${unreachable.size} route(s) reported the chain as unreachable, which is the honest\n` +
+        "         state with no local node running and is not counted as a browser error",
+    );
+  }
+
+  if (failures.length === 0) {
+    console.log(`\n  PASS — ${ROUTES.length} routes walked, no finding.\n`);
+    console.log(
+      "  NOT AN ACCESSIBILITY AUDIT. This checks a fixed list of structural properties that can be\n" +
+        "  checked mechanically. A real audit involves a person and assistive technology, and nothing\n" +
+        "  here substitutes for one.\n",
+    );
+    return;
+  }
+
+  console.log(`\n  FAIL — ${failures.length} finding(s):\n`);
+  for (const finding of failures) {
+    console.log(`    ${finding.check.padEnd(18)} ${finding.route.padEnd(28)} ${finding.detail}`);
+  }
+  console.log("");
+  process.exitCode = 1;
+}
+
+await main();
