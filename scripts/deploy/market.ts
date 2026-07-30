@@ -90,6 +90,9 @@ interface DeployedContract {
   readonly constructorArgs: readonly string[];
   readonly runtimeHash: Hex;
   readonly runtimeSize: number;
+  /** Always the confidential layer. Recorded so the Etherscan verifier reads one shape. */
+  readonly layer: "confidential";
+  readonly compiler: typeof CONFIDENTIAL_COMPILER;
   readonly explorerUrl: string | null;
 }
 
@@ -196,6 +199,8 @@ export async function deployMarket(environment: Environment): Promise<MarketDepl
           constructorArgs: args.map((a) => String(a)),
           runtimeHash: keccak256(code),
           runtimeSize: (code.length - 2) / 2,
+          layer: "confidential",
+          compiler: CONFIDENTIAL_COMPILER,
           explorerUrl: explorer === null ? null : `${explorer}/address/${recorded.address}#code`,
         };
         console.log(`  ${name.padEnd(20)} ${recorded.address}  resumed, already on chain`);
@@ -238,6 +243,8 @@ export async function deployMarket(environment: Environment): Promise<MarketDepl
       constructorArgs: args.map((a) => String(a)),
       runtimeHash: keccak256(code),
       runtimeSize: (code.length - 2) / 2,
+      layer: "confidential",
+      compiler: CONFIDENTIAL_COMPILER,
       explorerUrl: explorer === null ? null : `${explorer}/address/${address}#code`,
     };
     console.log(`  ${name.padEnd(20)} ${address}  ${receipt.gasUsed} gas`);

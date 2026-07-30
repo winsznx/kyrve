@@ -61,6 +61,18 @@ import { assertNoSecrets, etherscanApiKey, sepoliaRpc } from "../lib/env.js";
 import { readJson, repoPath, run, stableStringify } from "../lib/shell.js";
 
 const CHAIN_ID = 11155111;
+
+/** Replaces every URL in a string with scheme and host, discarding the key-bearing path. */
+function redactUrls(text: string): string {
+  return text.replace(/https?:\/\/[^\s"')]+/g, (url) => {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.protocol}//${parsed.host}/***`;
+    } catch {
+      return "<url redacted>";
+    }
+  });
+}
 const EXPLORER = "https://sepolia.etherscan.io";
 const API = "https://api.etherscan.io/v2/api";
 
@@ -327,9 +339,25 @@ function verifySettlement(
 }
 
 async function main(): Promise<void> {
-  const recordPath = repoPath("deployments/sepolia/series.json");
+  /**
+   * WHICH LAYER. `--suffix b` verifies `series-b.json` and writes `series-b-etherscan.json`.
+   *
+   * A roll needs two complete layers (delta U-1) and both must be Etherscan-verified, so the record
+   * this reads cannot be a constant. The suffix is the same one `deploy:series` writes with, so the
+   * two cannot drift apart.
+   */
+  const suffixArg = process.argv.indexOf("--suffix");
+  const suffix = suffixArg === -1 ? "" : `-${process.argv[suffixArg + 1]}`;
+  /**
+   * `--record market` verifies the Phase 6 market layer, whose contracts live in their own record
+   * because `KyrveRollBook` cannot exist until a second layer does. Everything there is
+   * confidential-layer, so the record carries `layer` and `compiler` and this reads one shape.
+   */
+  const recordArg = process.argv.indexOf("--record");
+  const recordName = recordArg === -1 ? `series${suffix}` : (process.argv[recordArg + 1] as string);
+  const recordPath = repoPath(`deployments/sepolia/${recordName}.json`);
   if (!existsSync(recordPath)) {
-    throw new Error("no deployments/sepolia/series.json — run `pnpm deploy:series sepolia` first");
+    throw new Error(`no deployments/sepolia/${recordName}.json — deploy that layer first`);
   }
   const deployment = readJson<Deployment>(recordPath);
   const apiKey = etherscanApiKey();
@@ -353,37 +381,45 @@ async function main(): Promise<void> {
    * deployer — so they are reconstructed from the same immutables the factory used, every one of which
    * is in the record.
    */
-  const vaultEntry: DeployedContract = {
-    address: deployment.seriesVault,
-    deploymentTx: deployment.contracts["KyrveSeriesFactory"]?.deploymentTx ?? "0x",
-    constructorArgs: [
-      (await client.readContract({
+  const isSeriesRecord = deployment.seriesVault !== undefined;
+  const vaultEntry: DeployedContract | null = !isSeriesRecord
+    ? null
+    : {
         address: deployment.seriesVault,
-        abi: [
-          {
-            type: "function",
-            name: "MIDNIGHT",
-            stateMutability: "view",
-            inputs: [],
-            outputs: [{ type: "address" }],
-          },
+        deploymentTx: deployment.contracts["KyrveSeriesFactory"]?.deploymentTx ?? "0x",
+        constructorArgs: [
+          (await client.readContract({
+            address: deployment.seriesVault,
+            abi: [
+              {
+                type: "function",
+                name: "MIDNIGHT",
+                stateMutability: "view",
+                inputs: [],
+                outputs: [{ type: "address" }],
+              },
+            ],
+            functionName: "MIDNIGHT",
+          })) as Address,
+          deployment.contracts["KyrveQuoteRegistry"]?.address ?? "",
+          deployment.contracts["QuoteActivator"]?.address ?? "",
+          deployment.contracts["KyrveQuoteExpiryController"]?.address ?? "",
+          deployment.loanToken,
+          deployment.operator,
+          deployment.seriesId,
         ],
-        functionName: "MIDNIGHT",
-      })) as Address,
-      deployment.contracts["KyrveQuoteRegistry"]?.address ?? "",
-      deployment.contracts["QuoteActivator"]?.address ?? "",
-      deployment.contracts["KyrveQuoteExpiryController"]?.address ?? "",
-      deployment.loanToken,
-      deployment.operator,
-      deployment.seriesId,
-    ],
-    runtimeHash: "0x",
-    layer: "settlement",
-  };
+        runtimeHash: "0x",
+        layer: "settlement",
+      };
 
   const targets: readonly [string, DeployedContract][] = [
     ...Object.entries(deployment.contracts),
-    ["KyrveSeriesVault", vaultEntry],
+    // The series vault is deployed BY THE FACTORY, so it is not in the record and is appended here.
+    // A market record has no vault of its own, and appending a null one would verify nothing while
+    // failing on the first read.
+    ...(vaultEntry === null
+      ? []
+      : ([["KyrveSeriesVault", vaultEntry]] as [string, DeployedContract][])),
   ];
 
   const outcomes: Outcome[] = [];
@@ -426,11 +462,11 @@ async function main(): Promise<void> {
     total: outcomes.length,
     contracts: outcomes,
   });
-  assertNoSecrets(payload, "deployments/sepolia/series-etherscan.json");
-  writeFileSync(repoPath("deployments/sepolia/series-etherscan.json"), payload);
+  assertNoSecrets(payload, `deployments/sepolia/${recordName}-etherscan.json`);
+  writeFileSync(repoPath(`deployments/sepolia/${recordName}-etherscan.json`), payload);
 
   console.log(`\n  ${verified}/${outcomes.length} contracts verified`);
-  console.log("  metadata written to deployments/sepolia/series-etherscan.json");
+  console.log(`  metadata written to deployments/sepolia/${recordName}-etherscan.json`);
 
   if (verified !== outcomes.length) {
     console.error("\nverify:etherscan:series FAILED — not every contract is verified");
@@ -439,6 +475,13 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(`\nFAILED: ${error instanceof Error ? error.message : String(error)}`);
+  /**
+   * REDACT BEFORE PRINTING. viem embeds the transport URL in its error text, and a provider API key
+   * lives in the PATH — so a raw `console.error` of a failed read publishes the owner's Alchemy key
+   * to the terminal and to any captured log. `assertNoSecrets` guards files; nothing guarded this
+   * until a market-record run failed and printed it.
+   */
+  const raw = error instanceof Error ? error.message : String(error);
+  console.error(`\nFAILED: ${redactUrls(raw)}`);
   process.exitCode = 1;
 });
