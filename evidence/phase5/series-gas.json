@@ -4,10 +4,10 @@
   "providerCount": 3,
   "consumeChunk": "1006680",
   "unwrapFunding": "320119",
-  "finalizeUnwrap": "76898",
+  "finalizeUnwrap": "76910",
   "take": "332394",
-  "allocateChunk": "1412113",
+  "allocateChunk": "1412311",
   "closeQuote": "137634",
   "proveSolvency": "294636",
-  "seriesDeployment": "226430"
+  "seriesDeployment": "272285"
 }

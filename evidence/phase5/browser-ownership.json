@@ -6,8 +6,8 @@
   "supplyMatchesAggregate": true,
   "providerCount": 2,
   "aggregateFillAmount": "499999999",
-  "quoteId": "0x9a0d2025afdab4330e3411d783dabada3bd52d15d92264c252d7199eb717a96c",
-  "epochId": "0xa3eba9babd40b8725fb35e768c0ed4e7fb83f24ec9100ba9cdae67b0fb38b39e",
+  "quoteId": "0xc17815c644bbc0b552ee8f1ebec83c27d44a8711108b7c645bef200bd6b397b1",
+  "epochId": "0xa9ef7f7375d6bb5e9e76c8a8ddd7ca62bfcf6f87e0e254b2e8165b4202d34fa8",
   "refusalKind": "not-authorised",
   "creditUnits": "500000999",
   "solvency": "verified solvent"

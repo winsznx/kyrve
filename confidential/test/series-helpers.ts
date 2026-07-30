@@ -30,6 +30,8 @@ export interface SeriesLayer {
   readonly allocator: any;
   readonly residue: any;
   readonly solvency: any;
+  /** Phase 6. Frozen selective disclosure over this series. */
+  readonly capsules: any;
   readonly seriesId: `0x${string}`;
   readonly marketId: `0x${string}`;
   readonly vault: any;
@@ -145,6 +147,30 @@ export async function deploySeriesLayer(
   // every locked balance (threat T-B).
   await record(await h.custody.write.bindSettler([allocator.address], asDeployer));
 
+  /**
+   * PHASE 6. The capsule vault comes last because it reads five of the contracts above in its
+   * constructor and checks every one against this series id — a vault wired to another series'
+   * token would freeze the wrong position under the right name.
+   *
+   * `bindCapsuleVault` is the token's fourth one-shot binding. The vault is deliberately NOT added
+   * to `isReviewedTransientRecipient`: it never receives a handle it could publish, because the
+   * only grant a capsule makes is made by the token itself, on a handle the holder asked it to
+   * freeze for them. Finding F-1's shape, avoided rather than mitigated.
+   */
+  const deploymentId = (await s.registry.read.DEPLOYMENT_ID()) as `0x${string}`;
+  const capsules = await h.connection.viem.deployContract("KyrveCapsuleVault", [
+    args.seriesId,
+    args.marketId,
+    deploymentId,
+    token.address,
+    ownership.address,
+    solvency.address,
+    residue.address,
+    args.vaultAddress,
+    curator.account.address,
+  ]);
+  await record(await token.write.bindCapsuleVault([capsules.address], asDeployer));
+
   const vault = getContract({
     address: args.vaultAddress,
     abi: foundryArtifactAbi("KyrveSeriesVault"),
@@ -157,6 +183,7 @@ export async function deploySeriesLayer(
     allocator,
     residue,
     solvency,
+    capsules,
     seriesId: args.seriesId,
     marketId: args.marketId,
     vault,

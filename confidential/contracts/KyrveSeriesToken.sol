@@ -7,6 +7,7 @@ import {Nox, ebool, euint256, externalEuint256} from "@iexec-nox/nox-protocol-co
 
 import {KyrveConfidentialBase} from "./KyrveConfidentialBase.sol";
 import {KyrveEmergencyController} from "./KyrveEmergencyController.sol";
+import {IKyrveCapsuleVault} from "./interfaces/ICapsuleVault.sol";
 
 /**
  * @title KyrveSeriesToken
@@ -98,6 +99,7 @@ contract KyrveSeriesToken is ERC7984, KyrveConfidentialBase {
     bytes32 private constant ROLE_SUPPLY_SNAPSHOT = keccak256("kyrve.series.supplySnapshot");
     bytes32 private constant ROLE_ENTITLEMENT = keccak256("kyrve.series.entitlement");
     bytes32 private constant ROLE_ENTITLEMENT_TOTAL = keccak256("kyrve.series.entitlementTotal");
+    bytes32 private constant ROLE_CAPSULE_SNAPSHOT = keccak256("kyrve.series.capsuleSnapshot");
 
     /// @notice The longest operator grant this token will write. Seven days, because the blast
     ///         radius is the holder's entire claim and there is no per-amount cap to fall back on.
@@ -117,6 +119,8 @@ contract KyrveSeriesToken is ERC7984, KyrveConfidentialBase {
     address public allocator;
     /// @notice The only address that may borrow the aggregate supply handle. Bound once, never again.
     address public solvencyVerifier;
+    /// @notice Where a holder's frozen ownership capsules are recorded. Bound once, never again.
+    address public capsuleVault;
 
     /**
      * @notice The public factor converting one unit of principal claim into redeemable loan assets.
@@ -152,6 +156,11 @@ contract KyrveSeriesToken is ERC7984, KyrveConfidentialBase {
 
     event AllocatorBound(address indexed allocatorAddress);
     event SolvencyVerifierBound(address indexed verifierAddress);
+    event CapsuleVaultBound(address indexed vaultAddress);
+    /// @dev No amount, ever. The recipient learns the value through the gateway or not at all.
+    event OwnershipCapsuleIssued(
+        bytes32 indexed capsuleId, address indexed subject, address indexed recipient, bytes32 snapshotHandle
+    );
     /// @dev No amount, ever. One shape whatever the encrypted outcome was.
     event ClaimMinted(bytes32 indexed quoteId, address indexed provider);
     event ClaimUnwound(bytes32 indexed quoteId, address indexed provider);
@@ -162,6 +171,8 @@ contract KyrveSeriesToken is ERC7984, KyrveConfidentialBase {
 
     error AllocatorAlreadyBound(address existing);
     error AllocatorNotBound();
+    error CapsuleVaultAlreadyBound(address existing);
+    error CapsuleVaultNotBound();
     error FactorAboveCap(uint256 supplied, uint256 cap);
     error FactorIsZero();
     error NotAllocator(address caller, address expected);
@@ -216,6 +227,21 @@ contract KyrveSeriesToken is ERC7984, KyrveConfidentialBase {
         if (verifierAddress == address(0)) revert ZeroAddress("solvencyVerifier");
         solvencyVerifier = verifierAddress;
         emit SolvencyVerifierBound(verifierAddress);
+    }
+
+    /**
+     * @notice Binds the capsule vault. Once, never again.
+     * @dev The vault is NOT a transient recipient and is deliberately absent from
+     *      {isReviewedTransientRecipient}. It never receives a handle it could publish — it receives
+     *      a `bytes32` to record, after this contract has already made the only grant a capsule
+     *      produces. See {issueOwnershipCapsule}.
+     */
+    function bindCapsuleVault(address vaultAddress) external {
+        if (msg.sender != DEPLOYER) revert NotDeployer(msg.sender, DEPLOYER);
+        if (capsuleVault != address(0)) revert CapsuleVaultAlreadyBound(capsuleVault);
+        if (vaultAddress == address(0)) revert ZeroAddress("capsuleVault");
+        capsuleVault = vaultAddress;
+        emit CapsuleVaultBound(vaultAddress);
     }
 
     modifier onlyAllocator() {
@@ -435,6 +461,80 @@ contract KyrveSeriesToken is ERC7984, KyrveConfidentialBase {
         Nox.allowThis(isolatedTotal);
 
         emit Redeemed(msg.sender, nonce);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────────────────
+    // Kyrve Capsule — frozen selective disclosure of the holder's OWN claim
+    // ─────────────────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * @notice Freezes the caller's own claim into a snapshot only `recipient` and the caller can
+     *         decrypt, and records the capsule.
+     *
+     * ════════════════════════════════════════════════════════════════════════════════════════
+     * WHY THE HOLDER CALLS THIS, AND WHY NO CONTRACT SITS IN FRONT OF IT
+     * ════════════════════════════════════════════════════════════════════════════════════════
+     *
+     * The obvious design gives `KyrveCapsuleVault` a transient grant on the holder's live balance and
+     * lets it do the isolation. It would work, and it would be strictly worse: transient access
+     * carries FULL persistent-grant power, so a capsule vault holding a live balance handle could
+     * publish it irreversibly. That is finding F-1's shape exactly — `lendSupply` originally took its
+     * recipient as a parameter and thereby let any caller publish the aggregate supply forever.
+     *
+     * So no contract ever receives a live balance handle. The holder calls this, on their own claim,
+     * and this contract — the only admin on that handle — makes the two grants and hands the vault a
+     * `bytes32` to record. The vault is not in {isReviewedTransientRecipient} and does not need to be.
+     *
+     * ════════════════════════════════════════════════════════════════════════════════════════
+     * WHAT THE RECIPIENT GETS, AND WHAT THEY DO NOT
+     * ════════════════════════════════════════════════════════════════════════════════════════
+     *
+     * They get `snapshot`: a `select` output whose VALUE equals the caller's balance at this block
+     * and whose HANDLE is not the balance handle. When the holder next transfers, redeems or is
+     * allocated to, `_balances[holder]` becomes a different handle and the recipient holds nothing on
+     * it. That is the whole distinction between a capsule and a viewer, and it is structural.
+     *
+     * IRREVERSIBLE, AND STATED AT THE POINT OF ACTION. `Nox.allow` is permanent — there is no
+     * `removeViewer`. The recipient can decrypt this snapshot forever, including after the capsule's
+     * expiry. The capsule's expiry ends what the capsule ASSERTS, never what the recipient can read.
+     *
+     * ════════════════════════════════════════════════════════════════════════════════════════
+     * WHY THE SUB-INDEX CARRIES THE RECIPIENT AND A COUNTER
+     * ════════════════════════════════════════════════════════════════════════════════════════
+     *
+     * A Nox handle is deterministic in its operands. Two holders with numerically identical balances
+     * disclosing to the same auditor would otherwise compute the same `select` and produce ONE handle
+     * with ONE permanent ACL entry — and one holder would hold a grant on the other's disclosure. The
+     * same holder issuing twice to two different auditors would collide the same way. The domain
+     * folds in this contract, the series, the role, the subject, the recipient and a per-subject
+     * sequence, so no two capsules can ever be one handle. Invariant 9, delta R-6.
+     */
+    function issueOwnershipCapsule(address recipient, bytes32 quoteId, uint64 expiry, uint256 nonce)
+        external
+        returns (bytes32 capsuleId, euint256 snapshot)
+    {
+        if (capsuleVault == address(0)) revert CapsuleVaultNotBound();
+        if (recipient == address(0)) revert ZeroAddress("recipient");
+        _assertDirectCaller();
+        _consumeNonce(nonce);
+
+        uint256 sequence = IKyrveCapsuleVault(capsuleVault).issuedBy(msg.sender);
+        snapshot = _isolateOwn(
+            confidentialBalanceOf(msg.sender),
+            ROLE_CAPSULE_SNAPSHOT,
+            uint256(keccak256(abi.encode(msg.sender, recipient, sequence)))
+        );
+
+        Nox.allowThis(snapshot);
+        Nox.allow(snapshot, msg.sender);
+        // THE ONLY GRANT A CAPSULE EVER MAKES. Permanent, to one address, over one frozen value.
+        Nox.allow(snapshot, recipient);
+
+        capsuleId = IKyrveCapsuleVault(capsuleVault).recordOwnershipCapsule(
+            msg.sender, recipient, quoteId, expiry, euint256.unwrap(snapshot), sequence
+        );
+
+        emit OwnershipCapsuleIssued(capsuleId, msg.sender, recipient, euint256.unwrap(snapshot));
     }
 
     // ─────────────────────────────────────────────────────────────────────────────────────────
