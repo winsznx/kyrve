@@ -102,8 +102,13 @@ interface IKyrveSeriesVault {
     function LOAN_TOKEN() external view returns (address);
 }
 
-/// @notice The minimum of ERC-20 the residue policy needs. Public amounts only, by construction.
+/// @notice The minimum of ERC-20 the public paths need. Public amounts only, by construction.
+/// @dev `transferFrom` is here for exactly one caller: `KyrveCrossBook.settleResidualPublicly`,
+/// which pulls the counterparty's public loan tokens for a residual leg whose amount the order's
+/// owner has already published. Every function on this interface moves a PLAINTEXT amount — that is
+/// what makes it the public side of the boundary, and nothing confidential may be routed through it.
 interface IPublicLoanToken {
     function balanceOf(address account) external view returns (uint256);
     function transfer(address to, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
