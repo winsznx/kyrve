@@ -1,0 +1,49 @@
+{
+  "$comment": "One real Kyrve Capsule on Ethereum Sepolia. NO DECRYPTED VALUE APPEARS HERE and none is representable: the auditor's snapshot was compared against the subject's own decryption IN MEMORY and only the verdict is recorded. Every public field below was already public.",
+  "auditor": "0xdE252d52b31EeA91836F4CE6F22f413871d386Ec",
+  "auditorReadTheSnapshot": true,
+  "auditorRefusedTheLiveBalance": true,
+  "auditorSnapshotEqualsSubjectClaim": true,
+  "capsuleId": "0x52e32992b85f20857edf0e492531fa4bc4ac423f18e150270a55df50b6e70a86",
+  "capsuleVault": "0x488d9d4348e6de9aad8750eda035968f09bfd896",
+  "chainId": 11155111,
+  "deploymentId": "0x2befeed43fc93264db77b9b3f42fa0c1590e283b2967c42f8cc1ec7557fc4e0d",
+  "expiryIsNotRevocation": "The auditor can decrypt this snapshot forever, including after the capsule expires. Nox has no removeViewer, no removeAdmin and no un-publish. Expiry ends what the capsule ASSERTS, never what the recipient can read. Delta U-3.",
+  "explorer": "https://sepolia.etherscan.io/address/0x488d9d4348e6de9aad8750eda035968f09bfd896",
+  "layer": "a",
+  "liveBalanceHandle": "0x0000aa36a72301ff423cca23bb0b411e2d7f2c9f0da6534f5a71a07529f14801",
+  "measuredAt": "2026-07-30T10:01:38.241Z",
+  "originDigest": "0x3f10b02fbfa9418b4630b84f03e0bbf287391611c20b4579b17ed59ea9ceef16",
+  "outsider": "0x2E4AA8DD5219A9297eFb11271ee654692Ad2d9Dd",
+  "outsiderRefusedTheSnapshot": true,
+  "publicCapsuleId": "0x68c29cca364cbad233e5343f3b8aec56f3cb9f32ab36ac0f775a5ab0053e6676",
+  "publicFacts": {
+    "aggregateFillAmount": "299999999",
+    "allocatedCount": 2,
+    "midnightCredit": "300000599",
+    "publicCoverage": "300000594",
+    "quoteClosed": true
+  },
+  "quoteId": "0x89a5a9748966fa8cfc4a0e25e5cbc73e620fcb57f5f9912d6884d07b516f3649",
+  "seriesId": "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+  "seriesToken": "0x61fcb2a7623bb15622b1303d0bf819247078f178",
+  "snapshotHandle": "0x0000aa36a72301eaf7c463c65bce1766e49a042197d5dfc661f4900587698427",
+  "snapshotIsNotTheLiveHandle": true,
+  "steps": [
+    {
+      "detail": "the subject froze their own claim, addressed to the declared auditor",
+      "gas": "406298",
+      "name": "issueOwnershipCapsule",
+      "tx": "0xed9cff14d3fc80857cf59cffd12c23dd61d7d298421e1b9aec9d5adebbe9307c"
+    },
+    {
+      "detail": "solvency scope, read from the bound contracts rather than supplied",
+      "gas": "454885",
+      "name": "issuePublicCapsule",
+      "tx": "0x94b34a333961ffd78cb8987d20c78174c380801aef6db3fdbd9148b845202ad5"
+    }
+  ],
+  "subject": "0x2442854c750C88168BE342C771827566c071F7a2",
+  "wrongRecipientRefusedOnChain": true
+}
+

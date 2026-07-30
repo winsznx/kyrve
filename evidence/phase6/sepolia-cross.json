@@ -1,0 +1,79 @@
+{
+  "$comment": "One real Kyrve Cross match on Ethereum Sepolia. NO MATCHED QUANTITY, ESCROW SIZE OR PRIVATE BALANCE APPEARS HERE. Every identity was evaluated IN MEMORY from balances each party decrypted for themselves, and only the verdicts are recorded.",
+  "buyer": "0xaCdcFB704ac3321eD80efBBfc304C18801a36Bee",
+  "buyerEscrowConserved": true,
+  "chainId": 11155111,
+  "crossBook": "0xbfae69cee2c1a26e213041475bdfcdcb9ca827ad",
+  "declaredFeeBps": 25,
+  "declaredPriceWad": "970000000000000000",
+  "dustRemainedWithTheBuyer": true,
+  "entryId": "0x9c753490449003b4f72038ac5fe6e935a5a162a27fa4bdd88f19defecb6194af",
+  "exitId": "0x5b38ad080a80915f48932770e972b8bf8687a39bd724d0442b994ee64451a0bd",
+  "explorer": "https://sepolia.etherscan.io/address/0xbfae69cee2c1a26e213041475bdfcdcb9ca827ad",
+  "feeBeneficiary": "0x120477983Fa87F42cB7103172aC62662e015efDF",
+  "keeper": "0x5Ab31ab5cACBFe04e693e4d1e7A8d0314e0533af",
+  "layer": "a",
+  "matchedAsModelled": true,
+  "measuredAt": "2026-07-30T10:05:16.916Z",
+  "partialFill": true,
+  "proceedsAsModelled": true,
+  "quoteId": "0x89a5a9748966fa8cfc4a0e25e5cbc73e620fcb57f5f9912d6884d07b516f3649",
+  "seller": "0x2442854c750C88168BE342C771827566c071F7a2",
+  "sellerEscrowConserved": true,
+  "seriesId": "0x07af68de01aa80ca39281ce1ab41f488fbe9a736247483786220d24b8c540bce",
+  "seriesToken": "0x61fcb2a7623bb15622b1303d0bf819247078f178",
+  "steps": [
+    {
+      "gas": "51028",
+      "name": "mint",
+      "tx": "0x06d1cbe2a16e93105e048055d91726791649df6b1b9d57bf1f9f734fbb829078"
+    },
+    {
+      "gas": "45894",
+      "name": "approve",
+      "tx": "0xfd0f4fed7f85e52b5015ff72391e6f564ce45cd5c6051b36e2f27c94ef6050ad"
+    },
+    {
+      "gas": "178658",
+      "name": "wrap",
+      "tx": "0x7365dfefc4826b2daea4273e57da87ae9cbed194d8f2fa6d3a49084e3aa0395e"
+    },
+    {
+      "gas": "46969",
+      "name": "setOperator",
+      "tx": "0xe87514d4d6abaf2387787bc282713d4b8b2a79649ba2259ba9b94e1c32711e56"
+    },
+    {
+      "gas": "467130",
+      "name": "submitExit",
+      "tx": "0x6027d6eeb642416595a2ee1b604b9902879ad5e70ccefcac751330c5d93ffd22"
+    },
+    {
+      "gas": "24915",
+      "name": "setOperator",
+      "tx": "0x18a9aa125a70b81c17a8f294b08f9211a28fb80a6f4f975e3b9ff8ddd731a57e"
+    },
+    {
+      "gas": "46507",
+      "name": "setOperator",
+      "tx": "0xbe64623d1cb898b1d04d26a741b37be2f1eaa48b095e793fe5eca95fbaa57e74"
+    },
+    {
+      "gas": "449610",
+      "name": "submitEntry",
+      "tx": "0xcc42352e658dbc72dc65ae20cc869579dee26eec5fd8b94f92fe02b5c5f1c150"
+    },
+    {
+      "gas": "24453",
+      "name": "setOperator",
+      "tx": "0x624ca8b6406bf15c52c9b6c3a114e43f88d543419dabc15a1a153a27a1d0e07a"
+    },
+    {
+      "gas": "994501",
+      "name": "matchOrders",
+      "tx": "0x4cc9a6a9d0e7e9eb1fe4d548491d8c976855928a44f20416d6126b67fd653a70"
+    }
+  ],
+  "wrappedAsset": "0xb5a0c841f6b0cea595bc9913e87d2294fe3fc707"
+}
+
