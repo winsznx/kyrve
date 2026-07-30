@@ -52,13 +52,27 @@ function summarise(output: string, lines = 1): string {
   return meaningful.slice(-lines).join(" | ") || "(no output)";
 }
 
-/** The node:test tally, which is the only line of a Hardhat run that says what happened. */
+/**
+ * The node:test tally, and a FAILURE IS A FAILURE.
+ *
+ * The first version of this function returned the tally as a detail string and let the gate report
+ * PASS beside it. A run printing "8 passing, 1 failing" was therefore recorded as a passing gate —
+ * which is the exact defect every gate in this repository exists to prevent, sitting inside the gate
+ * itself. `run` does not throw on a non-zero exit for these because the Hardhat runner's code is not
+ * reliable across versions, so the tally is the signal and it has to be read rather than echoed.
+ */
 function testTally(output: string): string {
   const tally = output
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => /^\d+ (passing|failing)/.test(line));
   if (tally.length === 0) throw new Error("the test run printed no pass/fail tally");
+
+  const failing = tally.map((line) => /^(\d+) failing/.exec(line)).find((match) => match !== null);
+  const failures = failing === null || failing === undefined ? 0 : Number(failing[1]);
+  if (failures > 0) {
+    throw new Error(`${failures} test(s) failed: ${tally.join(", ")}`);
+  }
   return tally.join(", ");
 }
 

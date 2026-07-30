@@ -142,7 +142,7 @@ export function ProofQuote({ quoteId }: { quoteId: `0x${string}` }): ReactElemen
     // that the difference is real loan tokens rather than a rounding note.
     found.push({
       id: "exact-fill",
-      claim: "the quote names one exact unit count and one exact asset amount",
+      claim: "the quote names one exact unit count and one exact settlement asset amount",
       verdict: "verified",
       detail:
         "Midnight permits newConsumed <= offer.maxUnits, so exact fill is not a property of the " +

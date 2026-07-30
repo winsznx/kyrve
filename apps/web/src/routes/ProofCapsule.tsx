@@ -117,7 +117,7 @@ export function ProofCapsule({ capsuleId }: { capsuleId: `0x${string}` }): React
       found.push(
         compare(
           "capsule-series",
-          "the vault that issued this capsule serves the series this record names",
+          "the vault that issued this capsule serves the series the deployment record names",
           vaultSeries,
           layer.series.seriesId,
           { vault, layer: layer.label },

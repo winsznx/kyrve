@@ -87,10 +87,21 @@ export function WalletBadge(): ReactElement {
           {session.account}
         </span>
       </span>
+      {/*
+        The lock's copy has to say what locking does NOT do, at the point of the action.
+
+        It clears decrypted values from memory immediately. It does not revoke anything: the wallet
+        keeps every ACL grant it held, because Nox has no `removeAdmin` and no `removeViewer`. A
+        reader who took "lock" to mean "withdraw access" would have exactly the wrong model of a
+        permanent grant, so the sentence lives beside the button rather than on a page they might
+        not read.
+      */}
       <span className="wallet-detail" data-testid="revealed-count">
         {held === 0
           ? "No decrypted value is held in this browser."
-          : `${held} decrypted value${held === 1 ? "" : "s"} held in this browser's memory, and nowhere else.`}
+          : `${held} decrypted value${held === 1 ? "" : "s"} held in this browser's memory, and nowhere else.`}{" "}
+        Locking clears them immediately. It does not revoke anything — every grant this wallet
+        already holds stays in place, permanently, because Nox has no way to withdraw one.
       </span>
       <div className="wallet-actions">
         <button type="button" onClick={() => lock()} disabled={held === 0} data-testid="lock">
