@@ -41,6 +41,7 @@ import { type Check, downloadArtefact, VERDICT_LABEL, type Verdict } from "../li
 import { useKyrve } from "../lib/context.js";
 import { safeErrorMessage } from "../lib/redact.js";
 import { revealedValues } from "../lib/session.js";
+import { Hash, type HashKind } from "./Hash.js";
 
 export interface VerifyPanelProps {
   /** What the artefact is about: `deployment`, `quote`, `series`, `capsule`. */
@@ -165,7 +166,17 @@ export function VerifyPanel({
                 {Object.entries(check.measured).map(([key, value]) => (
                   <div key={key}>
                     <dt>{key}</dt>
-                    <dd>{value}</dd>
+                    <dd>
+                      {/*
+                        Every measured value that is a real chain object becomes a link.
+
+                        This is the page whose whole argument is "check this yourself", and it was
+                        rendering forty hex strings as inert text. A reader had to select, copy, find
+                        an explorer and paste — which is the difference between verifiable in
+                        principle and verifiable.
+                      */}
+                      {isHex(value) ? <Hash value={value} kind={kindOf(key, value)} /> : value}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -222,6 +233,43 @@ export function VerifyPanel({
  * Exported because every proof page needs it and each one writing its own comparison is how a page
  * ends up comparing the record against itself.
  */
+/** Whether a measured value is a chain object rather than a number or a sentence. */
+function isHex(value: string): boolean {
+  return /^0x[0-9a-fA-F]{8,}$/.test(value.trim());
+}
+
+/**
+ * What a measured value IS, inferred from the label rather than from its length.
+ *
+ * A 32-byte hex string is a transaction hash, a series id, a quote id, a graph root or a Nox handle,
+ * and they are indistinguishable by shape. Guessing from length would link a series id to a
+ * transaction page and produce a confident 404 on the one surface that exists to be checked — so the
+ * label decides, and anything not recognised is an identifier with no link.
+ */
+function kindOf(label: string, value: string): HashKind {
+  const key = label.toLowerCase();
+  if (key.includes(" tx") || key.endsWith("tx") || key.includes("transaction")) return "tx";
+  if (key.includes("block")) return "block";
+  // A 20-byte value is an address whatever it is called; nothing else is that length.
+  if (/^0x[0-9a-fA-F]{40}$/.test(value.trim())) return "address";
+  if (
+    key.includes("vault") ||
+    key.includes("token") ||
+    key.includes("book") ||
+    key.includes("registry") ||
+    key.includes("verifier") ||
+    key.includes("beneficiary") ||
+    key.includes("ratifier") ||
+    key.includes("taker") ||
+    key.includes("recipient") ||
+    key.includes("subject") ||
+    key.includes("maker")
+  ) {
+    return "address";
+  }
+  return "id";
+}
+
 export function compare(
   id: string,
   claim: string,

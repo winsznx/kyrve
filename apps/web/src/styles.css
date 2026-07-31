@@ -2359,3 +2359,53 @@ button:active:not(:disabled),
     max-width: 100%;
   }
 }
+
+/* ── Linked identifiers ─────────────────────────────────────────────────────────────────────── */
+
+/*
+  Every address, transaction and identifier, with a link where one resolves and a copy control
+  always. The product's argument is "check this yourself"; inert hex is that argument undelivered.
+
+  The copy button is Ash and only reaches Ivory on hover or focus, so a fact list of twenty rows does
+  not read as twenty buttons.
+*/
+.hashref {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hashref-link {
+  color: var(--color-ivory-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-slate-border);
+}
+
+.hashref-link:hover {
+  text-decoration-color: var(--color-ivory-text);
+}
+
+.hashref-copy {
+  padding: 0 8px;
+  border: none;
+  background: none;
+  color: var(--color-ash-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+
+.hashref-copy:hover {
+  color: var(--color-ivory-text);
+}
+
+/* A chain with no explorer says so, rather than offering a link that would 404. */
+.hashref-note {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+  opacity: 0.7;
+}
