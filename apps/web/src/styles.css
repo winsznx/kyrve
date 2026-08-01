@@ -3227,3 +3227,221 @@ body {
     transition: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PAGE HEADER, STATS AND THE DASHBOARD GRID
+
+   The application screens used to be a single column of full-width bands: a heading, some rows, a
+   gap, another heading. That arrangement reads as documentation rather than as a terminal, because
+   every question it answers is a full scroll away from the next one.
+
+   Nothing here introduces a colour. The dashboard is built from the same Graphite card on the same
+   Onyx canvas that the rest of the product uses, and the only thing that changed is how many of
+   them fit on a screen at once.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.page-header-text {
+  min-width: 0;
+  max-width: 68ch;
+}
+
+.page-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-header-title h1 {
+  margin: 0;
+}
+
+.page-header .eyebrow {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.page-header .lede {
+  margin: 10px 0 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hairline);
+  font-size: var(--text-caption);
+  font-weight: 480;
+  letter-spacing: 0.02em;
+  color: var(--color-ash-text);
+  white-space: nowrap;
+}
+
+/* A live network gets a marker, not a colour: the dot is Ash and reads as a state, not an alert. */
+.badge[data-tone="live"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-ash-text);
+}
+
+.badge[data-tone="private"]::before {
+  content: "▨";
+  font-size: 10px;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 24px;
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+}
+
+.stat-label {
+  font-size: var(--text-caption);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ash-text);
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 480;
+  line-height: 1.1;
+  color: var(--color-ivory-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-hint {
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  color: var(--color-ash-text);
+}
+
+/*
+  The wider column carries the decision.
+
+  1.4fr rather than 1fr so the two columns are visibly unequal: equal columns read as a comparison,
+  and these two are not comparable — one is what to do and the other is what you have.
+*/
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+
+.dash-main > h2,
+.dash-side > h2 {
+  margin: 32px 0 16px;
+}
+
+.dash-main > *:first-child,
+.dash-side > *:first-child {
+  margin-top: 0;
+}
+
+.contract-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+.contract-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  background: var(--color-graphite-card);
+  border-radius: var(--radius-xl);
+}
+
+.contract-card strong {
+  font-weight: 480;
+  color: var(--color-ivory-text);
+}
+
+.contract-card span {
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  color: var(--color-ash-text);
+}
+
+.contract-absent {
+  font-style: italic;
+}
+
+@media (max-width: 1000px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .stat-row,
+  .contract-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .stat-row,
+  .contract-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+  Five full-width rows for five actions is four hundred and fifty pixels of list.
+
+  Two columns halve that without making any row smaller, and the actions stop reading as a queue to
+  work through in order. They are alternatives, not steps — the steps are in the timeline above.
+*/
+@media (min-width: 900px) {
+  .action-rows {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .action-rows > li {
+    margin: 0;
+  }
+
+  .action-rows .action-row {
+    height: 100%;
+  }
+}
+
+/* The disclosure closes the page; it does not need a section's worth of air beneath it. */
+.advanced {
+  margin-bottom: 0;
+}
+
+main > section.band:last-of-type {
+  margin-bottom: 24px;
+}

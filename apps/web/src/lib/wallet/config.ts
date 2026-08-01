@@ -27,10 +27,16 @@
  * THE PROJECT ID IS READ, NEVER EMBEDDED
  * ════════════════════════════════════════════════════════════════════════════════════════════
  *
- * `VITE_REOWN_PROJECT_ID` comes from the environment at build time. It is not a secret — it is a
- * public identifier that Reown ties to an origin allowlist — but it is per-deployment, and a value
- * committed to the repository would be somebody else's WalletConnect quota. Absent, WalletConnect is
- * simply not offered and injected wallets still work; that is a smaller product, not a broken one.
+ * `VITE_REOWN_PROJECT_ID` comes from the environment at build time, falling back to Kyrve's own id.
+ *
+ * That id is committed deliberately. A Reown project id is not a credential: it identifies an
+ * application to the WalletConnect relay, it is readable in the bundle of every site that uses one,
+ * and it is constrained by an origin allowlist rather than by secrecy. Treating it as a secret would
+ * mean a fork of this repository builds a product whose connect button does nothing, which is the
+ * defect this replaced.
+ *
+ * A fork with its own Reown project sets the environment variable and overrides it. Nothing here is
+ * a key, and `verify:bundles` still refuses a provider URL or an API key in any asset.
  */
 
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
@@ -54,8 +60,16 @@ export const kyrveLocal = defineChain({
   testnet: true,
 });
 
-/** Reown's project id, or nothing. Absent is a coherent state, not a failure. */
-export const REOWN_PROJECT_ID: string = import.meta.env["VITE_REOWN_PROJECT_ID"] ?? "";
+/**
+ * Kyrve's Reown project id.
+ *
+ * Public by design — see the note above. Overridden by `VITE_REOWN_PROJECT_ID` at build time.
+ */
+const KYRVE_PROJECT_ID = "eb5978e457d826e1c515a8629fd0bbea";
+
+/** The id this build will use. */
+export const REOWN_PROJECT_ID: string =
+  import.meta.env["VITE_REOWN_PROJECT_ID"] ?? KYRVE_PROJECT_ID;
 
 /**
  * Where the browser reaches each chain.

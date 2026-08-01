@@ -27,6 +27,8 @@
 import type { ReactElement } from "react";
 
 import { Facts } from "../components/Facts.js";
+import { Hash } from "../components/Hash.js";
+import { Badge, PageHeader, Stat } from "../components/PageHeader.js";
 import { NextAction, Workflow } from "../components/Workflow.js";
 import { MANDATE_STATE_LABEL, MandateState } from "../lib/abi.js";
 import { abbreviate } from "../lib/chain.js";
@@ -63,43 +65,87 @@ export function Overview(): ReactElement {
 
   const actions = ROLE_ACTIONS[role];
 
+  const contracts = contractCount(record);
+  /*
+    Named rather than numbered. "chain 31337" is accurate and tells a reader nothing; a badge exists
+    to be recognised at a glance, and the number is already in the footer for anyone who needs it.
+  */
+  const sepolia = record.chainId === 11155111;
+  const network = sepolia ? "Ethereum Sepolia" : "Local chain";
+  const source = sepolia ? "the Sepolia deployment" : "the local chain";
+
   return (
     <>
-      <section className="band">
-        <span className="eyebrow">{ROLE_COPY[role].label}</span>
-        <h1>Your Kyrve</h1>
-        <p className="lede">{ROLE_COPY[role].promise}</p>
-      </section>
+      <PageHeader
+        eyebrow={ROLE_COPY[role].label}
+        title="Your Kyrve"
+        description={`${ROLE_COPY[role].promise} Everything below is read from ${source} when this page loads. Nothing is cached and no amount is decrypted here.`}
+        badge={<Badge tone="live">{network}</Badge>}
+      />
 
-      <section className="band">
-        <NextAction journey={journey} />
+      {/*
+        The public shape of the deployment, before anything personal.
+
+        Four numbers that are true whether or not a wallet is connected, so the screen says something
+        concrete on the first visit rather than four rows of "not yet". They are all public facts
+        about what exists — never a balance, never a rate, never anything a reader would need a grant
+        to see, which is why they render through `Stat` rather than through `Figure`.
+      */}
+      <section className="stat-row" data-testid="deployment-stats">
+        <Stat
+          label="Series issued"
+          value={layers.length === 0 ? "none" : String(layers.length)}
+          hint="Complete issuance stacks on this deployment"
+          testId="stat-series"
+        />
+        <Stat
+          label="Contracts live"
+          value={String(contracts)}
+          hint="Deployed and recorded with their addresses"
+          testId="stat-contracts"
+        />
+        <Stat
+          label="Disclosure vaults"
+          value={vaults === 0 ? "none" : String(vaults)}
+          hint="Where a frozen snapshot can be granted"
+          testId="stat-vaults"
+        />
+        <Stat
+          label="Curve visibility"
+          value="private"
+          hint="No rate or allocation is public at any point"
+          testId="stat-curve"
+        />
       </section>
 
       {/*
-        The timeline appears only when there is one.
+        The two things a returning reader wants, side by side rather than stacked.
 
-        With no wallet connected there are no stages to show, and a heading standing over nothing is
-        exactly the dead vertical space this pass is removing — it reads as a section that failed to
-        load rather than as one that does not apply yet.
+        Stacked, "what to do next" and "what I hold" are four hundred pixels apart and the second one
+        is below the fold, so the screen answers one question per scroll. The wider column is the
+        action because that is the one with a decision in it.
       */}
-      <section className="band">
-        {journey.stages.length === 0 ? null : (
-          <>
-            <h2>Where this is up to</h2>
-            <Workflow journey={journey} />
-          </>
-        )}
-        {journey.error === undefined ? null : (
-          <p className="note" role="alert" data-testid="journey-error">
-            Some of this could not be read from the chain, so parts of the picture are missing
-            rather than empty. {journey.error}
-          </p>
-        )}
-      </section>
+      <section className="dash-grid">
+        <div className="dash-main">
+          <NextAction journey={journey} />
+          {journey.stages.length === 0 ? null : (
+            <>
+              <h2>Where this is up to</h2>
+              <Workflow journey={journey} />
+            </>
+          )}
+          {journey.error === undefined ? null : (
+            <p className="note" role="alert" data-testid="journey-error">
+              Some of this could not be read from the chain, so parts of the picture are missing
+              rather than empty. {journey.error}
+            </p>
+          )}
+        </div>
 
-      <section className="band">
-        <h2>What you hold</h2>
-        <Portfolio role={role} journey={journey} layerCount={layers.length} vaults={vaults} />
+        <div className="dash-side">
+          <h2>What you hold</h2>
+          <Portfolio role={role} journey={journey} layerCount={layers.length} vaults={vaults} />
+        </div>
       </section>
 
       <section className="band">
@@ -129,6 +175,37 @@ export function Overview(): ReactElement {
         </ul>
       </section>
 
+      {/*
+        The contracts, named in the language of the product rather than in Solidity.
+
+        A reader who wants to check the deployment should not have to work out which of eighteen
+        addresses matters. These three are the ones that carry the argument, each with the sentence
+        that says what it does and a link straight to its verified source.
+      */}
+      <section className="band">
+        <h2>What is deployed here</h2>
+        <ul className="contract-cards" data-testid="contract-cards">
+          <ContractCard
+            name="The mandate book"
+            body="Where a lender's encrypted terms are submitted. It stores handles and never a rate."
+            address={record.addresses["EncryptedMandateBook"]}
+            chainId={record.chainId}
+          />
+          <ContractCard
+            name="The custody vault"
+            body="Holds confidential coverage, and performs the one subtraction a reservation makes."
+            address={record.series?.addresses["KyrveCustodyVault"]}
+            chainId={record.chainId}
+          />
+          <ContractCard
+            name="The disclosure vault"
+            body="Freezes a snapshot for one named auditor. Expiry stops new snapshots, not old ones."
+            address={record.market?.addresses["KyrveCapsuleVault"]}
+            chainId={record.chainId}
+          />
+        </ul>
+      </section>
+
       <section className="band">
         <details className="advanced" data-testid="advanced">
           <summary>How this works underneath</summary>
@@ -151,6 +228,52 @@ export function Overview(): ReactElement {
         </details>
       </section>
     </>
+  );
+}
+
+/**
+ * Every contract this record names, across both issuance layers.
+ *
+ * Counting only `record.addresses` would report six on a deployment that has twenty, because the
+ * layer-specific contracts live under `series` and `market` and a second complete stack lives under
+ * `layerB`. A number on a dashboard that is quietly a sixth of the truth is worse than no number.
+ */
+function contractCount(record: ReturnType<typeof useKyrve>["record"]): number {
+  const groups = [
+    record.addresses,
+    record.series?.addresses,
+    record.market?.addresses,
+    record.layerB?.series.addresses,
+    record.layerB?.market?.addresses,
+  ];
+  return groups.reduce<number>((total, group) => total + Object.keys(group ?? {}).length, 0);
+}
+
+function ContractCard({
+  name,
+  body,
+  address,
+  chainId,
+}: {
+  name: string;
+  body: string;
+  address: string | undefined;
+  chainId: number;
+}): ReactElement {
+  return (
+    <li className="contract-card">
+      <strong>{name}</strong>
+      <span>{body}</span>
+      {/*
+        An absent address is stated, not hidden. A deployment that has not issued a series has no
+        curve engine, and a card that quietly renders nothing there reads as a rendering fault.
+      */}
+      {address === undefined ? (
+        <span className="contract-absent">not deployed on this record</span>
+      ) : (
+        <Hash value={address} kind="address" chainId={chainId} />
+      )}
+    </li>
   );
 }
 
