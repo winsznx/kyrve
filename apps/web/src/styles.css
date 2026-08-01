@@ -3863,9 +3863,19 @@ main > section.band:last-of-type {
     /* A hairline, not a shadow. Separation is the one-step value lift, per design.md. */
     border-right: 1px solid var(--hairline);
     /*
-      The role menu opens beside the rail. A scroll container clips that horizontal popover even
-      with a higher z-index, which makes the role choices visible only as a thin edge. The rail's
-      contents fit at the supported desktop height, so leave the container visible for the menu.
+      The RAIL does not scroll; its NAV does. Two constraints have to hold at once.
+
+      The role menu opens sideways out of the foot, and a scroll container clips that popover even
+      at a higher z-index — which is why this is `visible` rather than `auto`.
+
+      But `visible` alone said the contents fit at any supported height, and they do not. At
+      1280x720, Playwright's default, the rail wanted 802px: the session block landed at 690-802
+      and the LOCK BUTTON sat below the fold with nothing able to scroll to it. That is the one
+      control that clears decrypted values from memory, so it being unreachable is a privacy
+      defect, not a layout one. `70-browser-flow.ts` caught it by trying to click it.
+
+      So the nav takes the overflow and the foot is pinned. The popover still escapes, because it
+      opens from the foot and the foot is not inside a scroll container.
     */
     overflow: visible;
   }
@@ -3874,9 +3884,21 @@ main > section.band:last-of-type {
     padding: 0 12px 24px;
   }
 
-  /* The nav takes the slack so the session block sits at the foot, not under the last link. */
+  /*
+    The nav absorbs every extra pixel and scrolls when there are too many.
+
+    `min-height: 0` is load-bearing: a flex child defaults to `min-height: auto`, which refuses to
+    shrink below its content and pushes the foot out of the rail instead of scrolling.
+  */
   .rail-nav {
     flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Never compressed and never scrolled past. Lock must be reachable at every height. */
+  .rail-foot {
+    flex-shrink: 0;
   }
 
   .rail-group + .rail-group {

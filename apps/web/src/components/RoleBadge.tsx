@@ -132,7 +132,16 @@ export function RoleBadge(): ReactElement {
             {held === 0
               ? "No decrypted value is held in this browser."
               : `${held} decrypted value${held === 1 ? "" : "s"} held in this browser's memory, and nowhere else.`}{" "}
-            Locking clears them immediately. It does not revoke access. Every grant this wallet
+            {/*
+              "does not revoke anything", never "does not revoke access".
+
+              The second reads identically to a human and contains the literal substring
+              `revoke access`, which is on `verify:web`'s forbidden-phrase list. A sentence that
+              NEGATES a forbidden claim is not the claim, but a substring check cannot tell the
+              difference — and the honest fix is to write the sentence that is not ambiguous rather
+              than to carve an exception into the check that protects this exact wording elsewhere.
+            */}
+            Locking clears them immediately. It does not revoke anything. Every grant this wallet
             already holds stays in place permanently because Nox has no way to withdraw one.
           </span>
           <div className="account-line">
