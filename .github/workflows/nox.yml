@@ -58,13 +58,20 @@ jobs:
           docker --version
           docker info --format 'server version: {{.ServerVersion}}'
 
+      # `--ignore-workspace` because spikes/* are deliberately OUTSIDE the root workspace.
+      #
+      # pnpm walks up, finds the root pnpm-workspace.yaml, sees that spikes/nox is not a member, and
+      # installs into the ROOT node_modules instead of here — so `pnpm exec hardhat` then fails with
+      # "Command hardhat not found" even though hardhat is in this package's own lockfile. The flag
+      # makes pnpm treat this directory as the standalone project it is, which is the whole point of
+      # spikes reproducing from their own frozen lockfiles.
       - name: Install Nox spike dependencies
         working-directory: spikes/nox
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-workspace
 
       - name: Nox runtime suite (real local stack)
         working-directory: spikes/nox
-        run: pnpm exec hardhat test
+        run: ./node_modules/.bin/hardhat test
 
       - name: Pin check against source-lock
         run: pnpm exec tsx scripts/verify/nox-runtime.ts

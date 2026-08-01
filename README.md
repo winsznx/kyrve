@@ -25,21 +25,47 @@ that becomes public is the offer that settles.
 
 ## How it works
 
-```
-encrypted lender mandates + one encrypted borrower requirement
-        │
-        ▼  Nox confidential curve engine
-        │  eligibility, capacity, privacy floor, leaf selection, all on ciphertext
-        ▼
-one publicly decrypted leaf:  market · rate · aggregate amount
-        │
-        ▼  KyrveSettlementRatifier      authenticates the exact offer and the approved taker
-        ▼  KyrveSeriesVault.onBuy       enforces exact fill size
-        ▼
-unmodified Morpho Midnight take()
-        │
-        ▼
-public credit position  +  confidential ERC-7984 ownership of it
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#171721','primaryColor':'#1e1e2a','primaryTextColor':'#ededf3','primaryBorderColor':'#70707d','secondaryColor':'#272735','lineColor':'#c3c3cc','textColor':'#ededf3','mainBkg':'#1e1e2a','nodeBorder':'#70707d','clusterBkg':'#171721','clusterBorder':'#70707d','edgeLabelBackground':'#171721','fontFamily':'ui-sans-serif, system-ui, sans-serif','fontSize':'14px'}}}%%
+flowchart TD
+    subgraph private["PRIVATE · encrypted, never published"]
+        direction TB
+        M["Lender mandates<br/><small>budget, market caps, rate floors</small>"]
+        R["Borrower requirement<br/><small>size, minimum, rate ceiling</small>"]
+        E["Nox curve engine<br/><small>eligibility · capacity · privacy floor · leaf selection</small>"]
+        X["Every rejected alternative<br/><small>allocations, capacities, exposure</small>"]
+        M --> E
+        R --> E
+        E -.-> X
+    end
+
+    Q(["ONE executable quote<br/><b>market · rate · exact amount</b>"])
+    E ==> Q
+
+    subgraph public["PUBLIC · on chain, verifiable by anyone"]
+        direction TB
+        RAT["KyrveSettlementRatifier<br/><small>authenticates offer and taker</small>"]
+        VAULT["KyrveSeriesVault.onBuy<br/><small>enforces exact fill size</small>"]
+        MID["Morpho Midnight take()<br/><small>unmodified, pinned release</small>"]
+        POS["Public credit position"]
+        RAT --> VAULT --> MID --> POS
+    end
+
+    Q ==> RAT
+
+    OWN["Confidential ERC-7984 ownership<br/><small>who owns how much stays private</small>"]
+    POS --> OWN
+
+    classDef priv fill:#1e1e2a,stroke:#70707d,stroke-width:1px,color:#c3c3cc
+    classDef pub fill:#272735,stroke:#70707d,stroke-width:1px,color:#ededf3
+    classDef quote fill:#5266eb,stroke:#5266eb,stroke-width:0px,color:#ffffff
+    classDef rejected fill:#1e1e2a,stroke:#70707d,stroke-width:1px,stroke-dasharray:4 4,color:#c3c3cc
+
+    class M,R,E priv
+    class X rejected
+    class RAT,VAULT,MID,POS pub
+    class OWN priv
+    class Q quote
 ```
 
 Every alternative the engine considered stays encrypted. A rejection produces no public reason,
@@ -49,6 +75,81 @@ The two enforcement points are not redundant. `isRatified` is a `view` and never
 it can authenticate an offer and can never enforce fill size. Midnight itself permits
 `newConsumed <= offer.maxUnits`. `onBuy` is the only place actual fill size reaches maker code, so
 exact fill is enforced there.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#171721','primaryColor':'#1e1e2a','primaryTextColor':'#ededf3','primaryBorderColor':'#70707d','secondaryColor':'#272735','lineColor':'#c3c3cc','textColor':'#ededf3','mainBkg':'#1e1e2a','nodeBorder':'#70707d','clusterBkg':'#171721','clusterBorder':'#70707d','edgeLabelBackground':'#171721','fontFamily':'ui-sans-serif, system-ui, sans-serif','fontSize':'14px'}}}%%
+flowchart LR
+    T["Borrower calls<br/>Midnight take()"]
+    A{"isRatified<br/><small>view · receives no units</small>"}
+    B{"onBuy<br/><small>receives actual fill size</small>"}
+    OK["Settles at the exact amount"]
+    NO["Reverted<br/><small>the whole take rolls back</small>"]
+
+    T --> A
+    A -->|"offer and taker authentic"| B
+    A -->|"altered offer or wrong taker"| NO
+    B -->|"units equal the quote"| OK
+    B -->|"partial fill"| NO
+
+    classDef step fill:#1e1e2a,stroke:#70707d,color:#ededf3
+    classDef check fill:#272735,stroke:#70707d,color:#ededf3
+    classDef good fill:#5266eb,stroke:#5266eb,color:#ffffff
+    classDef bad fill:#1e1e2a,stroke:#ededf3,stroke-width:2px,color:#ededf3
+
+    class T step
+    class A,B check
+    class OK good
+    class NO bad
+```
+
+## Contract layers
+
+Two compiler pins that cannot be reconciled, so they are two projects that talk through a declared
+interface. `nox-protocol-contracts` needs `^0.8.35`; the Midnight substrate is pinned at 0.8.34 so
+its bytecode stays comparable with the pinned release.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'background':'#171721','primaryColor':'#1e1e2a','primaryTextColor':'#ededf3','primaryBorderColor':'#70707d','secondaryColor':'#272735','lineColor':'#c3c3cc','textColor':'#ededf3','mainBkg':'#1e1e2a','nodeBorder':'#70707d','clusterBkg':'#171721','clusterBorder':'#70707d','edgeLabelBackground':'#171721','fontFamily':'ui-sans-serif, system-ui, sans-serif','fontSize':'14px'}}}%%
+flowchart TD
+    subgraph l1["Confidential layer · solc 0.8.36 · iExec Nox"]
+        direction LR
+        ENG["NoxCurveEngine"]
+        VLT["KyrveCustodyVault"]
+        TOK["KyrveSeriesToken<br/><small>ERC-7984</small>"]
+        MKT["Capsule · Cross · Roll"]
+    end
+
+    subgraph l2["Settlement layer · solc 0.8.34 · byte-comparable with Midnight"]
+        direction LR
+        ACT["QuoteActivator"]
+        RAT["KyrveSettlementRatifier"]
+        SV["KyrveSeriesVault"]
+    end
+
+    subgraph l3["Unmodified, pinned"]
+        MID["Morpho Midnight<br/><small>release 2026-07-23</small>"]
+    end
+
+    ENG --> ACT
+    VLT --> SV
+    ACT --> RAT --> SV --> MID
+    MID --> TOK
+    TOK --> MKT
+
+    IFACE["ICurveLayer<br/><small>declared, never imported</small>"]
+    ENG -.-> IFACE
+    IFACE -.-> ACT
+
+    classDef conf fill:#1e1e2a,stroke:#70707d,color:#ededf3
+    classDef settle fill:#272735,stroke:#70707d,color:#ededf3
+    classDef ext fill:#171721,stroke:#ededf3,stroke-width:2px,color:#ededf3
+    classDef bridge fill:#171721,stroke:#70707d,stroke-dasharray:4 4,color:#c3c3cc
+
+    class ENG,VLT,TOK,MKT conf
+    class ACT,RAT,SV settle
+    class MID ext
+    class IFACE bridge
+```
 
 ## Live on Ethereum Sepolia
 

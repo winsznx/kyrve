@@ -61,10 +61,13 @@ interface RpcCall {
 
 /** One JSON-RPC error, in the shape viem already knows how to read. */
 function rpcError(id: unknown, code: number, message: string): Response {
-  return new Response(JSON.stringify({ jsonrpc: "2.0", id: id ?? null, error: { code, message } }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ jsonrpc: "2.0", id: id ?? null, error: { code, message } }),
+    {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    },
+  );
 }
 
 export default {
