@@ -28,6 +28,8 @@
 
 import { existsSync, writeFileSync } from "node:fs";
 
+import { formatUnits } from "viem";
+
 import { readJson, repoPath } from "../lib/shell.js";
 
 type Verdict = "verified" | "unavailable" | "reported-not-verified";
@@ -180,10 +182,21 @@ function main(): void {
            * that fell through to zero would put "0.00 tUSDC" under the words "settled quote" on the
            * landing page, which is a claim about a settlement rather than an absence of one.
            */
-          amount: (Number(requireField(settlement, "aggregateFillAmount")) / 1e6).toLocaleString(
-            "en-GB",
-            { minimumFractionDigits: 2, maximumFractionDigits: 2 },
-          ),
+          /*
+           * SIX decimals, because that is what the token carries and two of them round the residue
+           * away.
+           *
+           * The aggregate is 299,999,999 base units. At two decimal places that formats to "300.00",
+           * displayed under the caption "settled at exactly these units" — a rounded figure beside
+           * the word exactly, on the one number this page invites a reader to check against
+           * Etherscan, where they would find 299999999.
+           *
+           * The missing unit is not a rounding artefact either. It is the floor-division residue
+           * between the reserved aggregate and the buyer's assets, and delta T-2 exists because
+           * there are two such residues and confusing them discloses the winning leaf's capacity.
+           * A hero that hides it is hiding the mechanism.
+           */
+          amount: formatUnits(BigInt(requireField(settlement, "aggregateFillAmount")), 6),
           units: requireField(settlement, "consumedUnits"),
           settlementTx,
         };
