@@ -121,8 +121,8 @@ export function Landing(): ReactElement {
         */}
         <span className="wordmark">kyrve</span>
         <nav aria-label="Kyrve">
-          <Link to="/app" className="row-link">
-            Open the terminal
+          <Link to="/proof" className="row-link">
+            Verify the deployment
           </Link>
         </nav>
       </header>
@@ -145,12 +145,14 @@ export function Landing(): ReactElement {
             two competing fills is the most common way a hero stops converting, and Cobalt is
             rationed to one element per page regardless.
           */}
+          {/*
+            One action. The proof link sits in the navigation instead, because a secondary action
+            beside the primary one competes with it, and the deployment page it pointed at is
+            already the first thing the verification route offers.
+          */}
           <div className="hero-actions">
             <Link to="/app" className="primary" data-testid="open-terminal">
               Enter the terminal
-            </Link>
-            <Link to="/proof/deployment" className="row-link">
-              Verify the deployment
             </Link>
           </div>
           <p className="hero-proof" data-testid="proof-line">

@@ -2984,3 +2984,132 @@ h3 {
     align-content: start;
   }
 }
+
+/*
+  The hero field bleeds the full width of the viewport.
+
+  Making the hero a grid trapped it inside a grid area, so it rendered as a rectangle with visible
+  edges in the middle of the page. An atmospheric field with a seam is worse than no field: the eye
+  reads the boundary rather than the texture.
+
+  Pulled out of flow entirely and pinned to the viewport, with the grid columns sitting on top.
+*/
+.hero-field {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  width: 100vw;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@media (min-width: 1000px) {
+  .hero {
+    position: relative;
+  }
+
+  .hero-field {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/*
+  A card whose content is prose fills its own width.
+
+  `p.lede` caps at 68ch for readability, which is right inside a narrow column and leaves a third of
+  a full-width card empty. Capping the CARD instead keeps the measure and removes the dead space, so
+  the panel looks considered rather than half-filled.
+*/
+.card.prose {
+  max-width: 78ch;
+}
+
+.card.prose p.lede {
+  max-width: none;
+  margin-bottom: 16px;
+}
+
+.card.prose p.lede:last-child {
+  margin-bottom: 0;
+}
+
+/*
+  The hero does not clip its own field.
+
+  `overflow: hidden` was on the hero from when the field was an inset child. Once the field became a
+  100vw bleed, that clip cut it back to the page width and put a visible vertical edge down the right
+  side of the screen, which is exactly the seam the bleed exists to remove.
+
+  The page itself still cannot scroll sideways: the field is `pointer-events: none` and every route
+  is measured for horizontal overflow at 360px by `pnpm verify:web`.
+*/
+.hero {
+  overflow: visible;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/*
+  Full bleed without 100vw, because 100vw includes the scrollbar.
+
+  The bleed above worked and added 4px of horizontal overflow at desktop, which `pnpm verify:web`
+  fails a build for and rightly so. The fix is not a narrower bleed, it is to stop needing one: the
+  hero is full width and the CONTENT is constrained by the grid instead of the section.
+
+  Four columns. The outer two are flexible gutters, the inner two hold the copy and the specimen and
+  are capped so the pair never exceeds the page measure. The field spans all four and therefore
+  reaches both edges of the viewport with no transform and no viewport unit.
+*/
+@media (min-width: 1000px) {
+  .hero {
+    max-width: none;
+    margin: 0;
+    grid-template-columns:
+      minmax(24px, 1fr)
+      minmax(0, 620px)
+      minmax(0, 560px)
+      minmax(24px, 1fr);
+    column-gap: var(--card-padding);
+  }
+
+  .hero-inner {
+    grid-column: 2;
+  }
+
+  .hero-specimen {
+    grid-column: 3;
+  }
+}
+
+.hero-field {
+  left: 0;
+  right: 0;
+  width: auto;
+  transform: none;
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+/* No longer needed once nothing exceeds the viewport, and it hid real overflow while it was set. */
+body {
+  overflow-x: visible;
+}
+
+/*
+  The field clips its own image, and nothing else does.
+
+  `.field-image` is scaled 1.005 to hide the resampling seam at the edges of a dithered raster. At
+  768px that half-percent put 2px past the viewport, which `verify:web` caught. Clipping at the field
+  container keeps the seam fix and contains it, where clipping at the hero would have cut the bleed.
+*/
+.hero-field,
+.close-field,
+.sequence-field {
+  overflow: hidden;
+}

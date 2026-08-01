@@ -104,7 +104,7 @@ export function Proof(): ReactElement {
       </section>
 
       <section className="band">
-        <div className="card">
+        <div className="card prose">
           <h2>What these pages are not</h2>
           <p className="lede">
             A recomputation at one block, by one browser, over the checks each page lists. Not an
