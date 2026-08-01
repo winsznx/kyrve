@@ -122,6 +122,26 @@ function main(): void {
     return found as `0x${string}`;
   };
 
+  /**
+   * A Phase 2 contract address, by name.
+   *
+   * Throws rather than falling back. A missing book must stop the generator, because the failure it
+   * replaced was the interface silently addressing a contract that could not serve it.
+   */
+  const curveRecord = readJson<{ phase2?: Record<string, string> }>(
+    repoPath("deployments/sepolia/curve.json"),
+  );
+  const phase2 = (name: string): `0x${string}` => {
+    const found = curveRecord.phase2?.[name];
+    if (found === undefined) {
+      throw new Error(
+        `deployments/sepolia/curve.json records no phase2.${name}. The interface would otherwise ` +
+          "be pointed at a contract that cannot serve it.",
+      );
+    }
+    return found as `0x${string}`;
+  };
+
   const activation = readJson<{
     quoteId: string;
     epochId: string;
@@ -152,8 +172,24 @@ function main(): void {
       TestUnderlyingERC20: a.loanToken,
       KyrveWrappedAsset: address(a, "KyrveWrappedAsset"),
       KyrveConfidentialAssetVault: address(a, "KyrveCustodyVault"),
-      EncryptedMandateBook: address(a, "QuoteEpochController"),
-      ConfidentialRequestBook: address(a, "CurveGraphRegistry"),
+      /*
+       * The REAL books, from the Phase 2 deployment, and not whatever else happens to be deployed.
+       *
+       * These two keys used to be bound to `QuoteEpochController` and `CurveGraphRegistry`. Both of
+       * those exist, both hold code, and neither implements a single function the mandate or request
+       * pages call — so `/app/mandates` rendered a complete working form and every submission died
+       * on `nextNonce` with a bare `execution reverted`.
+       *
+       * It could not fail locally. The local stack deploys the books at their own addresses, so the
+       * record was right there and wrong only on Sepolia. That is the same shape as delta V-* : a
+       * generator that binds a key to a plausible neighbour produces a record that is structurally
+       * valid, passes every shape check, and points the interface at the wrong contract.
+       *
+       * Read from `phase2` in the curve deployment, which is where `scripts/deploy/confidential.ts`
+       * recorded them.
+       */
+      EncryptedMandateBook: phase2("EncryptedMandateBook"),
+      ConfidentialRequestBook: phase2("ConfidentialRequestBook"),
     },
     disclosure:
       "Kyrve is open-source software integrating an unmodified, source-available Morpho Midnight " +
