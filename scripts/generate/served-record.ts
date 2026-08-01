@@ -58,6 +58,81 @@ function address(record: SeriesRecord, name: string): `0x${string}` {
   return found as `0x${string}`;
 }
 
+/**
+ * The market's maturity, by market id, from the universe record.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * A ZERO HERE IS A DATE, NOT AN ABSENCE
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * This used to be the literal string "0". Nothing failed: the interface formatted it and every
+ * series page reported `MATURITY 1970-01-01 00:00 UTC`, which reads as data rather than as a value
+ * nobody filled in. A missing address renders as a blank and gets noticed; a missing timestamp
+ * renders as the Unix epoch and gets believed.
+ *
+ * So it throws. A series whose maturity cannot be resolved must stop the generator rather than
+ * publish a date fifty-seven years in the past for a ninety-day instrument.
+ */
+function maturityOf(marketId: string): string {
+  const universe = readJson<unknown>(repoPath("deployments/sepolia/markets.json"));
+
+  let found: string | undefined;
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (typeof node !== "object" || node === null) return;
+    const entry = node as Record<string, unknown>;
+    if (
+      typeof entry["id"] === "string" &&
+      entry["id"].toLowerCase() === marketId.toLowerCase() &&
+      typeof entry["market"] === "object"
+    ) {
+      const market = entry["market"] as Record<string, unknown>;
+      if (typeof market["maturity"] === "string") found = market["maturity"];
+    }
+    for (const value of Object.values(entry)) walk(value);
+  };
+  walk(universe);
+
+  if (found === undefined || found === "0") {
+    throw new Error(
+      `deployments/sepolia/markets.json records no maturity for market ${marketId}. Serving "0" ` +
+        "would publish 1970-01-01 as the maturity of a real instrument.",
+    );
+  }
+  return found;
+}
+
+/**
+ * The providers holding a claim on a layer, from that layer's allocation evidence.
+ *
+ * Participation in an epoch is public and the interface says so — it is the honest cost of a
+ * permissionless keeper. What stays private is whether any of them was eligible, at what rate, in
+ * what size, and what they now own, and none of that is here: the allocation record carries
+ * addresses and verdicts, never an amount.
+ *
+ * Empty used to be hardcoded, so a settled series with two real providers reported "0 providers hold
+ * a claim on this quote" directly underneath the credit they were allocated.
+ */
+function providersOf(suffix: "a" | "b"): string[] {
+  const record = readJson<{ providers?: { provider?: string }[] }>(
+    repoPath(`evidence/phase6/sepolia-allocation-${suffix}.json`),
+  );
+  const providers = (record.providers ?? [])
+    .map((entry) => entry.provider)
+    .filter((value): value is string => typeof value === "string");
+
+  if (providers.length === 0) {
+    throw new Error(
+      `evidence/phase6/sepolia-allocation-${suffix}.json names no provider. A settled layer with no ` +
+        "provider is not a state this deployment can be in.",
+    );
+  }
+  return providers;
+}
+
 /** One issuance stack, shaped the way the web app's `records.ts` normalises it. */
 function layer(
   record: SeriesRecord,
@@ -65,6 +140,7 @@ function layer(
   epochId: string,
   graphRoot: string,
   vault: string,
+  suffix: "a" | "b",
 ) {
   return {
     addresses: {
@@ -90,13 +166,13 @@ function layer(
     loanToken: record.loanToken,
     loanTokenSymbol: "tUSDC",
     loanTokenDecimals: 6,
-    maturity: "0",
+    maturity: maturityOf(record.marketId),
     quoteId,
     epochId,
     graphRoot,
     settlementTx: "0x0000000000000000000000000000000000000000000000000000000000000000",
     allocationTx: "0x0000000000000000000000000000000000000000000000000000000000000000",
-    providers: [] as string[],
+    providers: providersOf(suffix),
   };
 }
 
@@ -153,7 +229,14 @@ function main(): void {
     repoPath("evidence/phase6/sepolia-settlement-a.json"),
   );
 
-  const layerA = layer(a, activation.quoteId, activation.epochId, epoch.graphRoot, settled.vault);
+  const layerA = layer(
+    a,
+    activation.quoteId,
+    activation.epochId,
+    epoch.graphRoot,
+    settled.vault,
+    "a",
+  );
   layerA.settlementTx = activation.settlementTxHash;
   layerA.allocationTx = activation.activationTxHash;
 
@@ -235,7 +318,7 @@ function main(): void {
        * the confusion `scripts/lib/layer.ts` exists to prevent — layer B is omitted until its own
        * settlement evidence exists. One honest layer beats two where one is a copy.
        */
-      series: layer(b, activation.quoteId, activation.epochId, epoch.graphRoot, settled.vault),
+      series: layer(b, activation.quoteId, activation.epochId, epoch.graphRoot, settled.vault, "b"),
     };
   }
 

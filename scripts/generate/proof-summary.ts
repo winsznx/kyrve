@@ -139,6 +139,18 @@ function main(): void {
    * landing page is precisely what this product argues against, so it must not be possible to have
    * one here without a run behind it.
    */
+  /** A field that must exist. The landing page's only numbers come through here. */
+  const requireField = (record: Record<string, string>, key: string): string => {
+    const value = record[key];
+    if (value === undefined || value.length === 0) {
+      throw new Error(
+        `evidence/phase6/sepolia-settlement-a.json has no ${key}, so the landing page has no ` +
+          "settled quote to show. A default here would be a fabricated figure under a real heading.",
+      );
+    }
+    return value;
+  };
+
   const settlement = evidence<Record<string, string>>("evidence/phase6/sepolia-settlement-a.json");
   /*
    * The settlement TRANSACTION HASH is in the activation record, not the settlement record.
@@ -160,11 +172,19 @@ function main(): void {
       ? null
       : {
           // Six decimals, as the loan token carries. Formatted here so the component holds no maths.
-          amount: (Number(settlement["aggregateFillAmount"] ?? "0") / 1e6).toLocaleString("en-GB", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }),
-          units: settlement["consumedUnits"] ?? "",
+          /*
+           * No `?? "0"` and no `?? ""`.
+           *
+           * Both were here, and both are the same defect as the empty transaction link above: a
+           * missing field becomes a plausible value instead of stopping the build. An aggregate
+           * that fell through to zero would put "0.00 tUSDC" under the words "settled quote" on the
+           * landing page, which is a claim about a settlement rather than an absence of one.
+           */
+          amount: (Number(requireField(settlement, "aggregateFillAmount")) / 1e6).toLocaleString(
+            "en-GB",
+            { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+          ),
+          units: requireField(settlement, "consumedUnits"),
           settlementTx,
         };
 
