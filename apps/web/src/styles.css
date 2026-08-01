@@ -3445,3 +3445,218 @@ body {
 main > section.band:last-of-type {
   margin-bottom: 24px;
 }
+
+/* ── The operations rail ────────────────────────────────────────────────────────────────────────
+
+   Replaces the masthead on every application route. `layout/Sidebar.tsx` explains why the session
+   moved out of the header; this is the geometry that lets it.
+
+   The rail is a fixed column rather than a grid track, because a grid on `body` would have to be
+   declared for the landing page too — and `/` and `/app/start` render chromeless and full-bleed with
+   their own gutters. A fixed column plus a padding offset on `.page` leaves that page untouched.
+*/
+
+@media (min-width: 1000px) {
+  .rail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 20;
+    width: 248px;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    background: var(--color-graphite-card);
+    /* A hairline, not a shadow. Separation is the one-step value lift, per design.md. */
+    border-right: 1px solid var(--hairline);
+    overflow-y: auto;
+  }
+
+  .rail-top {
+    padding: 0 12px 24px;
+  }
+
+  /* The nav takes the slack so the session block sits at the foot, not under the last link. */
+  .rail-nav {
+    flex: 1 1 auto;
+  }
+
+  .rail-group + .rail-group {
+    margin-top: 24px;
+  }
+
+  .rail-heading {
+    margin: 0 0 6px;
+    padding: 0 12px;
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-ash-text);
+  }
+
+  .rail-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .rail-link {
+    display: block;
+    padding: 7px 12px;
+    border-radius: var(--radius-pill);
+    color: var(--color-ash-text);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+  }
+
+  .rail-link:hover {
+    color: var(--color-ivory-text);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  /*
+    The active route is marked by value, never by Cobalt.
+
+    design.md reserves the one chromatic note for a page's single primary action, and persistent
+    chrome cannot hold it without spending that allowance before the page has rendered.
+  */
+  .rail-link-active,
+  .rail-link-active:hover {
+    color: var(--color-ivory-text);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .rail-foot {
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* The session block, sized for a 216px column rather than for a masthead. */
+  .rail-foot .account {
+    flex: 1 1 auto;
+    gap: 8px;
+  }
+
+  .rail-foot .account-line {
+    gap: 6px;
+  }
+
+  .rail-foot .account-note {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  /*
+    The address wraps rather than overflows.
+
+    A 42-character hex string in a 216px column has no break opportunity of its own, and without
+    this it pushes the rail wider than its fixed width and clips the nav.
+  */
+  .rail-foot .account-note .mono {
+    display: block;
+    word-break: break-all;
+    font-size: 10px;
+  }
+
+  .rail-foot .account button {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  /* The role menu opens INTO the page, away from the rail, not off the left edge. */
+  .rail-foot .account-menu {
+    top: auto;
+    bottom: 0;
+    right: auto;
+    left: calc(100% + 8px);
+    margin: 0;
+  }
+
+  /* The content column clears the rail. The footer sits inside the same offset. */
+  .page,
+  .site-footer {
+    padding-left: calc(248px + 24px);
+  }
+
+  .page-full {
+    padding-left: 0;
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/*
+  Between the handset bar and the rail there was nothing.
+
+  The bottom bar was written for 720px and under; the rail starts at 1000px. A tablet at 800px had
+  the masthead before this change and would have had no navigation at all after it. The bar now runs
+  everywhere the rail does not.
+*/
+@media (max-width: 999px) {
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: rgba(23, 23, 33, 0.96);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--hairline);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 56px;
+    color: var(--color-ash-text);
+    font-size: var(--text-caption);
+    text-decoration: none;
+  }
+
+  .bottom-nav a[aria-current="page"] {
+    color: var(--color-ivory-text);
+  }
+
+  .bottom-nav .bottom-mark {
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+  }
+
+  .page {
+    padding-bottom: 112px;
+  }
+
+  .site-footer {
+    padding-bottom: 72px;
+  }
+
+  /*
+    Without the rail, the session still needs somewhere to be.
+
+    It renders above the page content rather than being hidden: locking is the control that clears
+    decrypted values from the screen, and it must never be further away than what it protects.
+  */
+  .rail {
+    display: block;
+    padding: 16px 24px 0;
+  }
+
+  .rail-top,
+  .rail-nav {
+    display: none;
+  }
+
+  .rail-foot {
+    padding: 16px 0 0;
+  }
+}

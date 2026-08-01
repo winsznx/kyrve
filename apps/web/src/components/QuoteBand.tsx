@@ -43,9 +43,11 @@ import {
   explorerLink,
   formatUnits,
   QUOTE_STATUS_LABEL,
+  type QuoteCandidateRecord,
   QuoteStatus,
   type SettlementRecord,
 } from "../lib/settlement.js";
+import { Empty } from "./Facts.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "./Status.js";
 
 const OFFER_ABI_PARAM = QUOTE_ACTIVATOR_ABI[0].outputs[1];
@@ -130,6 +132,17 @@ interface Failure {
   readonly detail: string;
 }
 
+/**
+ * The activation panel, which needs a finished epoch to act on.
+ *
+ * Split in two so the guard sits OUTSIDE the hooks. React forbids an early return above a hook, and
+ * threading `candidate?` through twenty of them would put an optional chain on every read and leave
+ * the panel able to render a half-state that means nothing. The inner component takes a candidate
+ * that is present, so nothing inside it has to ask again.
+ *
+ * A public deployment record serves no candidate on purpose — the gateway proofs are not deployment
+ * facts. That is a normal state and it is stated, not hidden.
+ */
 export function QuoteBand({
   settlement,
   session,
@@ -137,7 +150,29 @@ export function QuoteBand({
   settlement: SettlementRecord;
   session: Session;
 }): React.ReactElement {
-  const { candidate, addresses } = settlement;
+  const { candidate } = settlement;
+  if (candidate === undefined) {
+    return (
+      <Empty title="No finished epoch is being served here">
+        Activation acts on a finished epoch together with its gateway decryption proofs. Those
+        proofs are not deployment facts, so a public record does not carry them and this panel has
+        nothing to act on. Run an epoch on a local stack to exercise it.
+      </Empty>
+    );
+  }
+  return <ActivationPanel settlement={settlement} candidate={candidate} session={session} />;
+}
+
+function ActivationPanel({
+  settlement,
+  candidate,
+  session,
+}: {
+  settlement: SettlementRecord;
+  candidate: QuoteCandidateRecord;
+  session: Session;
+}): React.ReactElement {
+  const { addresses } = settlement;
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [failure, setFailure] = useState<Failure>();

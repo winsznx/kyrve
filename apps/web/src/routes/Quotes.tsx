@@ -46,7 +46,7 @@ export function Quotes(): ReactElement {
    * page an honest empty state rather than a crash on a public URL.
    */
   const settlements = settlementsOf(record).filter(
-    (entry) => (entry.settlement as { candidate?: unknown }).candidate !== undefined,
+    (entry) => entry.settlement.candidate !== undefined,
   );
   const layers = layersOf(record);
 

@@ -61,7 +61,16 @@ const STAGES: readonly { readonly name: string; readonly unit: string; readonly 
 export function Curve(): ReactElement {
   const { record, publicClient } = useKyrve();
   const settlements = settlementsOf(record);
-  const first = settlements[0];
+
+  /*
+    The first settlement THAT CARRIES A CANDIDATE.
+
+    A record can name a settlement layer without serving a finished epoch — every public deployment
+    does. This page is about the epoch, so a settlement with no candidate is nothing for it to show
+    and it renders the same explained empty state as no settlement at all.
+  */
+  const first = settlements.find((entry) => entry.settlement.candidate !== undefined);
+  const candidate = first?.settlement.candidate;
 
   /**
    * The published leaf, re-derived on chain rather than read from the record.
@@ -71,8 +80,8 @@ export function Curve(): ReactElement {
    * activated rather than one a script wrote down.
    */
   const verified = useChainRead(async () => {
-    if (first === undefined) return undefined;
-    const { candidate, addresses } = first.settlement;
+    if (first === undefined || candidate === undefined) return undefined;
+    const { addresses } = first.settlement;
     return (await publicClient.readContract({
       address: addresses.KyrvePublicResultVerifier,
       abi: PUBLIC_RESULT_VERIFIER_ABI,
@@ -89,9 +98,9 @@ export function Curve(): ReactElement {
         candidate.proofs.aggregate,
       ],
     })) as { marketIndex: number; rateIndex: number; borrower: `0x${string}` };
-  }, [first?.settlement.candidate.epochId]);
+  }, [candidate?.epochId]);
 
-  const rateIndex = verified.value?.rateIndex ?? first?.settlement.candidate.rateIndex;
+  const rateIndex = verified.value?.rateIndex ?? candidate?.rateIndex;
   const resolved = rateIndex !== undefined;
 
   return (
@@ -125,7 +134,7 @@ export function Curve(): ReactElement {
         </div>
       </section>
 
-      {first === undefined ? (
+      {first === undefined || candidate === undefined ? (
         <section className="band">
           <Empty title="No epoch has finished on this deployment" testId="curve-empty">
             <p>
@@ -153,15 +162,15 @@ export function Curve(): ReactElement {
             facts={[
               {
                 label: "Epoch",
-                value: <span className="mono">{first.settlement.candidate.epochId}</span>,
+                value: <span className="mono">{candidate.epochId}</span>,
               },
               {
                 label: "Sealed graph root",
-                value: <span className="mono">{first.settlement.candidate.graphRoot}</span>,
+                value: <span className="mono">{candidate.graphRoot}</span>,
               },
               {
                 label: "Request",
-                value: abbreviate(first.settlement.candidate.requestId),
+                value: abbreviate(candidate.requestId),
               },
               {
                 label: "Selected market",

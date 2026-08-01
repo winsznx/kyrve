@@ -120,7 +120,16 @@ export interface SettlementRecord {
   readonly loanToken: `0x${string}`;
   readonly addresses: Readonly<Record<SettlementContractName, `0x${string}`>>;
   readonly deploymentId: `0x${string}`;
-  readonly candidate: QuoteCandidateRecord;
+  /**
+   * The finished epoch awaiting activation, when one is being served.
+   *
+   * OPTIONAL, and absent on every public deployment record. A candidate is a finished epoch together
+   * with its gateway proofs, and those proofs are not deployment facts — `served-record.ts` refuses
+   * to invent a shape for them rather than ship a placeholder proof. Declaring it required was a
+   * type that disagreed with the data the generator deliberately produces, and it cost `/app/curve`
+   * a crash on Sepolia that no local run could reproduce.
+   */
+  readonly candidate?: QuoteCandidateRecord;
   /** `https://sepolia.etherscan.io` when the record is for a public network, absent locally. */
   readonly explorer?: string;
 }

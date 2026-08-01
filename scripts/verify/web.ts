@@ -31,7 +31,7 @@
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 import { type ConsoleMessage, chromium } from "playwright";
 
@@ -132,6 +132,14 @@ function fail(check: string, route: string, detail: string): void {
   failures.push({ check, route, detail });
 }
 
+/**
+ * Walk against the PUBLIC record shape as well, when asked.
+ *
+ * Swapped in around the whole run and restored in a `finally`, so an interrupted run cannot leave a
+ * developer's checkout serving Sepolia addresses from a local stack.
+ */
+const PUBLIC_RECORD = process.argv.includes("--public");
+
 async function main(): Promise<void> {
   if (!existsSync(repoPath("apps/web/dist/index.html"))) {
     console.log("  building the web bundle first, because this checks what ships\n");
@@ -168,8 +176,17 @@ async function main(): Promise<void> {
     notes.push(`${declared.length} routes declared, ${ROUTES.length} walked`);
   }
 
-  const recordServed = existsSync(repoPath("apps/web/public/deployment.json"));
+  const recordPath = repoPath("apps/web/public/deployment.json");
+  const recordServed = existsSync(recordPath);
   recordAvailable = recordServed;
+
+  let saved: string | undefined;
+  if (PUBLIC_RECORD) {
+    if (recordServed) saved = readFileSync(recordPath, "utf8");
+    console.log("  regenerating the served record from Sepolia evidence\n");
+    run("pnpm", ["exec", "tsx", repoPath("scripts/generate/served-record.ts")]);
+    run("pnpm", ["--filter", "@kyrve/web", "build"]);
+  }
 
   let preview: ChildProcess | undefined;
   try {
@@ -203,10 +220,30 @@ async function main(): Promise<void> {
     }
   } finally {
     preview?.kill("SIGTERM");
+    if (saved !== undefined) writeFileSync(recordPath, saved);
   }
 
+  if (PUBLIC_RECORD) notes.push("walked against the public (Sepolia) record shape");
   report(recordServed);
 }
+
+/**
+ * The record this walk ran against.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * ONE SHAPE PASSING IS NOT THE PRODUCT PASSING
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * `pnpm verify:web` ran against the local record for the whole of Phase 7, and the local record
+ * carries a quote candidate. The deployed record deliberately does not — a candidate includes
+ * gateway decryption proofs, which are not deployment facts, so `served-record.ts` refuses to
+ * invent them. `/app/curve` read `settlement.candidate.epochId` unguarded and crashed on Sepolia,
+ * on a route that passed every local run.
+ *
+ * `pnpm verify:web --public` regenerates the served record from the Sepolia evidence, walks
+ * everything against it, and restores what was there. The type is honest about the field now, so
+ * the compiler catches the next one first — this is the check that proves the two agree.
+ */
 
 async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>): Promise<void> {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
