@@ -25,6 +25,7 @@ import type { ReactElement } from "react";
 import { Empty, Facts } from "../components/Facts.js";
 import { OwnershipBand } from "../components/OwnershipBand.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
+import { Why } from "../components/Why.js";
 import { abbreviate, formatTimestamp } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
 import { layerBySeriesId } from "../lib/records.js";
@@ -149,6 +150,21 @@ export function SeriesDetail({ seriesId }: { seriesId: `0x${string}` }): ReactEl
             Recompute this series from chain state
           </Link>
         </div>
+      </section>
+
+      <section className="band">
+        <Why title="Four quantities here, and no two of them are the same number">
+          <p>
+            The winning leaf’s capacity, the published aggregate, the units Midnight recorded and
+            the assets the borrower received all differ. On the settled run they differ by small
+            amounts, which is what makes the mistake easy: minting against units instead of the
+            aggregate over-issues by 600.
+          </p>
+          <p>
+            Supply is the published aggregate. Credit is Midnight’s denomination. The leaf’s own
+            capacity stays private forever, because publishing it would reveal it by subtraction.
+          </p>
+        </Why>
       </section>
     </>
   );

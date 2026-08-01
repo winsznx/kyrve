@@ -37,6 +37,7 @@ import { ConfidentialValue } from "../components/ConfidentialValue.js";
 import { Empty, Facts } from "../components/Facts.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "../components/Status.js";
+import { Why } from "../components/Why.js";
 import {
   INTENT_STATE_LABEL,
   type IntentState,
@@ -233,6 +234,20 @@ export function Roll(): ReactElement {
             />
           )}
         </RequiresWallet>
+      </section>
+
+      <section className="band">
+        <Why title="A roll moves a claim. It does not burn one and mint another">
+          <p>
+            Minting and burning are the only operations that touch confidential total supply, and
+            both produce a new supply handle. After a roll the supply handles on both sides are
+            unchanged, which proves no issuance happened more strongly than equal numbers would.
+          </p>
+          <p>
+            A roll is also not one transaction and nothing here claims it is. The status shows the
+            next action rather than a percentage, so an interrupted roll resumes from chain state.
+          </p>
+        </Why>
       </section>
     </>
   );

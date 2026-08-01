@@ -32,6 +32,7 @@ import { ConfidentialValue } from "../components/ConfidentialValue.js";
 import { Facts } from "../components/Facts.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "../components/Status.js";
+import { Why } from "../components/Why.js";
 import { REQUEST_BOOK_ABI } from "../lib/abi.js";
 import { formatTimestamp } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
@@ -92,6 +93,19 @@ export function RequestPage(): ReactElement {
             Track the confidential computation
           </Link>
         </div>
+      </section>
+
+      <section className="band">
+        <Why title="A refusal tells you nothing, and that is the mechanism">
+          <p>
+            If no quote can be produced you are told there is no fill and nothing else. No provider
+            is named, no rule is named, and no reason is recorded on chain.
+          </p>
+          <p>
+            A confidential rejection that explained itself would let anyone map the book by
+            submitting requests and reading the refusals. The silence is what stops that.
+          </p>
+        </Why>
       </section>
     </>
   );

@@ -28,6 +28,7 @@ import { ConfidentialValue } from "../components/ConfidentialValue.js";
 import { Empty, Facts } from "../components/Facts.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "../components/Status.js";
+import { Why } from "../components/Why.js";
 import {
   CROSS_BOOK_ABI,
   CROSS_BOOK_ORDER_ABI,
@@ -97,6 +98,20 @@ export function Cross({ seriesId }: { seriesId: `0x${string}` }): ReactElement {
         <RequiresWallet purpose="escrow an encrypted amount bound to your wallet">
           {(session) => <OrderPanel session={session} layer={layer} book={book} />}
         </RequiresWallet>
+      </section>
+
+      <section className="band">
+        <Why title="An open order says nothing about how much is left in it">
+          <p>
+            An order stays open until it is cancelled or fully settled, and matching leaves
+            floor-division dust. An order can be drained to almost nothing and still read as open,
+            because the contract cannot report a remainder without leaking a balance.
+          </p>
+          <p>
+            Only the owner holds a grant on the escrow handle, so decrypting your own order above is
+            the only way to answer the question. That is the design rather than a gap in it.
+          </p>
+        </Why>
       </section>
     </>
   );

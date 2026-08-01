@@ -27,6 +27,7 @@ import { ConfidentialValue } from "../components/ConfidentialValue.js";
 import { Facts } from "../components/Facts.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "../components/Status.js";
+import { Why } from "../components/Why.js";
 import { ERC20_ABI, WRAPPED_ASSET_ABI } from "../lib/abi.js";
 import { formatAmount } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
@@ -117,6 +118,21 @@ export function Fund(): ReactElement {
             Submit a lending mandate
           </Link>
         </div>
+      </section>
+
+      <section className="band">
+        <Why title="Wrapping is public going in, and permanent going out">
+          <p>
+            The amount you wrap is a plain number in the transaction and stays readable by anyone,
+            forever. That is unavoidable when the source is a public token, and it is the honest
+            cost of entering the confidential layer.
+          </p>
+          <p>
+            Unwrapping later is the same crossing in reverse and is worse: it marks the burn amount
+            publicly decryptable, and Nox has no way to un-publish a value. Everything between the
+            two crossings is encrypted.
+          </p>
+        </Why>
       </section>
     </>
   );

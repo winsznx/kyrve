@@ -62,3 +62,14 @@ export const PROOF_STAGES: readonly ProofStage[] = [
     "detail": "recorded in evidence/phase6/sepolia-roll.json"
   }
 ];
+
+/** One real settled quote for the hero, or null when no settlement evidence exists. */
+export const PROOF_SPECIMEN: {
+  readonly amount: string;
+  readonly units: string;
+  readonly settlementTx: string;
+} | null = {
+  "amount": "300.00",
+  "units": "300000599",
+  "settlementTx": ""
+};

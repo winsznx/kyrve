@@ -34,6 +34,7 @@ import type { ReactElement } from "react";
 
 import { Empty, Facts } from "../components/Facts.js";
 import { RedactedCurve } from "../components/RedactedCurve.js";
+import { Why } from "../components/Why.js";
 import { PUBLIC_RESULT_VERIFIER_ABI } from "../lib/abi.js";
 import { abbreviate, useChainRead } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
@@ -236,6 +237,21 @@ export function Curve(): ReactElement {
           These are local measurements. Testnet gas remains <strong>unverified</strong> and is not
           presented here as a forecast.
         </p>
+      </section>
+
+      <section className="band">
+        <Why title="This advances in visible steps because every encrypted operation is a transaction">
+          <p>
+            Nox has no batch entry point. Each primitive is a separate external call, so an epoch is
+            tens of transactions rather than one, and cost scales with the number of operations
+            rather than with the size of the numbers.
+          </p>
+          <p>
+            There is also no callback when off-chain work finishes. Readiness is found by polling,
+            which is why each stage names what it is waiting on instead of showing a spinner that
+            cannot know.
+          </p>
+        </Why>
       </section>
     </>
   );

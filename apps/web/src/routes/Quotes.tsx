@@ -29,6 +29,7 @@ import type { ReactElement } from "react";
 import { Empty } from "../components/Facts.js";
 import { QuoteBand } from "../components/QuoteBand.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
+import { Why } from "../components/Why.js";
 import { abbreviate } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
 import { layersOf, settlementsOf } from "../lib/records.js";
@@ -113,6 +114,21 @@ export function Quotes(): ReactElement {
           </ul>
         </section>
       )}
+
+      <section className="band">
+        <Why title="Exact fill is enforced twice because neither check can do it alone">
+          <p>
+            <code>isRatified</code> is a view and never receives the unit count, so it can confirm
+            the offer and the taker are authentic and can never enforce size. Midnight itself
+            permits a partial fill.
+          </p>
+          <p>
+            <code>onBuy</code> is the only place the actual fill size reaches maker code, so that is
+            where an exact match is required. Reverting there rolls back the entire take, including
+            the credit and the debt.
+          </p>
+        </Why>
+      </section>
     </>
   );
 }

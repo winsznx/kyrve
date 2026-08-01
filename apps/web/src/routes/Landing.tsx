@@ -34,6 +34,7 @@
 import type { ReactElement } from "react";
 
 import { EncryptedField } from "../components/EncryptedField.js";
+import { QuoteSpecimen } from "../components/QuoteSpecimen.js";
 import { TaglineReveal } from "../components/TaglineReveal.js";
 import { PROOF_LINE, PROOF_STAGES } from "../generated/proof-summary.js";
 import { useKyrve } from "../lib/context.js";
@@ -120,8 +121,8 @@ export function Landing(): ReactElement {
         */}
         <span className="wordmark">kyrve</span>
         <nav aria-label="Kyrve">
-          <Link to="/proof" className="row-link">
-            Verify the deployment
+          <Link to="/app" className="row-link">
+            Open the terminal
           </Link>
         </nav>
       </header>
@@ -155,6 +156,17 @@ export function Landing(): ReactElement {
           <p className="hero-proof" data-testid="proof-line">
             {PROOF_LINE}
           </p>
+        </div>
+
+        {/*
+          The product, above the fold.
+
+          A reader should understand what Kyrve does before the first paragraph, not after five
+          thousand pixels of it. Four encrypted rows and one public number carry the entire thesis
+          in about two seconds.
+        */}
+        <div className="hero-specimen">
+          <QuoteSpecimen />
         </div>
       </section>
 
@@ -342,8 +354,9 @@ export function Landing(): ReactElement {
               alt="The selected quote, showing the market, rate and exact amount that become public"
               width={1600}
               height={1000}
-              loading="lazy"
-              decoding="async"
+              loading="eager"
+              decoding="sync"
+              fetchPriority="high"
             />
           </picture>
           <figcaption>
@@ -361,8 +374,9 @@ export function Landing(): ReactElement {
                 alt="Setting private lending terms, with public and private fields listed before signing"
                 width={1600}
                 height={1000}
-                loading="lazy"
-                decoding="async"
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
               />
             </picture>
             <figcaption>Private terms, with the boundary named before you sign.</figcaption>
@@ -376,8 +390,9 @@ export function Landing(): ReactElement {
                 alt="A confidential position, showing ownership readable only by its holder"
                 width={1600}
                 height={1000}
-                loading="lazy"
-                decoding="async"
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
               />
             </picture>
             <figcaption>Confidential ownership of a public credit position.</figcaption>
@@ -391,8 +406,9 @@ export function Landing(): ReactElement {
                 alt="The verification page, recomputing published claims from chain state"
                 width={1600}
                 height={1000}
-                loading="lazy"
-                decoding="async"
+                loading="eager"
+                decoding="sync"
+                fetchPriority="high"
               />
             </picture>
             <figcaption>Verification that recomputes rather than displays.</figcaption>
@@ -430,14 +446,21 @@ export function Landing(): ReactElement {
       <section className="landing-section" data-testid="faq">
         <span className="eyebrow">Questions</span>
         <h2>The things people ask first.</h2>
-        <dl className="faq">
-          {FAQ.map((entry) => (
-            <div key={entry.q}>
-              <dt>{entry.q}</dt>
-              <dd>{entry.a}</dd>
-            </div>
+        {/*
+          Disclosure elements rather than ten open paragraphs.
+
+          Native `details`, so it is keyboard operable, findable by the browser's own search, and
+          open by default for the first two — a reader who never clicks still learns what is private
+          and what becomes public, which are the two questions everybody actually has.
+        */}
+        <div className="faq">
+          {FAQ.map((entry, index) => (
+            <details key={entry.q} open={index < 2}>
+              <summary>{entry.q}</summary>
+              <p>{entry.a}</p>
+            </details>
           ))}
-        </dl>
+        </div>
       </section>
 
       {/* ── 11. Final CTA. The field resolves to one point. ──────────────────────────────── */}
@@ -454,18 +477,6 @@ export function Landing(): ReactElement {
             </Link>
           </div>
         </div>
-      </section>
-
-      <section className="landing-section landing-legal">
-        <p className="disclaimer">{record.disclosure}</p>
-        <p className="disclaimer">
-          Not an offer of securities and not investment advice. This is an unmodified,
-          source-available Morpho Midnight testnet replica under its non-production licence, and is
-          not an official Morpho deployment. Values published through the Nox handle gateway carry
-          decryption proofs — signatures over a released plaintext, not zero-knowledge proofs. No
-          gas indistinguishability is claimed. The confidential contract layer has no
-          static-analysis coverage.
-        </p>
       </section>
     </>
   );

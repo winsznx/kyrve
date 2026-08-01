@@ -44,3 +44,6 @@ evidence/phase2/confidential-suite.log
 
 # The local stack writes its runtime manifest here. Machine-specific, never committed.
 .runtime/
+
+# Working notes for the frontend pass. Local only.
+FRONTEND-IMPROVEMENTS.md

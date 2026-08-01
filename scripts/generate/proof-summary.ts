@@ -131,6 +131,28 @@ function main(): void {
           .map((stage) => stage.label.toLowerCase())
           .join(" · ")}`;
 
+  /**
+   * The hero specimen: one real settled quote, or nothing.
+   *
+   * Read from the Sepolia settlement record rather than written. If that file is absent the emitted
+   * value is `null` and the component renders its unavailable state — a plausible rate typed into a
+   * landing page is precisely what this product argues against, so it must not be possible to have
+   * one here without a run behind it.
+   */
+  const settlement = evidence<Record<string, string>>("evidence/phase6/sepolia-settlement-a.json");
+  const specimen =
+    settlement === undefined
+      ? null
+      : {
+          // Six decimals, as the loan token carries. Formatted here so the component holds no maths.
+          amount: (Number(settlement["aggregateFillAmount"] ?? "0") / 1e6).toLocaleString("en-GB", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+          units: settlement["consumedUnits"] ?? "",
+          settlementTx: settlement["settlementTxHash"] ?? settlement["txHash"] ?? "",
+        };
+
   const source = `/**
  * GENERATED. Do not edit by hand — run \`pnpm generate\`.
  *
@@ -152,6 +174,13 @@ export interface ProofStage {
 export const PROOF_LINE = ${JSON.stringify(line)};
 
 export const PROOF_STAGES: readonly ProofStage[] = ${JSON.stringify(stages, null, 2)};
+
+/** One real settled quote for the hero, or null when no settlement evidence exists. */
+export const PROOF_SPECIMEN: {
+  readonly amount: string;
+  readonly units: string;
+  readonly settlementTx: string;
+} | null = ${JSON.stringify(specimen, null, 2)};
 `;
 
   writeFileSync(repoPath("apps/web/src/generated/proof-summary.ts"), source);

@@ -32,6 +32,7 @@ import { ConfidentialValue } from "../components/ConfidentialValue.js";
 import { Facts } from "../components/Facts.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "../components/Status.js";
+import { Why } from "../components/Why.js";
 import { MANDATE_BOOK_ABI, MANDATE_STATE_LABEL, MandateState } from "../lib/abi.js";
 import { useKyrve } from "../lib/context.js";
 import { recall, remember, type Session, useRevealed } from "../lib/session.js";
@@ -91,6 +92,21 @@ export function Mandates(): ReactElement {
             Watch an epoch compute
           </Link>
         </div>
+      </section>
+
+      <section className="band">
+        <Why title="Every mandate is the same size, whatever you put in it">
+          <p>
+            A submission carries 35 encrypted fields whether you enable one market or eight. The
+            unused slots hold encrypted zeros, so the shape of your strategy cannot be read from the
+            transaction the way it could if the payload grew with your appetite.
+          </p>
+          <p>
+            Retiring is terminal for a related reason. The identifier is derived from your address
+            and the market, so it can never be reused, and a retired epoch’s handles could otherwise
+            be confused with a live one’s. Pausing is the reversible action.
+          </p>
+        </Why>
       </section>
     </>
   );

@@ -2409,3 +2409,578 @@ button:active:not(:disabled),
   color: var(--color-ash-text);
   opacity: 0.7;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   Density pass.
+
+   The landing page measured 9,044px at 1440px wide for eleven sections: roughly 830px each, most
+   of it vertical gap rather than content. A reader scrolling at normal speed passed through long
+   stretches with nothing on screen, which reads as unfinished rather than as restrained.
+
+   The content was already written. It was spread too thin to land.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/*
+  Section rhythm, halved on the landing narrative only.
+
+  `--section-gap` stays 72px for the application, where panels genuinely need the separation. The
+  landing page is a continuous argument and 144px of combined padding between two paragraphs was
+  reading as a gap in the reasoning rather than as a pause in it.
+*/
+.landing-section {
+  padding-top: 56px;
+  padding-bottom: 56px;
+}
+
+.tagline-section {
+  padding-top: 88px;
+  padding-bottom: 88px;
+}
+
+.landing-close {
+  padding-top: 96px;
+  padding-bottom: 96px;
+}
+
+.sequence {
+  margin-top: var(--card-padding);
+}
+
+.product-details {
+  margin-top: var(--card-padding);
+}
+
+/*
+  Heading hierarchy, restored at every width.
+
+  `h1` scaled down responsively and `h2` never did, so at 768px they were both 42px and at 390px the
+  h2 was LARGER than the h1. The page had an inverted hierarchy on every phone, which no type
+  checker and no screenshot would catch.
+
+  `clamp` gives each level its own range with no overlap: h1 always outranks h2, h2 always outranks
+  h3, at every width between the breakpoints rather than only at them.
+*/
+h1 {
+  font-size: clamp(32px, 5vw, var(--text-heading-lg));
+}
+
+.hero h1 {
+  font-size: clamp(36px, 7vw, var(--text-display));
+}
+
+h2 {
+  font-size: clamp(24px, 3.2vw, var(--text-heading-sm));
+}
+
+.problem h2,
+.close-inner h2 {
+  font-size: clamp(26px, 4vw, var(--text-heading-lg));
+}
+
+h3 {
+  font-size: clamp(18px, 2vw, var(--text-subheading));
+}
+
+/* ── The hero specimen ──────────────────────────────────────────────────────────────────────── */
+
+.hero {
+  min-height: 0;
+  padding-bottom: 72px;
+}
+
+.hero-inner {
+  margin: 0;
+}
+
+.hero-specimen {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 40px 0 0;
+}
+
+.specimen {
+  background: var(--color-graphite-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  padding: 20px var(--card-padding);
+}
+
+.specimen-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--element-gap);
+  padding-bottom: var(--element-gap);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.specimen-label {
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+}
+
+.specimen-chain {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+}
+
+.specimen-table {
+  width: 100%;
+  margin: 0;
+}
+
+.specimen-table th {
+  padding: 10px 0;
+  color: var(--color-ash-text);
+  font-weight: var(--weight-regular);
+  font-size: var(--text-body-sm);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.specimen-table td {
+  padding: 10px 0;
+  text-align: right;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.specimen-table tr:last-child th,
+.specimen-table tr:last-child td {
+  border-bottom: none;
+}
+
+/*
+  A redacted value, in the same language the application uses.
+
+  Structure with no information in it. Never a blur, which implies the value is present and merely
+  obscured, and never a zero, which is a claim about contents.
+*/
+.specimen-redacted {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+  margin-right: var(--element-gap);
+}
+
+.specimen-redacted span {
+  display: block;
+  width: 12px;
+  height: 14px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(195, 195, 204, 0.24),
+    rgba(195, 195, 204, 0.24) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+}
+
+.specimen-state {
+  display: inline-block;
+  min-width: 14ch;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+}
+
+.specimen-value {
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ivory-text);
+  margin-right: var(--element-gap);
+}
+
+.specimen-unit {
+  font-size: var(--text-body-sm);
+  color: var(--color-ash-text);
+}
+
+.specimen-foot {
+  margin: var(--element-gap) 0 0;
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+}
+
+.specimen-foot a {
+  color: var(--color-ivory-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .specimen-table th,
+  .specimen-table td {
+    display: block;
+    text-align: left;
+    border-bottom: none;
+    padding: 2px 0;
+  }
+
+  .specimen-table tr {
+    display: block;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  .hero-specimen {
+    margin-top: var(--card-padding);
+  }
+}
+
+/* ── The per-page mechanism note ────────────────────────────────────────────────────────────── */
+
+/*
+  Set apart from the work without becoming a warning.
+
+  A left rule and Ash body rather than a filled card: a reader should be able to skip it once they
+  know the thing, and a boxed panel demands attention every time. It is not an alert, and styling it
+  as one would put a caution next to behaviour that is working correctly.
+*/
+.why {
+  margin-top: var(--card-padding);
+  padding-left: 20px;
+  border-left: 1px solid var(--color-slate-border);
+  max-width: 74ch;
+}
+
+.why h3 {
+  font-size: var(--text-body);
+  font-weight: var(--weight-w480);
+  color: var(--color-ivory-text);
+  margin: 0 0 8px;
+}
+
+.why div,
+.why p {
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  line-height: 1.55;
+  margin: 0 0 8px;
+}
+
+.why p:last-child {
+  margin-bottom: 0;
+}
+
+.why code {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+/* ── Primitives ─────────────────────────────────────────────────────────────────────────────── */
+
+.surface-control {
+  background: var(--color-obsidian-button);
+  border-radius: var(--radius-xl);
+  padding: var(--card-padding);
+}
+
+.surface-bare {
+  padding: var(--card-padding) 0;
+}
+
+/*
+  A labelled figure with its confidentiality state.
+
+  The state line is always rendered, at caption size in Ash, so a number is never on screen without
+  it. The value is tabular so a figure does not reflow as it updates.
+*/
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.figure-label {
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ash-text);
+}
+
+.figure-value {
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-w480);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ivory-text);
+  overflow-wrap: anywhere;
+}
+
+.figure-state {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+}
+
+/* Decrypted is the one state that is Ivory rather than Ash, because it is the one held in memory. */
+.figure[data-state="decrypted"] .figure-state {
+  color: var(--color-ivory-text);
+}
+
+.figure-hint {
+  font-size: var(--text-caption);
+  color: var(--color-ash-text);
+}
+
+/*
+  One public fact beside one private one, on a single row.
+
+  Two columns at desktop and stacked below 640px, but never split across sections: the pair is the
+  statement, and either half alone says nothing.
+*/
+.boundary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 8px var(--card-padding);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+  font-size: var(--text-body-sm);
+}
+
+.boundary-private {
+  color: var(--color-ash-text);
+}
+
+.boundary-dot {
+  font-family: var(--font-mono);
+  color: var(--color-ash-text);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   Density, measured per section rather than trimmed globally.
+
+   Profiling the landing page at 1440px gave height against character count, which is the ratio that
+   actually matters. Two sections were far out of line: the product section spent 1,307px on 376
+   characters, and the mechanism sequence spent 992px on 356. Both were tall because of fixed
+   minimums and stacking, not because of content.
+
+   The FAQ is the densest section on the page and is left alone. Trimming it would have removed the
+   most informative thing there to fix a number.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/*
+  The mechanism reads across at desktop.
+
+  Three stacked bands each 260px tall put a full screen between "set terms privately" and "settle one
+  quote", which is the wrong shape for a sequence: the whole point is that the three are one motion
+  from dense to resolved, and that only reads when they are visible together.
+*/
+@media (min-width: 1000px) {
+  .sequence {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sequence > li {
+    min-height: 300px;
+  }
+
+  .sequence-copy {
+    padding: 20px;
+  }
+}
+
+.sequence > li {
+  min-height: 190px;
+}
+
+/*
+  The supporting screenshots sit in one row and stay small.
+
+  They are supporting evidence for the large frame above them, and at full width each one was a
+  scroll of its own. Capping the row keeps the section proportional to what it says.
+*/
+.product-details {
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: var(--element-gap);
+}
+
+.product-details figcaption {
+  font-size: var(--text-caption);
+}
+
+.product-frame img {
+  max-height: 520px;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* The boundary columns are two short lists and do not need a section of their own height. */
+.boundary-columns li {
+  padding: 4px 0;
+}
+
+.boundary-columns ul {
+  margin: 0;
+}
+
+/* Outcome panels: the copy is one line each, so the padding was carrying the height. */
+.outcome {
+  padding: 20px var(--card-padding);
+}
+
+.outcome-go {
+  margin-top: var(--element-gap);
+}
+
+/*
+  The FAQ reads in two columns at desktop.
+
+  Ten questions in one column is a long scroll of short answers. Two columns halves the height and
+  the answers stay whole, because each question and answer is one grid item rather than a row that
+  could split across a column boundary.
+*/
+@media (min-width: 1000px) {
+  .faq {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 var(--section-gap);
+  }
+
+  .faq > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 16px 0;
+  }
+}
+
+.evidence > li {
+  padding: 12px 0;
+}
+
+.tagline-section {
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+/*
+  The large product frame is a crop, not a full page.
+
+  A landing page screenshot is there to show what the interface looks like, not to be read. Cropping
+  to the top of the screen keeps the header, the page title and the first panel, which is the part
+  that carries the impression, and drops the scroll nobody reads at this size.
+*/
+.product-frame img {
+  max-height: 400px;
+}
+
+.product-frame figcaption {
+  font-size: var(--text-caption);
+}
+
+/*
+  The hero reads as two columns at desktop, so the product is genuinely above the fold.
+
+  Stacked, the specimen sat about 900px down: past the fold on a laptop, which defeats the point of
+  putting it there. The argument is "here is the thing" and it only works if the thing is visible
+  while the headline is.
+
+  Below 1000px it stacks, because two columns at tablet width makes both of them too narrow to read.
+*/
+@media (min-width: 1000px) {
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
+    align-items: center;
+    gap: var(--section-gap);
+    padding-top: 96px;
+    padding-bottom: 96px;
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+  }
+
+  .hero-inner {
+    max-width: none;
+    grid-column: 1;
+  }
+
+  .hero-specimen {
+    grid-column: 2;
+    margin: 0;
+    max-width: none;
+  }
+
+  /* The field spans the whole hero, behind both columns. */
+  .hero-field {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+/* ── The questions, as disclosures ──────────────────────────────────────────────────────────── */
+
+/*
+  Ten open answers was a long scroll of short text. The questions are the scannable layer.
+
+  Native `details` rather than a scripted accordion: keyboard operable for free, findable by the
+  browser's own in-page search even while closed, and it degrades to open text with no JavaScript.
+  The first two are open, so a reader who never clicks still gets the two questions everybody asks.
+*/
+.faq details {
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.faq summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--element-gap);
+  padding: 16px 0;
+  cursor: pointer;
+  color: var(--color-ivory-text);
+  font-weight: var(--weight-w480);
+  list-style: none;
+  transition: color var(--duration-settle) var(--ease-settle);
+}
+
+/* Safari renders its own triangle unless this is removed. */
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+/*
+  The marker is a plus that becomes a minus.
+
+  A rotating chevron is the usual choice and it reads as navigation. A plus reads as "there is more
+  here", which is what a question actually offers.
+*/
+.faq summary::before {
+  content: "+";
+  font-family: var(--font-mono);
+  color: var(--color-ash-text);
+  width: 1ch;
+  flex: 0 0 auto;
+}
+
+.faq details[open] summary::before {
+  content: "−";
+  color: var(--color-ivory-text);
+}
+
+.faq summary:hover {
+  color: var(--color-ivory-text);
+}
+
+.faq p {
+  margin: 0 0 20px calc(1ch + var(--element-gap));
+  color: var(--color-ash-text);
+  line-height: 1.55;
+  max-width: 68ch;
+}
+
+/* The two-column rule from the density pass applied to `dl`; the markup is now a plain container. */
+@media (min-width: 1000px) {
+  .faq {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 var(--section-gap);
+    align-content: start;
+  }
+}

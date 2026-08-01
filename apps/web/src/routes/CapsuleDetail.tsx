@@ -30,6 +30,7 @@ import { ConfidentialValue } from "../components/ConfidentialValue.js";
 import { Empty, Facts } from "../components/Facts.js";
 import { RequiresWallet } from "../components/RequiresWallet.js";
 import { classifyFailure, type FailureKind, type Phase, Status } from "../components/Status.js";
+import { Why } from "../components/Why.js";
 import { CAPSULE_READ_ABI, CAPSULE_SCOPE_LABEL } from "../lib/abi.js";
 import { abbreviate, formatTimestamp, useChainRead } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
@@ -221,6 +222,20 @@ export function CapsuleDetail({ capsuleId }: { capsuleId: `0x${string}` }): Reac
             Recompute the origin from chain state
           </Link>
         </div>
+      </section>
+
+      <section className="band">
+        <Why title="Expiry stops a disclosure asserting, not its recipient reading">
+          <p>
+            A disclosure grants access to one frozen copy of one value, and that grant is permanent.
+            Nox has no way to withdraw one, so nothing here will ever say “revoked”.
+          </p>
+          <p>
+            What expiry governs is whether the disclosure still asserts its facts. After it passes,
+            live access has ended and future snapshots are disabled, and this historical snapshot
+            stays readable by the person you gave it to.
+          </p>
+        </Why>
       </section>
     </>
   );
