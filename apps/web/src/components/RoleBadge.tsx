@@ -66,14 +66,32 @@ export function RoleBadge(): ReactElement {
   return (
     <div className="account">
       <div className="account-line">
+        {/*
+          The trigger says it is a trigger.
+
+          It used to render the role name alone, in a pill, at the foot of the rail. Every role was
+          reachable from it and nobody could tell: a reviewer who had onboarded as a provider could
+          not find the way back to the three choices, because nothing about the control suggested it
+          opened anything. `aria-haspopup` told assistive technology what sighted users could not
+          see, which is the wrong way round.
+
+          A caret and a standing label cost one line each and make the control legible as a control.
+        */}
         <button
           type="button"
           className="account-trigger"
           aria-expanded={open}
+          aria-haspopup="menu"
           onClick={() => setOpen((was) => !was)}
           data-testid="account-menu"
         >
-          {role === undefined ? "Choose a role" : SHORT[role]}
+          <span className="account-role-label">Working as</span>
+          <span className="account-role-name">
+            {role === undefined ? "Choose a role" : SHORT[role]}
+            <span className="account-caret" aria-hidden="true">
+              {open ? "\u2303" : "\u2304"}
+            </span>
+          </span>
         </button>
 
         <span className="account-wallet" data-testid="wallet" data-wallet={walletState}>

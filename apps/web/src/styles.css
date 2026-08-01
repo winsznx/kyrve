@@ -3728,3 +3728,37 @@ main > section.band:last-of-type {
     justify-content: flex-end;
   }
 }
+
+/*
+  The role trigger reads as a control.
+
+  A pill carrying only the current role name was reachable, labelled and invisible as a menu — a
+  reviewer who onboarded as a provider could not find their way back to the three choices. The
+  standing label and the caret are the affordance; nothing about the menu's contents changed.
+*/
+.account-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.account-role-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-ash-text);
+}
+
+.account-role-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-ivory-text);
+}
+
+.account-caret {
+  font-family: var(--font-mono);
+  color: var(--color-ash-text);
+}
