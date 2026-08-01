@@ -136,6 +136,27 @@ Verdicts have four values, and two of them are neither pass nor fail. `unavailab
 could not run. `reported-not-verified` means a record asserts something this browser did not check,
 which is where the Etherscan counts and the static-analysis gap are listed rather than dropped.
 
+### The evidence is committed, and proven to carry nothing private
+
+Every record in [`evidence/`](evidence/) is in this repository so you can check a claim without
+running anything or trusting us. On a confidentiality product that invites the obvious question, so
+it is answered by a scan rather than by assurance.
+
+`pnpm exec tsx scripts/verify/privacy-scan.ts` reads
+[`confidential/test/private-fixtures.json`](confidential/test/private-fixtures.json) — the values
+the suite actually decrypted — and greps the whole repository for each one. Three things make it
+mean something:
+
+- **It fails if the fixture file is missing.** A scanner that cannot know what was decrypted has not
+  passed; it has failed to run.
+- **The private and public sets must be disjoint.** A wrap amount is a plain `uint256` in calldata
+  and public the moment it is sent, so it is listed as public by construction. The scan refuses any
+  value that appears in both lists, which means a leak cannot be silenced by reclassifying it.
+- **It says what it cannot check.** Rate indexes, enabled flags and allocation weights are integers
+  between 0 and 100; grepping a repository for `12` proves nothing. Those rest on the structural half
+  instead: no code path can write a decrypted value anywhere at all — no console, fetch, file or
+  storage sink on the decryption path, and no Worker or script imports it.
+
 ## Install and run
 
 Requirements: Node 22 or newer, pnpm 10.33.0, Docker (for the Nox stack), Foundry.
