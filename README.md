@@ -68,23 +68,15 @@ its bytecode stays comparable with the pinned release.
 
 ```mermaid
 graph TD
-  subgraph Confidential["Confidential layer, solc 0.8.36"]
-    Engine[NoxCurveEngine]
-    Custody[KyrveCustodyVault]
-    Token["KyrveSeriesToken\nERC-7984"]
-    Market["Capsule, Cross, Roll"]
-  end
+  Engine["NoxCurveEngine\nsolc 0.8.36"] -->|ICurveLayer, declared not imported| Activator
+  Custody["KyrveCustodyVault\nsolc 0.8.36"] --> Vault
 
-  subgraph Settlement["Settlement layer, solc 0.8.34"]
-    Activator[QuoteActivator]
-    Ratifier[KyrveSettlementRatifier]
-    Vault[KyrveSeriesVault]
-  end
+  Activator["QuoteActivator\nsolc 0.8.34"] --> Ratifier["KyrveSettlementRatifier\nsolc 0.8.34"]
+  Ratifier --> Vault["KyrveSeriesVault\nsolc 0.8.34"]
+  Vault --> Midnight["Morpho Midnight\nunmodified, pinned"]
 
-  Engine -->|ICurveLayer, declared not imported| Activator
-  Custody --> Vault
-  Activator --> Ratifier --> Vault --> Midnight["Morpho Midnight\nunmodified, pinned"]
-  Midnight --> Token --> Market
+  Midnight --> Token["KyrveSeriesToken\nERC-7984, solc 0.8.36"]
+  Token --> Market["Capsule, Cross, Roll\nsolc 0.8.36"]
 ```
 
 ## Live on Ethereum Sepolia
