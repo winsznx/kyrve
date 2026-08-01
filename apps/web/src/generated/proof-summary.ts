@@ -71,5 +71,5 @@ export const PROOF_SPECIMEN: {
 } | null = {
   "amount": "300.00",
   "units": "300000599",
-  "settlementTx": ""
+  "settlementTx": "0xfa8ef1a14438f1361f1cd3bfc221f1dad2e3636e18032790fac478a4085aa684"
 };

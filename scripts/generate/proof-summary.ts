@@ -140,8 +140,23 @@ function main(): void {
    * one here without a run behind it.
    */
   const settlement = evidence<Record<string, string>>("evidence/phase6/sepolia-settlement-a.json");
+  /*
+   * The settlement TRANSACTION HASH is in the activation record, not the settlement record.
+   *
+   * `sepolia-settlement-a.json` describes the outcome — amounts, units, positions, the two refusals
+   * — and its per-step hashes live under `transactions[]`. The single hash that identifies the
+   * settlement is written by the activation run.
+   *
+   * Reading it from the wrong file did not fail. `settlement["settlementTxHash"]` was simply
+   * undefined, fell through two `??` to an empty string, and the landing page rendered
+   * `href="https://sepolia.etherscan.io/tx/"` — a live link to nothing, under the one number on the
+   * page that is supposed to be checkable. The `?? ""` is what made it silent, so it is gone.
+   */
+  const activation = evidence<Record<string, string>>("evidence/phase6/sepolia-activation-a.json");
+  const settlementTx = activation?.["settlementTxHash"];
+
   const specimen =
-    settlement === undefined
+    settlement === undefined || settlementTx === undefined || settlementTx.length === 0
       ? null
       : {
           // Six decimals, as the loan token carries. Formatted here so the component holds no maths.
@@ -150,7 +165,7 @@ function main(): void {
             maximumFractionDigits: 2,
           }),
           units: settlement["consumedUnits"] ?? "",
-          settlementTx: settlement["settlementTxHash"] ?? settlement["txHash"] ?? "",
+          settlementTx,
         };
 
   const source = `/**

@@ -11,6 +11,19 @@ settles it exactly.
 **Chain:** Ethereum Sepolia
 **Demo video:** (link added at submission)
 
+### 👉 [**How to use Kyrve**](USING-KYRVE.md) — every page, what it does, what to click
+
+Nineteen routes and four confidentiality states take some orienting. That guide walks the provider
+journey, the borrower journey and the verification surface page by page, and says plainly which
+things this deployment does not have so nothing reads as broken when it is not.
+
+**The fastest way to judge this project needs no wallet at all.** Open
+[`/proof`](https://kyrve.timjosh507.workers.dev/proof) and click **Deployment**. It recomputes every
+published fact from chain state in your browser, names the block it read, and reports four verdicts
+rather than two — `recomputed`, `failed`, `not deployed here`, and `reported, not verified here`.
+The last two exist because calling an unrun check a pass or a failure would be a lie in one
+direction or the other.
+
 ---
 
 ## The problem
