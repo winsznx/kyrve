@@ -39,6 +39,12 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
+          # The self-installer runs a BUNDLED older pnpm to install the pinned one, and that older
+          # pnpm cannot parse `onlyBuiltDependencies` in `pnpm-workspace.yaml` — it expects the key
+          # in package.json, where pnpm 9 kept it. It fails with
+          # `onlyBuiltDependencies?.sort is not a function` before our version is ever installed.
+          # `standalone: true` downloads the pinned binary directly and never runs that path.
+          standalone: true
 
       - uses: actions/setup-node@v4
         with:
