@@ -287,20 +287,18 @@ async function checkRefreshRestoresPublicState(browser: Browser, baseUrl: string
       `Object.keys(window.localStorage).concat(Object.keys(window.sessionStorage))`,
     );
     /*
-     * Kyrve's own keys, plus the wallet stack's.
+     * Kyrve's own two keys, plus one keyless version string.
      *
-     * RainbowKit, wagmi and AppKit each persist connection state under their own namespace, and a
-     * wallet that forgot which connector you used on every reload would be a worse product. None of
-     * these may hold a Kyrve value: the check below reads every stored value and fails on anything
-     * that looks like an amount, which is the property that actually matters here.
+     * This was briefly a prefix allowance covering `rk-`, `wagmi.`, `@appkit/` and `base-acc-sdk.`,
+     * because the WalletConnect stack wrote all four. That stack is gone — it contacted two
+     * third-party origins and failed the egress assertions in `70-browser-flow.ts` — and wagmi no
+     * longer persists at all, so the allowance would now be permitting keys nothing writes.
+     *
+     * Named, never prefixed. `rk-version` holds a schema version; a future `rk-recent-wallets`
+     * must fail here rather than inherit permission from its first three characters.
      */
-    const WALLET_PREFIXES = ["rk-", "wagmi.", "@appkit/", "base-acc-sdk."];
-    const unexpected = stored.filter(
-      (key) =>
-        key !== "kyrve.role" &&
-        key !== "kyrve.onboarded" &&
-        !WALLET_PREFIXES.some((prefix) => key.startsWith(prefix)),
-    );
+    const PERMITTED = new Set(["kyrve.role", "kyrve.onboarded", "rk-version"]);
+    const unexpected = stored.filter((key) => !PERMITTED.has(key));
     if (unexpected.length > 0) {
       fail("refresh", `unexpected persisted keys: ${unexpected.join(", ")}`);
     }

@@ -332,7 +332,16 @@ describe("Phase 2: the local terminal, in a real browser, against the real stack
      * `scripts/verify/privacy-scan.ts` forbids every storage sink in `packages/nox/src/client.ts`,
      * which is the only module in the workspace that ever holds a plaintext.
      */
-    const permitted = new Set(["kyrve.role", "kyrve.onboarded"]);
+    /*
+     * `rk-version` is RainbowKit's own schema-version string and holds no value of any kind.
+     *
+     * It is permitted by name rather than by prefix, so a future `rk-recent-wallets` or
+     * `rk-connection` would still fail here. wagmi's `wagmi.store` DID carry the connected
+     * addresses and used to appear in this list; it is gone because `createWalletConfig` sets
+     * `storage: null`, which is the product's own stated position that reconnecting is an action
+     * rather than something a reload does on the reader's behalf.
+     */
+    const permitted = new Set(["kyrve.role", "kyrve.onboarded", "rk-version"]);
     const unexpectedKeys = storage.localKeys.filter((key: string) => !permitted.has(key));
     assert.deepEqual(unexpectedKeys, [], "only the role and the onboarding flag may be persisted");
     assert.equal(storage.session, 0, "nothing is persisted to sessionStorage");
