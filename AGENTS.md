@@ -41,25 +41,13 @@ primary source before acting on anything that changes a decision.
 ## Architecture in one pass
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'background':'#171721','primaryColor':'#1e1e2a','primaryTextColor':'#ededf3','primaryBorderColor':'#70707d','secondaryColor':'#272735','lineColor':'#c3c3cc','textColor':'#ededf3','mainBkg':'#1e1e2a','nodeBorder':'#70707d','clusterBkg':'#171721','clusterBorder':'#70707d','edgeLabelBackground':'#171721','fontFamily':'ui-sans-serif, system-ui, sans-serif','fontSize':'14px'}}}%%
-flowchart TD
-    IN["encrypted mandates + encrypted request"]
-    ENG["Nox curve engine<br/><small>eligibility · capacity · privacy floor · leaf selection</small>"]
-    LEAF(["one publicly decrypted leaf<br/><b>market · rate · aggregate amount</b>"])
-    RAT["KyrveSettlementRatifier<br/><small>authenticates the exact offer and approved taker</small>"]
-    ONBUY["KyrveSeriesVault.onBuy<br/><small>enforces exact units and exact assets</small>"]
-    MID["unmodified Morpho Midnight take()"]
-    OUT["public credit position<br/>+ confidential ERC-7984 ownership"]
-
-    IN --> ENG --> LEAF --> RAT --> ONBUY --> MID --> OUT
-
-    classDef priv fill:#1e1e2a,stroke:#70707d,color:#c3c3cc
-    classDef pub fill:#272735,stroke:#70707d,color:#ededf3
-    classDef quote fill:#5266eb,stroke:#5266eb,stroke-width:0px,color:#ffffff
-
-    class IN,ENG priv
-    class RAT,ONBUY,MID,OUT pub
-    class LEAF quote
+graph LR
+  Inputs["Encrypted mandates\nand request"] --> Engine[Nox curve engine]
+  Engine --> Leaf["One decrypted leaf\nmarket, rate, aggregate"]
+  Leaf --> Ratifier["KyrveSettlementRatifier\nauthenticates offer and taker"]
+  Ratifier --> OnBuy["KyrveSeriesVault.onBuy\nenforces exact units"]
+  OnBuy --> Midnight["Morpho Midnight take()"]
+  Midnight --> Out["Public credit position\nConfidential ERC-7984 ownership"]
 ```
 
 The two enforcement points are not redundant. `isRatified` is `view` and never receives `units`, so
