@@ -1,96 +1,231 @@
 # Kyrve
 
-Confidential fixed-income liquidity network. Encrypted lender mandates and borrower requirements
-become **one** executable Morpho Midnight offer, while the full yield curve, provider allocations,
-exposure limits, rejected alternatives and beneficial ownership stay private.
+Confidential fixed-income liquidity on iExec Nox, settling on unmodified Morpho Midnight.
+
+Lenders set private terms. Borrowers ask the market privately. Kyrve reveals one executable quote and
+settles it exactly.
 
 > One quote. The curve stays private.
 
+**Live:** https://kyrve.timjosh507.workers.dev
+**Chain:** Ethereum Sepolia
+**Demo video:** (link added at submission)
+
 ---
 
-## Status: Phase 1 — public substrate
+## The problem
 
-**This repository does not yet implement the product.** Phase 1 builds the substrate every later
-phase settles on, and stops there deliberately.
+A lender who posts a full curve has published their position. Anyone reading it learns which markets
+they will touch, how much they can deploy and the rate below which they stop. A borrower who shops a
+requirement publishes what they need before anyone quotes them.
 
-| Built and proven | Not yet built |
-|---|---|
-| Pinned Morpho Midnight, deployed unmodified to Ethereum Sepolia | The confidential curve engine |
-| Four launch markets, live and verified | Mandate book and request book |
-| Quote math proven against real `take()` returns | The confidential asset vault |
-| Exact-fill enforcement, with rollback and replay proven on chain | Secondary market, roll engine |
-| The Nox boundary (`@kyrve/nox`) and its enforcement | The frontend |
-| Protocol registry, deployment verifier, Osaka probe | |
-| Cloudflare foundation — running locally only | Cloudflare deployment |
+In fixed income both of those are the strategy itself. The usual answer is a private venue with a
+trusted operator. Kyrve's answer is that the computation runs on encrypted values, and the only thing
+that becomes public is the offer that settles.
 
-Read [`docs/phase1/GATE.md`](docs/phase1/GATE.md) for the verdict and its evidence.
+## How it works
+
+```
+encrypted lender mandates + one encrypted borrower requirement
+        │
+        ▼  Nox confidential curve engine
+        │  eligibility, capacity, privacy floor, leaf selection, all on ciphertext
+        ▼
+one publicly decrypted leaf:  market · rate · aggregate amount
+        │
+        ▼  KyrveSettlementRatifier      authenticates the exact offer and the approved taker
+        ▼  KyrveSeriesVault.onBuy       enforces exact fill size
+        ▼
+unmodified Morpho Midnight take()
+        │
+        ▼
+public credit position  +  confidential ERC-7984 ownership of it
+```
+
+Every alternative the engine considered stays encrypted. A rejection produces no public reason,
+because a confidential failure that explained itself would let anyone probe the book by asking.
+
+The two enforcement points are not redundant. `isRatified` is a `view` and never receives `units`, so
+it can authenticate an offer and can never enforce fill size. Midnight itself permits
+`newConsumed <= offer.maxUnits`. `onBuy` is the only place actual fill size reaches maker code, so
+exact fill is enforced there.
 
 ## Live on Ethereum Sepolia
 
-Deployed at block 11373556. **9/9 contracts verified on Etherscan V2.** The deployed Midnight
-runtime bytecode hash is identical to the local build, so "pinned release, deployed unmodified" is
-a fact this repository re-checks rather than a claim it makes.
+**56 of 56 contracts verified on Etherscan.** Two complete confidential issuance stacks sharing zero
+contracts, plus a market layer of three.
 
 | Contract | Address |
 |---|---|
-| Morpho Midnight (replica) | [`0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7`](https://sepolia.etherscan.io/address/0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7#code) |
-| `KyrveProtocolRegistry` | [`0xB7790e3f28eD688C81f09C0Cad72f7f45f4D3957`](https://sepolia.etherscan.io/address/0xB7790e3f28eD688C81f09C0Cad72f7f45f4D3957#code) |
-| `KyrveDeploymentVerifier` | [`0xa7D60Be81889777C54CB1AF4afAe8FaBFe8C20e0`](https://sepolia.etherscan.io/address/0xa7D60Be81889777C54CB1AF4afAe8FaBFe8C20e0#code) |
-| `KyrveOsakaProbe` | [`0xbbec3e83090F764bB7C55006042aa0438cF6974A`](https://sepolia.etherscan.io/address/0xbbec3e83090F764bB7C55006042aa0438cF6974A#code) |
+| Morpho Midnight (pinned, unmodified) | [`0xA8774FEba…`](https://sepolia.etherscan.io/address/0xA8774FEba7DDCAdcE4C299c3EC376B8ef447B2d7#code) |
+| `NoxCurveEngine` | [`0xb2be4575c…`](https://sepolia.etherscan.io/address/0xb2be4575c78b8f6be1bc84d54ece9f0da643010a#code) |
+| `KyrveCustodyVault` | [`0xcd4161de1…`](https://sepolia.etherscan.io/address/0xcd4161de15c52da9e5f51dbe4488a5020604d6f2#code) |
+| `KyrveSettlementRatifier` | [`0xa0bdd96d9…`](https://sepolia.etherscan.io/address/0xa0bdd96d999f6f7641dd0f78f6a5b6b5ede6eabc#code) |
+| `QuoteActivator` | [`0x0d7e61d9f…`](https://sepolia.etherscan.io/address/0x0d7e61d9febe5b44114eebf2d20b54fb341e5c14#code) |
+| `KyrveSeriesToken` | [`0x61fcb2a76…`](https://sepolia.etherscan.io/address/0x61fcb2a7623bb15622b1303d0bf819247078f178#code) |
 
-Full manifest, including test assets, oracles and the four market ids:
-[`deployments/sepolia/`](deployments/sepolia/).
+Full manifests: [`deployments/sepolia/`](deployments/sepolia/).
 
-## Licence, stated precisely
+**What has actually run on Sepolia**, each with an evidence record in [`evidence/`](evidence/):
 
-> Kyrve is open-source software integrating an unmodified, **source-available** Morpho Midnight
-> testnet replica under its applicable **non-production** licence.
+| Stage | Evidence |
+|---|---|
+| Confidential curve epoch, matching the plaintext reference model | [`sepolia-epoch-a.json`](evidence/phase6/sepolia-epoch-a.json) |
+| Quote activation, a partial fill refused, then exact settlement | [`sepolia-activation-a.json`](evidence/phase6/sepolia-activation-a.json) |
+| Confidential series ownership allocated to two providers | [`sepolia-allocation-a.json`](evidence/phase6/sepolia-allocation-a.json) |
+| Frozen selective disclosure (Capsule) | [`sepolia-capsule.json`](evidence/phase6/sepolia-capsule.json) |
+| Confidential secondary transfer (Cross) | [`sepolia-cross.json`](evidence/phase6/sepolia-cross.json) |
+| Confidential migration between maturities (Roll) | [`sepolia-roll.json`](evidence/phase6/sepolia-roll.json) |
 
-Morpho Midnight is BUSL-1.1. It is **not** open source. Its Additional Use Grant was resolved on
-2026-07-28 and found **empty**, so only non-production use is granted. Kyrve's Sepolia deployment
-is a non-production testnet replica — not an official Morpho deployment, not maintained by Morpho
-Association, and carrying no Morpho branding.
+## Verify it yourself
 
-Kyrve's own contracts are GPL-2.0-or-later; its other code is MIT. See [`LICENSE`](LICENSE) and
-[`docs/phase1/MIDNIGHT-LICENCE.md`](docs/phase1/MIDNIGHT-LICENCE.md).
+The verification pages recompute every published claim from chain state in your own browser. The
+deployment record supplies addresses and is never the source of a verdict. Where a record and the
+chain disagree, the row fails and shows both values.
 
-## Getting started
+- https://kyrve.timjosh507.workers.dev/proof/deployment
+- https://kyrve.timjosh507.workers.dev/proof
+
+That property is proven the only way it can be. A test rewrites the served record with a false series
+id and requires the page to turn that row red on its own
+([`130-roll.ts`](confidential/test/130-roll.ts), demonstration 24).
+
+Verdicts have four values, and two of them are neither pass nor fail. `unavailable` means the check
+could not run. `reported-not-verified` means a record asserts something this browser did not check,
+which is where the Etherscan counts and the static-analysis gap are listed rather than dropped.
+
+## Install and run
+
+Requirements: Node 22 or newer, pnpm 10.33.0, Docker (for the Nox stack), Foundry.
 
 ```bash
-git submodule update --init --recursive
-pnpm install --frozen-lockfile
-pnpm verify:phase1        # the full gate
+git clone <this repository>
+cd kyrve
+pnpm install
+
+cp .env.example .env      # fill in ALCHEMY_API_KEY to talk to Sepolia
+pnpm build
 ```
 
-Everything runs offline except the Sepolia gates, which need only a read RPC.
+**Run the web product against the live Sepolia deployment:**
 
 ```bash
-pnpm deploy:local         # anvil + full substrate + manifests
-pnpm test:contracts       # 53 against real unmodified Midnight
-pnpm test:unit            # 213
-pnpm test:workers         # 32 under workerd
+pnpm generate                    # derives the served record from the Sepolia manifests
+pnpm --filter @kyrve/web build
+pnpm web:preview                 # http://127.0.0.1:4173
 ```
 
-Copy [`.env.example`](.env.example) to `.env` for chain access. `.env` is git-ignored, and
-`pnpm verify:secrets` fails the build if any credential reaches a tracked file.
+**Run the full confidential stack locally.** This boots a Hardhat node, NoxCompute, the KMS, the
+ingestor, the runner, the gateway and the Midnight substrate in Docker, then drives a whole epoch
+against them:
 
-## Two properties worth understanding
+```bash
+cd confidential
+npx hardhat test test/80-curve-epoch.ts         # a confidential epoch, end to end
+npx hardhat test test/91-settlement-browser.ts  # activation, refused partial fill, exact settlement
+npx hardhat test test/101-series-browser.ts     # confidential ownership in two browser contexts
+```
 
-**Exact fill is enforced in the callback, not the ratifier — and it has to be.**
-`IRatifier.isRatified` is `view` and never receives `units`, so it can authenticate an offer but is
-structurally incapable of enforcing its size. `onBuy` is the only point where actual fill size
-reaches maker code. Proven on live Sepolia: a partial fill reverts `WrongUnits`, and the mined
-reverted transaction leaves group consumption, vault credit and taker debt all unchanged.
+**Gates:**
 
-**A Nox decryption proof proves less than it looks like.** It is a pure signature check with no ACL,
-nonce, expiry or caller binding, so it is replayable by anyone forever. `@kyrve/nox` will not return
-a decrypted value without the handle derived from the caller's own sealed operation graph.
+```bash
+pnpm verify:phase7      # 25 passed, 0 failed, 0 skipped
+pnpm verify:ux-final    # 11 passed, 0 failed, 0 skipped
+pnpm verify:kyrve       # recompute every published claim from Sepolia chain state
+```
 
 ## Documentation
 
-| Where | What |
+| Topic | Document |
 |---|---|
-| [`docs/phase1/`](docs/phase1/) | This phase: gate, deltas, security, testing, toolchain, licence |
-| [`docs/day0/`](docs/day0/) | Validation evidence and the operation budget |
-| [`kyrve-production-prd-v1.1.md`](kyrve-production-prd-v1.1.md) | Normative amendment; wins over v1.0 |
-| [`AGENTS.md`](AGENTS.md) | Orientation for contributors |
+| Feedback on the iExec Nox tools | [`feedback.md`](feedback.md) |
+| Architecture and orientation | [`AGENTS.md`](AGENTS.md) |
+| Product and architecture specification | [`kyrve-production-prd.md`](kyrve-production-prd.md) |
+| Visual system | [`design.md`](design.md) |
+
+**Security**
+
+| Topic | Document |
+|---|---|
+| Threat model | [`docs/day0/THREAT-MODEL.md`](docs/day0/THREAT-MODEL.md) |
+| Failure matrix | [`docs/day0/FAILURE-MATRIX.md`](docs/day0/FAILURE-MATRIX.md) |
+| Confidential layer | [`docs/phase3/SECURITY.md`](docs/phase3/SECURITY.md) |
+| Settlement layer | [`docs/phase4/SECURITY.md`](docs/phase4/SECURITY.md) |
+| Series ownership | [`docs/phase5/SECURITY.md`](docs/phase5/SECURITY.md) |
+| Market operations | [`docs/phase6/SECURITY.md`](docs/phase6/SECURITY.md) |
+| Web product | [`docs/phase7/SECURITY.md`](docs/phase7/SECURITY.md) |
+| Operational role separation | [`docs/phase6/ROLES.md`](docs/phase6/ROLES.md) |
+
+**Adversarial testing**
+
+Every defensive claim has a paired negative test that fails without the defence. When a revert is
+asserted, it is asserted by decoded error name, because a test that passes for the wrong reason is
+worse than no test.
+
+| Suite | What it attacks |
+|---|---|
+| [`40-proof-attacks.ts`](confidential/test/40-proof-attacks.ts) | Input proof replay, wrong owner, wrong contract, expiry |
+| [`81-curve-attacks.ts`](confidential/test/81-curve-attacks.ts) | Stale epochs, unauthorised stages, handle substitution |
+| [`102-series-attacks.ts`](confidential/test/102-series-attacks.ts) | Double allocation, unauthorised minting |
+| [`140-phase6-attacks.ts`](confidential/test/140-phase6-attacks.ts) | Capsule, Cross and Roll refusals, each by decoded name |
+| [`ExactFill.t.sol`](contracts/integration/test/ExactFill.t.sol) | Partial fill against real unmodified Midnight |
+
+Side channels: [`docs/phase1/GAS-SIDE-CHANNEL.md`](docs/phase1/GAS-SIDE-CHANNEL.md). No gas
+indistinguishability is claimed, for any path in any phase.
+
+**Verification and evidence**
+
+| Topic | Document |
+|---|---|
+| Day 0 validation verdict | [`docs/day0/VERDICT.md`](docs/day0/VERDICT.md) |
+| Source and version lock | [`docs/day0/SOURCE-LOCK.md`](docs/day0/SOURCE-LOCK.md) |
+| Handle lineage and isolation | [`docs/phase3/HANDLE-LINEAGE.md`](docs/phase3/HANDLE-LINEAGE.md) |
+| Phase gates | [`day0`](docs/day0/GATE.md) · [`1`](docs/phase1/GATE.md) · [`3`](docs/phase3/GATE.md) · [`4`](docs/phase4/GATE.md) · [`5`](docs/phase5/GATE.md) · [`6`](docs/phase6/GATE.md) · [`7`](docs/phase7/GATE.md) |
+| Corrections to the specification | [`docs/phase7/PRD-DELTA.md`](docs/phase7/PRD-DELTA.md), and one delta file per phase |
+
+## Licence
+
+Kyrve's own contracts are **GPL-2.0-or-later**. Its packages, workers and tooling are MIT. See
+[`LICENSE`](LICENSE).
+
+> Kyrve is open-source software integrating an unmodified, source-available Morpho Midnight testnet
+> replica under its applicable non-production licence.
+
+Morpho Midnight is BUSL-1.1 and is not open source. Its Additional Use Grant was resolved on
+2026-07-28 and found empty, so only non-production use is granted. Kyrve's Sepolia deployment is a
+non-production testnet replica. It is not an official Morpho deployment, it is not maintained by
+Morpho Association, and it carries no Morpho branding.
+
+Midnight interfaces, libraries and periphery that Kyrve imports carry GPL-2.0-or-later, which is why
+Kyrve's own contracts do too. Full per-dependency analysis:
+[`docs/day0/LICENSE-MATRIX.md`](docs/day0/LICENSE-MATRIX.md). How the grant was resolved:
+[`docs/phase1/MIDNIGHT-LICENCE.md`](docs/phase1/MIDNIGHT-LICENCE.md).
+
+iExec Nox packages are used as published, unmodified.
+
+## Originality
+
+Kyrve was built entirely during this hackathon. It reuses no project from the previous VIBE Coding
+Hackathon.
+
+Two dependencies are pre-existing open-source work, both used unmodified and both pinned:
+
+- **Morpho Midnight**, release `2026-07-23`, commit `dbd8d3d5`, in `vendor/midnight` as a submodule
+  that is never edited. Kyrve deploys it unmodified and extends it with separate contracts.
+- **iExec Nox**, `nox-protocol-contracts@0.2.4` with the published SDK and Hardhat plugin.
+
+Everything in `contracts/kyrve/`, `confidential/contracts/`, `packages/`, `workers/`, `apps/web/` and
+`scripts/` was written for this hackathon.
+
+## What this is not
+
+Not an offer of securities and not investment advice. The Midnight deployment is a testnet replica
+under a non-production licence. There is no Nox mainnet.
+
+Values published through the Nox handle gateway carry **decryption proofs**, which are EIP-712
+signatures by the Nox KMS attesting that a handle decrypts to a value. They are not zero-knowledge
+proofs and Kyrve never describes them as such.
+
+The confidential contract layer has **no static-analysis coverage**. `crytic-compile` cannot be made
+to drive solc 0.8.36, so Slither cannot reach it. Every gate run reports this as unverified rather
+than folding it into a pass. The settlement layer, which Slither can reach, is analysed and clean.
