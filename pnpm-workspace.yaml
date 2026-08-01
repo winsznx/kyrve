@@ -30,3 +30,20 @@ overrides:
   lodash-es: 4.18.1
   # A crafted ZIP triggers a 4 GB allocation.
   adm-zip: 0.6.0
+
+  # ── Arriving through the wallet stack, all of them development-and-browser transitive ────────
+  #
+  # RainbowKit pulls @wagmi/connectors, which pulls @base-org/account, which pulls
+  # @coinbase/cdp-sdk. Three packages deep, none of them chosen by Kyrve, and all three carry
+  # published fixes. Pulled forward rather than excused, and pinned to the SAME MAJOR wherever the
+  # fix exists there: a major bump on a transitive dependency changes an API for a consumer that
+  # never asked for it.
+  #
+  # Ten advisories in axios, covering SSRF through absolute-URL handling, a DoS through unbounded
+  # response decompression, and an HTTP/2 upload path that bypasses maxBodyLength.
+  axios: 1.19.0
+  # Two in ws: a DoS through unbounded header counts, and a request-smuggling path.
+  ws: 8.21.1
+  # One in uuid. 11.1.1 is the fix inside the major the wallet stack already depends on; 14.x is
+  # available and would be a two-major jump for a consumer that pinned 11.
+  uuid: 11.1.1
