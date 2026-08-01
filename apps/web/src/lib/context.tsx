@@ -29,6 +29,7 @@
  */
 
 import type { NoxNetwork } from "@kyrve/nox";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import {
   createContext,
   type ReactElement,
@@ -128,6 +129,14 @@ export interface KyrveProviderProps {
 
 export function KyrveProvider({ children, fallback }: KyrveProviderProps): ReactElement {
   const [boot, setBoot] = useState<BootState>({ record: undefined, error: undefined });
+  /*
+    RainbowKit's modal opener.
+
+    Read here rather than at each call site so that every control in the product which says "connect
+    wallet" opens the same chooser. The onboarding step used to own its own button and got a no-op.
+  */
+  const { openConnectModal } = useConnectModal();
+
   // RainbowKit's connection, read through wagmi. Undefined until somebody connects.
   const { address: wagmiAccount } = useAccount();
   const { data: wagmiClient } = useWalletClient();
@@ -193,19 +202,39 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
   );
 
   /**
-   * The deterministic adapter, and only when a key was injected into the page.
+   * Two adapters behind one action.
    *
-   * This is the path four browser suites drive. It cannot be reached from a URL — nothing here reads
-   * `location.search` — and it cannot be reached at all unless the harness put a key on `window`
-   * before the first script ran, which only `addInitScript` can do.
+   * ════════════════════════════════════════════════════════════════════════════════════════════
+   * THE REAL PATH OPENS RAINBOWKIT; THE TEST PATH NEVER DOES
+   * ════════════════════════════════════════════════════════════════════════════════════════════
    *
-   * A real visitor never takes this branch. Their connection is RainbowKit's, below.
+   * With an injected key this connects deterministically: the path four browser suites drive. It
+   * cannot be reached from a URL — nothing here reads `location.search` — and it cannot be reached
+   * at all unless the harness put the key on `window` before the first script ran, which only
+   * `addInitScript` can do.
+   *
+   * Without one, it opens RainbowKit's modal. It used to return, on the assumption that the header
+   * control was the only way a real visitor would ever connect — which was true of the header and
+   * false of the onboarding step, where the same action is the whole point of the screen and did
+   * nothing at all when clicked.
+   *
+   * That is the failure this codebase is most careful about, arriving from the other direction. A
+   * silent no-op is correct for a CONFIDENTIAL refusal, where a reason would be an oracle. This is a
+   * public UI action, and a public action that fails silently is just broken.
    */
   const connect = useCallback(async (): Promise<void> => {
     if (network === undefined) return;
     if (window.__KYRVE_LOCAL_KEY__ === undefined) {
-      // Nothing to do: RainbowKit owns connection for a real wallet, and the connect control in the
-      // header opens its modal rather than calling this.
+      /*
+        Undefined while RainbowKit is still mounting its modal context. Nothing to fall back to —
+        opening a wallet chooser is the only thing this can mean — so it reports rather than
+        pretending the click was received.
+      */
+      if (openConnectModal === undefined) {
+        setWalletFailure("The wallet chooser is still loading. Try again in a moment.");
+        return;
+      }
+      openConnectModal();
       return;
     }
     setWalletState("connecting");
@@ -217,7 +246,7 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
       setWalletFailure(safeErrorMessage(error));
       setWalletState("not-connected");
     }
-  }, [network, rpcUrl]);
+  }, [network, rpcUrl, openConnectModal]);
 
   /**
    * Ends the session and clears every decrypted value from memory, immediately.

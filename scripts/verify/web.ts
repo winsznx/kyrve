@@ -197,6 +197,7 @@ async function main(): Promise<void> {
     try {
       await walkRoutes(browser);
       await checkResponsive(browser);
+      await checkConnectControls(browser);
     } finally {
       await browser.close();
     }
@@ -502,6 +503,76 @@ async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>):
 }
 
 /** 360px wide. Nothing may scroll the page body sideways; wide content scrolls inside its own box. */
+/**
+ * Every control that says "connect wallet" must open the wallet chooser.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * WHY THIS IS A CHECK AND NOT A COMMENT
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * The onboarding step's connect button did nothing for four days. It rendered, it was enabled, it
+ * had a click handler, its handler ran to completion and returned normally — and the handler's first
+ * branch was a deliberate `return` written when the header was the only connect control in the
+ * product. Nothing in this file caught it: the route walked clean, the console was silent, the
+ * button was visible, the responsive pass measured it at every width.
+ *
+ * A button that is present and does nothing is invisible to every check that asks whether a page
+ * rendered. The only thing that finds it is clicking it and asserting that something happened.
+ *
+ * The assertion is deliberately on RainbowKit's own dialog rather than on Kyrve state: a wallet
+ * cannot be connected in headless Chromium, so the furthest this can go is proving the chooser
+ * opened. That is exactly the step that was broken.
+ */
+async function checkConnectControls(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+): Promise<void> {
+  const CONTROLS: readonly {
+    readonly path: string;
+    readonly testId: string;
+    readonly setup?: string;
+  }[] = [
+    {
+      path: "/app/start",
+      testId: "start-connect",
+      // Step two is only reachable once a role is chosen; the onboarding flow gates it.
+      setup: `localStorage.setItem("kyrve.role","provider")`,
+    },
+    { path: "/app", testId: "connect" },
+  ];
+
+  for (const control of CONTROLS) {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    try {
+      if (control.setup !== undefined) await page.addInitScript(control.setup);
+      await page.goto(`${PREVIEW_URL}${control.path}`, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(1200);
+
+      const button = page.locator(`[data-testid="${control.testId}"]`);
+      if ((await button.count()) === 0) {
+        fail("connect control", control.path, `no control with testid "${control.testId}"`);
+        continue;
+      }
+
+      await button.first().click();
+      await page.waitForTimeout(1500);
+
+      const dialogs = await page.locator('[role="dialog"]').count();
+      if (dialogs === 0) {
+        fail(
+          "connect control",
+          control.path,
+          `"${control.testId}" was clicked and no wallet chooser opened — the click is a no-op`,
+        );
+      } else {
+        notes.push(`${control.path} · ${control.testId} opens the wallet chooser`);
+      }
+    } finally {
+      await context.close();
+    }
+  }
+}
+
 async function checkResponsive(
   browser: Awaited<ReturnType<typeof chromium.launch>>,
 ): Promise<void> {
