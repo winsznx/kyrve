@@ -36,7 +36,17 @@ import { Link } from "../router/router.js";
 
 export function Quotes(): ReactElement {
   const { record } = useKyrve();
-  const settlements = settlementsOf(record);
+  /*
+   * Only a settlement carrying a FINISHED EPOCH can drive the activation panel.
+   *
+   * A deployed record names the registry so a quote can be verified, and carries no candidate,
+   * because a candidate is an epoch plus its gateway proofs and inventing that shape would be a
+   * placeholder proof. `QuoteBand` reads `candidate` directly, so filtering here is what keeps the
+   * page an honest empty state rather than a crash on a public URL.
+   */
+  const settlements = settlementsOf(record).filter(
+    (entry) => (entry.settlement as { candidate?: unknown }).candidate !== undefined,
+  );
   const layers = layersOf(record);
 
   return (

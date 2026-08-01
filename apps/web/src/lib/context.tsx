@@ -152,7 +152,22 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
     };
   }, []);
 
-  const rpcUrl = window.__KYRVE_RPC_URL__ ?? "http://127.0.0.1:8545";
+  /*
+   * Where the chain is, in precedence order.
+   *
+   *   1. an injected URL — the browser demonstration and local development hand one in
+   *   2. a same-origin `/rpc` proxy, on any deployment that is not a local dev server
+   *   3. the local node
+   *
+   * Step 2 is what keeps the provider credential out of the bundle. The browser talks to its own
+   * origin and the Worker attaches the key server-side; a URL with a key compiled into an asset
+   * would ship it to every visitor, which `verify:bundles` fails the build for.
+   */
+  const rpcUrl =
+    window.__KYRVE_RPC_URL__ ??
+    (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
+      ? "http://127.0.0.1:8545"
+      : `${window.location.origin}/rpc`);
 
   const network = useMemo(() => {
     if (boot.record === undefined) return undefined;

@@ -1,0 +1,16 @@
+{
+  "name": "@kyrve/site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "description": "Serves the built Kyrve web product, and proxies read-only Ethereum RPC so the provider credential stays server-side.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dry-run": "wrangler deploy --dry-run --outdir dist"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260729.1",
+    "wrangler": "4.115.0"
+  }
+}

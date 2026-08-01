@@ -300,6 +300,15 @@ importers:
         specifier: 4.115.0
         version: 4.115.0(@cloudflare/workers-types@5.20260729.1)
 
+  workers/site:
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 5.20260729.1
+        version: 5.20260729.1
+      wrangler:
+        specifier: 4.115.0
+        version: 4.115.0(@cloudflare/workers-types@5.20260729.1)
+
   workers/status:
     dependencies:
       '@kyrve/config':
