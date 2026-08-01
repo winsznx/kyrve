@@ -141,6 +141,11 @@ export function Fund(): ReactElement {
 function WrapPanel({ session }: { session: Session }): ReactElement {
   const { record } = useKyrve();
   const [amount, setAmount] = useState("1000");
+  /*
+   * Separate from the wrap amount on purpose. Topping up and crossing the boundary are different
+   * decisions, and one field for both invites wrapping whatever you happened to mint.
+   */
+  const [mintAmount, setMintAmount] = useState("25000");
   const [publicBalance, setPublicBalance] = useState<bigint>();
   const [handle, setHandle] = useState<`0x${string}`>();
   const [phase, setPhase] = useState<Phase>("idle");
@@ -225,6 +230,52 @@ function WrapPanel({ session }: { session: Session }): ReactElement {
     }
   }
 
+  /**
+   * Mint the public test token, visibly.
+   *
+   * ════════════════════════════════════════════════════════════════════════════════════════════
+   * THIS EXISTS BECAUSE `wrap` WAS ALREADY DOING IT SILENTLY
+   * ════════════════════════════════════════════════════════════════════════════════════════════
+   *
+   * `wrap` mints exactly what it is about to wrap, so the button reading "this amount becomes
+   * public" was also, undisclosed, a mint. On a Sepolia test token that is harmless and it is still
+   * the wrong shape: a control should not do a thing it does not name, and a reviewer who reads the
+   * transaction list afterwards should not find a step the interface never mentioned.
+   *
+   * So the mint is now also available on its own, named, with the balance beside it. `wrap` keeps
+   * its own mint because four browser suites drive it end to end and removing that would be a
+   * rewrite of a proven flow rather than a disclosure fix — but the wrap card now says it happens.
+   *
+   * `TestUnderlyingERC20.mint` is permissionless by construction. Anyone can already call it from
+   * Etherscan; this confers nothing, it just removes a step that had nothing to do with Kyrve.
+   */
+  async function mint(): Promise<void> {
+    setBusy(true);
+    setFailure(undefined);
+    try {
+      const units = parseUnits(mintAmount, UNDERLYING_DECIMALS);
+      setPhase("awaiting-signature");
+      const hash = await session.walletClient.writeContract({
+        address: underlying,
+        abi: ERC20_ABI,
+        functionName: "mint",
+        args: [session.account, units],
+        account: session.account,
+        chain: null,
+      });
+      setPhase("transaction-pending");
+      await session.publicClient.waitForTransactionReceipt({ hash });
+      setPhase("event-confirmed");
+      await refresh();
+      setPhase("done");
+    } catch (error) {
+      setFailure(classifyFailure(error));
+      setPhase("failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function decrypt(): Promise<void> {
     if (handle === undefined) return;
     setBusy(true);
@@ -245,6 +296,52 @@ function WrapPanel({ session }: { session: Session }): ReactElement {
 
   return (
     <div className="grid" data-testid="wrap-band">
+      <div className="card" data-testid="mint-band">
+        <h2>Test tokens</h2>
+        <p className="note">
+          tUSDC is a Sepolia test token with a permissionless <code>mint</code>. It carries no value
+          and stands in for a loan token so this market can be walked end to end. Mint some to your
+          own address, then wrap it below.
+        </p>
+        <div className="row">
+          <div className="field">
+            <label htmlFor="mint-amount">Amount to mint (tUSDC)</label>
+            <input
+              id="mint-amount"
+              type="text"
+              inputMode="decimal"
+              value={mintAmount}
+              onChange={(event) => setMintAmount(event.target.value)}
+              data-testid="mint-amount"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => void mint()}
+            disabled={busy}
+            data-testid="mint-submit"
+          >
+            Mint to my address
+          </button>
+        </div>
+        <table>
+          <tbody>
+            <tr>
+              <th>Public tUSDC balance</th>
+              <td className="numeric" data-testid="mint-balance">
+                {publicBalance === undefined
+                  ? "—"
+                  : formatAmount(publicBalance, UNDERLYING_DECIMALS)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p className="note">
+          This balance is public and always was. Nothing on this card touches the confidential
+          layer.
+        </p>
+      </div>
+
       <div className="card">
         <h2>Wrap</h2>
         <div className="row">
@@ -276,6 +373,10 @@ function WrapPanel({ session }: { session: Session }): ReactElement {
             The amount above appears in the transaction and stays readable by anyone, forever.
             Unwrapping later is the same crossing in reverse: it marks the burn amount publicly
             decryptable, and Nox has no un-publish.
+          </p>
+          <p>
+            On this testnet, wrapping also mints the amount first, so it works from an empty wallet.
+            That is three transactions to approve, not one: mint, approve, then wrap.
           </p>
         </div>
 
