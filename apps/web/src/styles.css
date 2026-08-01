@@ -3113,3 +3113,117 @@ body {
 .sequence-field {
   overflow: hidden;
 }
+
+/* ── The landing header ─────────────────────────────────────────────────────────────────────── */
+
+/*
+  Sticky, and it does not publish its own height.
+
+  It sits above the hero rather than overlapping it, so nothing downstream has to offset by a magic
+  number that goes wrong the moment the header changes size. The background is transparent at the
+  top of the page and resolves to a blurred Onyx once the reader has moved, so the encrypted field
+  reads uninterrupted at rest and the links stay legible over content afterwards.
+*/
+.landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--card-padding);
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 16px 24px;
+  background: rgba(23, 23, 33, 0.82);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid transparent;
+}
+
+/* The full-bleed rule the header needs, since the hero below it is full width. */
+.landing-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  left: 50%;
+  width: 100vw;
+  max-width: 100%;
+  transform: translateX(-50%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.landing-nav .wordmark {
+  font-size: var(--text-heading-sm);
+}
+
+.landing-links {
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.landing-links a {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  color: var(--color-ash-text);
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.landing-links a:hover {
+  color: var(--color-ivory-text);
+  background: var(--color-obsidian-button);
+}
+
+.landing-cta {
+  font-size: var(--text-body-sm);
+  padding: 8px 18px;
+  white-space: nowrap;
+}
+
+/*
+  The links appear at 900px and above.
+
+  Below that the wordmark and one action are the whole header. Five destinations crammed into a
+  phone's top bar is five targets too small to hit, and the sections are a scroll away regardless.
+*/
+@media (min-width: 900px) {
+  .landing-links {
+    display: flex;
+  }
+}
+
+/* An anchored section must not land under the sticky header. */
+#mechanism,
+#boundary,
+#evidence {
+  scroll-margin-top: 88px;
+}
+
+/*
+  The header's action fades in when the hero's has left.
+
+  `visibility` as well as opacity, so the hidden state is not a click target sitting invisibly over
+  the page. `aria-hidden` and `tabIndex={-1}` handle the same problem for a keyboard and a screen
+  reader, since neither of those reads opacity.
+*/
+.landing-cta {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duration-settle) var(--ease-settle),
+    visibility var(--duration-settle) var(--ease-settle);
+}
+
+.landing-cta[data-visible="true"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-cta {
+    transition: none;
+  }
+}

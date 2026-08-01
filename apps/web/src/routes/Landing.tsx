@@ -31,7 +31,7 @@
  * way to add one to this page is to execute it — and a claim here cannot outlive what it describes.
  */
 
-import type { ReactElement } from "react";
+import { type ReactElement, useEffect, useRef, useState } from "react";
 
 import { EncryptedField } from "../components/EncryptedField.js";
 import { QuoteSpecimen } from "../components/QuoteSpecimen.js";
@@ -112,23 +112,72 @@ const VERDICT_WORD: Record<string, string> = {
 export function Landing(): ReactElement {
   const { record } = useKyrve();
 
+  /*
+   * The header's action appears only once the hero has scrolled away.
+   *
+   * At rest the hero already carries "Enter the terminal" as the page's single primary action, and a
+   * second copy of it in the header two hundred pixels above is the duplication a reader notices.
+   * Once the hero is gone the page has no action at all, which is worse.
+   *
+   * `IntersectionObserver` on the hero rather than a scroll listener: it fires off the main thread
+   * and does not run on every frame, which is the same rule the tagline reveal follows.
+   */
+  const hero = useRef<HTMLElement>(null);
+  const [heroVisible, setHeroVisible] = useState(true);
+
+  useEffect(() => {
+    const node = hero.current;
+    if (node === null) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroVisible(entry?.isIntersecting ?? true),
+      { rootMargin: "-120px 0px 0px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
+      {/*
+        The header stays.
+
+        A 6,000px argument with no persistent navigation makes a reader scroll back to the top to go
+        anywhere, and most do not. It carries the page's own sections rather than a single repeated
+        call to action, so somebody who wants the boundary or the proof can reach either without
+        reading the parts in between.
+      */}
       <header className="landing-nav">
         {/*
           Text in Ivory. The approved symbol master is authored for light surfaces and measures
           1.30:1 against Onyx; `brand.json` forbids recolouring it or plating it.
         */}
-        <span className="wordmark">kyrve</span>
-        <nav aria-label="Kyrve">
-          <Link to="/proof" className="row-link">
-            Verify the deployment
-          </Link>
+        <Link to="/" className="wordmark-link">
+          <span className="wordmark">kyrve</span>
+        </Link>
+
+        <nav className="landing-links" aria-label="Kyrve">
+          <a href="#mechanism">How it works</a>
+          <a href="#boundary">What stays private</a>
+          <a href="#evidence">Evidence</a>
+          <Link to="/proof">Verify</Link>
+          <a href="https://github.com/winsznx/kyrve" target="_blank" rel="noreferrer">
+            Source
+          </a>
         </nav>
+
+        <Link
+          to="/app"
+          className="ghost landing-cta"
+          data-visible={!heroVisible}
+          tabIndex={heroVisible ? -1 : 0}
+          aria-hidden={heroVisible}
+        >
+          Enter the terminal
+        </Link>
       </header>
 
       {/* ── 1. Hero. Approved concept and headline, refined spacing. ─────────────────────── */}
-      <section className="hero">
+      <section className="hero" ref={hero}>
         <EncryptedField name="hero" priority className="hero-field" testId="hero-field" />
         <div className="hero-inner">
           <h1>
@@ -197,7 +246,7 @@ export function Landing(): ReactElement {
       </section>
 
       {/* ── 4. How one quote is formed. A sequence, resolving. ───────────────────────────── */}
-      <section className="landing-section" data-testid="mechanism">
+      <section className="landing-section" id="mechanism" data-testid="mechanism">
         <span className="eyebrow">How one quote is formed</span>
         <h2>Dense, then ordered, then one point.</h2>
 
@@ -264,7 +313,7 @@ export function Landing(): ReactElement {
       </section>
 
       {/* ── 6. What stays private. ───────────────────────────────────────────────────────── */}
-      <section className="landing-section" data-testid="boundary">
+      <section className="landing-section" id="boundary" data-testid="boundary">
         <span className="eyebrow">The boundary</span>
         <h2>Every value is on exactly one side of this line.</h2>
 
@@ -338,88 +387,8 @@ export function Landing(): ReactElement {
         </div>
       </section>
 
-      {/* ── 8. The product in use. Real screens, one large, then supporting. ─────────────── */}
-      <section className="landing-section" data-testid="product">
-        <span className="eyebrow">The product</span>
-        <h2>Every state names itself.</h2>
-        <p className="lede">
-          These are the real interface, captured from a running deployment. Nothing here is a
-          mockup.
-        </p>
-
-        <figure className="product-frame">
-          <picture>
-            <source type="image/avif" srcSet="/brand/screens/quote.avif" />
-            <source type="image/webp" srcSet="/brand/screens/quote.webp" />
-            <img
-              src="/brand/screens/quote.png"
-              alt="The selected quote, showing the market, rate and exact amount that become public"
-              width={1600}
-              height={1000}
-              loading="eager"
-              decoding="sync"
-              fetchPriority="high"
-            />
-          </picture>
-          <figcaption>
-            The one public result. Everything the market considered and rejected stays encrypted.
-          </figcaption>
-        </figure>
-
-        <div className="product-details">
-          <figure>
-            <picture>
-              <source type="image/avif" srcSet="/brand/screens/terms.avif" />
-              <source type="image/webp" srcSet="/brand/screens/terms.webp" />
-              <img
-                src="/brand/screens/terms.png"
-                alt="Setting private lending terms, with public and private fields listed before signing"
-                width={1600}
-                height={1000}
-                loading="eager"
-                decoding="sync"
-                fetchPriority="high"
-              />
-            </picture>
-            <figcaption>Private terms, with the boundary named before you sign.</figcaption>
-          </figure>
-          <figure>
-            <picture>
-              <source type="image/avif" srcSet="/brand/screens/position.avif" />
-              <source type="image/webp" srcSet="/brand/screens/position.webp" />
-              <img
-                src="/brand/screens/position.png"
-                alt="A confidential position, showing ownership readable only by its holder"
-                width={1600}
-                height={1000}
-                loading="eager"
-                decoding="sync"
-                fetchPriority="high"
-              />
-            </picture>
-            <figcaption>Confidential ownership of a public credit position.</figcaption>
-          </figure>
-          <figure>
-            <picture>
-              <source type="image/avif" srcSet="/brand/screens/verify.avif" />
-              <source type="image/webp" srcSet="/brand/screens/verify.webp" />
-              <img
-                src="/brand/screens/verify.png"
-                alt="The verification page, recomputing published claims from chain state"
-                width={1600}
-                height={1000}
-                loading="eager"
-                decoding="sync"
-                fetchPriority="high"
-              />
-            </picture>
-            <figcaption>Verification that recomputes rather than displays.</figcaption>
-          </figure>
-        </div>
-      </section>
-
       {/* ── 9. Proof beside the claim. ───────────────────────────────────────────────────── */}
-      <section className="landing-section" data-testid="evidence">
+      <section className="landing-section" id="evidence" data-testid="evidence">
         <span className="eyebrow">Proof</span>
         <h2>Each stage has run, and says how it is known.</h2>
 

@@ -199,6 +199,13 @@ export interface LinkProps {
   /** Set when the link is the page's single primary action. Exactly one per page may be cobalt. */
   readonly "data-testid"?: string;
   readonly "aria-current"?: "page";
+  /*
+    A link that is visually hidden must also leave the tab order and the accessibility tree.
+    Opacity does neither, so a faded control stays reachable by keyboard and still announced.
+  */
+  readonly tabIndex?: number;
+  readonly "aria-hidden"?: boolean;
+  readonly "data-visible"?: boolean;
 }
 
 /**
