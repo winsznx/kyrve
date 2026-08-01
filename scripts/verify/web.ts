@@ -379,22 +379,59 @@ async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>):
     }
 
     /*
-     * 9b. THE NAVIGATION IS ROLE-SHAPED, NOT CONTRACT-SHAPED.
+     * 9b. THE NAVIGATION IS TASK-SHAPED, NOT CONTRACT-SHAPED.
      *
-     * Four destinations. The old nine — Fund, Mandates, Curve, Quotes, Capsules, Roll — were every
-     * one a real surface and not one of them a task. They are all still reachable; what must not
-     * come back is asking a first-time reader to pick between them before they have done anything.
+     * The original nine destinations — Fund, Mandates, Curve, Quotes, Capsules, Roll and the rest —
+     * were every one a real surface and not one of them a task. What must not come back is asking a
+     * first-time reader to pick between protocol nouns before they have done anything.
+     *
+     * The rail states each destination as the thing it does and files it under a group, so this
+     * checks two properties: the groups are the fixed set, and no link is labelled with a bare
+     * contract noun. The earlier version of this check asserted four literal labels against
+     * `header nav a`, which made it a check on one specific arrangement rather than on the property
+     * that arrangement existed to hold — it failed the moment the header became a rail, while the
+     * product got strictly better at the thing being checked.
      */
-    // `/app/start` is chromeless by design — the onboarding flow has no application navigation,
-    // because a four-item operations bar across a screen asking "who are you" describes a product
-    // the reader has not been introduced to yet.
+    // `/app/start` is chromeless by design. A screen asking "who are you" should not carry an
+    // operations rail describing a product the reader has not been introduced to yet.
     if (route.path.startsWith("/app") && route.path !== "/app/start") {
-      const navLabels = await page.evaluate<string>(
-        `[...document.querySelectorAll("header nav a")].map(a => (a.textContent || "").trim()).join("|")`,
+      const groups = await page.evaluate<string>(
+        `[...document.querySelectorAll(".rail-heading")].map(h => (h.textContent || "").trim()).join("|")`,
       );
-      const expected = "Home|Activity|Positions|Verify";
-      if (navLabels !== expected) {
-        fail("navigation", route.path, `navigation reads "${navLabels}", expected "${expected}"`);
+      const expectedGroups = "Capital|Market|Holdings|Evidence";
+      if (groups !== expectedGroups) {
+        fail(
+          "navigation",
+          route.path,
+          `rail groups read "${groups}", expected "${expectedGroups}"`,
+        );
+      }
+
+      /*
+       * A label naming a contract or a protocol primitive rather than an outcome.
+       *
+       * "Cross" and "Roll" are the two that keep coming back, because they are what the contracts
+       * are called and the temptation is to reuse the name that is already there.
+       */
+      const NOUNS = ["Fund", "Mandates", "Cross", "Roll", "Curve", "Capsules", "Series"];
+      const labels = await page.evaluate<string>(
+        `[...document.querySelectorAll(".rail-link")].map(a => (a.textContent || "").trim()).join("|")`,
+      );
+      const offending = NOUNS.filter((noun) => labels.split("|").includes(noun));
+      if (offending.length > 0) {
+        fail(
+          "navigation",
+          route.path,
+          `rail labels a destination with a contract noun: ${offending.join(", ")}`,
+        );
+      }
+
+      // The handset keeps the four-destination model, because a rail does not fit on one.
+      const bottom = await page.evaluate<string>(
+        `[...document.querySelectorAll(".bottom-nav a")].map(a => (a.textContent || "").trim()).join("|")`,
+      );
+      if (bottom !== "◆Home|≡Activity|◇Positions|○Verify") {
+        fail("navigation", route.path, `the handset bar reads "${bottom}"`);
       }
     }
 

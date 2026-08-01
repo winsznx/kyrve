@@ -186,7 +186,14 @@ async function main(): Promise<void> {
         "two-systems",
         "boundary",
         "outcomes",
-        "product",
+        /*
+         * "product" is deliberately absent.
+         *
+         * It was a strip of interface screenshots that said nothing the hero does not already say
+         * with the live quote specimen, and it cost roughly 1,300px of scroll to say it. The section
+         * was removed; this list is the record of that, because a required-section list that still
+         * names it would fail forever on a page that is correct.
+         */
         "evidence",
         "faq",
         "close",

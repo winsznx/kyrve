@@ -137,19 +137,37 @@ async function checkNavigationIsRoleShaped(browser: Browser, baseUrl: string): P
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(`${baseUrl}/app/series`);
+  /*
+   * Wait for the chrome before counting it.
+   *
+   * The shell renders behind the deployment record's fetch, so a bare `goto` resolves on `load` with
+   * the boot fallback on screen and no navigation in the DOM at all. Counting there measures how
+   * fast the record arrived, not what the product offers.
+   */
+  await page.locator(".rail-link").first().waitFor({ timeout: 30_000 });
 
+  /*
+   * The rail, not a header bar.
+   *
+   * This used to read `header nav a` and require four exact labels. That asserted one ARRANGEMENT
+   * rather than the property the arrangement existed to hold, so it failed the moment navigation
+   * became a grouped rail — while getting strictly better at the thing being checked. What matters
+   * is that no destination is labelled with a contract noun.
+   */
   const labels = await page
-    .locator("header nav a")
+    .locator(".rail-link")
     .evaluateAll((nodes) => nodes.map((node) => (node.textContent ?? "").trim()));
 
   const leaked = labels.filter((label) => OLD_NAV_LABELS.includes(label));
   if (leaked.length > 0) {
     fail("navigation", `protocol nouns are back in the navigation: ${leaked.join(", ")}`);
   }
-  if (labels.join("|") !== "Home|Activity|Positions|Verify") {
-    fail("navigation", `navigation reads ${labels.join("|")}`);
+  if (labels.length < 8) {
+    fail("navigation", `the rail offers only ${String(labels.length)} destinations`);
   } else {
-    notes.push(`navigation is ${labels.join(" · ")} — four destinations, no contract names`);
+    notes.push(
+      `the rail offers ${String(labels.length)} destinations, none named after a contract`,
+    );
   }
   await context.close();
 }
@@ -268,7 +286,21 @@ async function checkRefreshRestoresPublicState(browser: Browser, baseUrl: string
     const stored = await page.evaluate<string[]>(
       `Object.keys(window.localStorage).concat(Object.keys(window.sessionStorage))`,
     );
-    const unexpected = stored.filter((key) => key !== "kyrve.role" && key !== "kyrve.onboarded");
+    /*
+     * Kyrve's own keys, plus the wallet stack's.
+     *
+     * RainbowKit, wagmi and AppKit each persist connection state under their own namespace, and a
+     * wallet that forgot which connector you used on every reload would be a worse product. None of
+     * these may hold a Kyrve value: the check below reads every stored value and fails on anything
+     * that looks like an amount, which is the property that actually matters here.
+     */
+    const WALLET_PREFIXES = ["rk-", "wagmi.", "@appkit/", "base-acc-sdk."];
+    const unexpected = stored.filter(
+      (key) =>
+        key !== "kyrve.role" &&
+        key !== "kyrve.onboarded" &&
+        !WALLET_PREFIXES.some((prefix) => key.startsWith(prefix)),
+    );
     if (unexpected.length > 0) {
       fail("refresh", `unexpected persisted keys: ${unexpected.join(", ")}`);
     }
@@ -300,8 +332,12 @@ async function checkMobileNavigation(browser: Browser, baseUrl: string): Promise
   const page = await context.newPage();
   try {
     await page.goto(`${baseUrl}/app/series`);
-    const visible = await page.locator("header nav a").count();
-    if (visible < 4) fail("mobile", `only ${visible} navigation items are present at 360px`);
+    // The rail does not fit on a handset, so `BottomNav` owns navigation at this width.
+    await page.locator(".bottom-nav a").first().waitFor({ timeout: 30_000 });
+    const visible = await page.locator(".bottom-nav a").count();
+    if (visible < 4) {
+      fail("mobile", `only ${String(visible)} navigation items are present at 360px`);
+    }
 
     for (const label of ["Home", "Activity", "Positions", "Verify"]) {
       const box = await page.getByRole("link", { name: label, exact: true }).first().boundingBox();

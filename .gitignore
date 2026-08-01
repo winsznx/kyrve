@@ -47,3 +47,6 @@ evidence/phase2/confidential-suite.log
 
 # Working notes for the frontend pass. Local only.
 FRONTEND-IMPROVEMENTS.md
+
+# Presentation notes, not product.
+DEMO-SCRIPT.md

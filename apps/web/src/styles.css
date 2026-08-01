@@ -3533,14 +3533,40 @@ main > section.band:last-of-type {
     border-top: 1px solid var(--hairline);
   }
 
-  /* The session block, sized for a 216px column rather than for a masthead. */
+  /*
+    The session block, sized for a 216px column rather than for a masthead.
+
+    In a header these controls sat on one line and read as a toolbar. In a column they have to stack,
+    so each line is given the full width and the buttons are laid out as a list rather than as pills
+    wrapping unpredictably against whatever text precedes them.
+  */
   .rail-foot .account {
     flex: 1 1 auto;
-    gap: 8px;
+    gap: 10px;
   }
 
   .rail-foot .account-line {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 6px;
+  }
+
+  .rail-foot .account-trigger {
+    width: 100%;
+    text-align: left;
+    padding: 7px 12px;
+    font-size: var(--text-body-sm);
+  }
+
+  .rail-foot .account-wallet {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .rail-foot .account button {
+    width: 100%;
+    text-align: left;
   }
 
   .rail-foot .account-note {
@@ -3574,14 +3600,28 @@ main > section.band:last-of-type {
     margin: 0;
   }
 
-  /* The content column clears the rail. The footer sits inside the same offset. */
+  /*
+    The content column clears the rail, and is centred in what is LEFT rather than in the viewport.
+
+    Padding the column instead would keep `margin: 0 auto` centring against the full window, which
+    puts the reading column visibly right of centre in its own space: 144px of gutter on each side of
+    a column that begins 248px in. Fixing the left margin and leaving the right one automatic centres
+    it in the area it actually occupies.
+  */
   .page,
   .site-footer {
-    padding-left: calc(248px + 24px);
+    margin-left: 248px;
+    margin-right: auto;
+    padding-left: 40px;
+    padding-right: 40px;
+    max-width: calc(var(--page-max-width) - 120px);
   }
 
   .page-full {
+    margin-left: 0;
     padding-left: 0;
+    padding-right: 0;
+    max-width: none;
   }
 
   .bottom-nav {
@@ -3647,16 +3687,44 @@ main > section.band:last-of-type {
     decrypted values from the screen, and it must never be further away than what it protects.
   */
   .rail {
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
     padding: 16px 24px 0;
   }
 
-  .rail-top,
+  /* Navigation is the bottom bar's job at this width. The rail keeps identity and the session. */
   .rail-nav {
     display: none;
   }
 
+  .rail-top {
+    padding: 0;
+  }
+
+  /*
+    The wordmark stays, at body size.
+    
+    It is the only route back to `/` from an application page, and a product whose name disappears
+    below 1000px reads as a different site to anyone who arrived on a handset.
+  */
+  .rail-top .wordmark {
+    font-size: var(--text-heading-xs, 20px);
+  }
+
   .rail-foot {
-    padding: 16px 0 0;
+    flex: 1 1 auto;
+    padding: 0;
+    margin: 0;
+    border-top: 0;
+  }
+
+  .rail-foot .account {
+    align-items: flex-end;
+  }
+
+  .rail-foot .account-line {
+    justify-content: flex-end;
   }
 }

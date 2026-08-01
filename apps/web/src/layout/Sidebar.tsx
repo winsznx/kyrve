@@ -82,7 +82,15 @@ const RAIL: readonly RailGroup[] = [
     items: [
       { to: "/app/activity", label: "Activity" },
       { to: "/app/curve", label: "Private matching" },
-      { to: "/app/quotes", label: "Quotes", owns: ["/app/quotes"] },
+      /*
+       * Not "Quotes".
+       *
+       * The route is titled Quotes and the product's tagline is "One quote", so the bare noun is
+       * tempting and `verify:journeys` rejects it — correctly. What a reader does here is check a
+       * quote before deciding to activate it, and activation is the irreversible step that makes a
+       * market, a rate and an aggregate amount public forever. The label should say that.
+       */
+      { to: "/app/quotes", label: "Review a quote", owns: ["/app/quotes"] },
     ],
   },
   {
@@ -125,9 +133,7 @@ export function Sidebar(): ReactElement {
       <nav className="rail-nav" aria-label="Kyrve">
         {RAIL.map((group, index) => (
           <div className="rail-group" key={group.heading ?? `group-${String(index)}`}>
-            {group.heading === undefined ? null : (
-              <p className="rail-heading">{group.heading}</p>
-            )}
+            {group.heading === undefined ? null : <p className="rail-heading">{group.heading}</p>}
             <ul>
               {group.items.map((item) => {
                 const active = isActive(pathname, item);
