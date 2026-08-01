@@ -50,3 +50,6 @@ FRONTEND-IMPROVEMENTS.md
 
 # Presentation notes, not product.
 DEMO-SCRIPT.md
+
+# The brand tooling's venv. Rebuild with pnpm brand:setup.
+scripts/brand/.venv/

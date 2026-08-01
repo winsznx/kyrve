@@ -1,0 +1,11 @@
+# Exact pins, like every other dependency in this repository.
+#
+# `brand:verify` reads the shipped brand assets pixel by pixel — contrast against Onyx, the
+# difference between a premultiplied resize and a naive one — so it needs real image tooling. It
+# used to assume both were installed globally, which meant the gate FAILED on any clean machine and
+# had therefore never run in CI. A checked-in venv definition is what makes it reproducible.
+#
+#   python3 -m venv scripts/brand/.venv
+#   scripts/brand/.venv/bin/pip install -r scripts/brand/requirements.txt
+numpy==2.5.1
+pillow==12.3.0

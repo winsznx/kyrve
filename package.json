@@ -12,7 +12,7 @@
   "scripts": {
     "audit:deps": "pnpm audit --audit-level moderate",
     "brand:build": "python3 scripts/brand/build-assets.py",
-    "brand:verify": "python3 scripts/brand/verify-assets.py",
+    "brand:verify": "scripts/brand/.venv/bin/python scripts/brand/verify-assets.py",
     "build": "tsc --build",
     "clean": "tsc --build --clean && rm -rf packages/*/dist workers/*/dist",
     "demo:phase7": "tsx scripts/demo/phase7.ts",
@@ -115,7 +115,8 @@
     "web:build": "pnpm --filter @kyrve/web build",
     "web:dev": "pnpm --filter @kyrve/web dev",
     "web:preview": "pnpm --filter @kyrve/web preview",
-    "wrangler:dry-run": "pnpm --filter './workers/*' dry-run"
+    "wrangler:dry-run": "pnpm --filter './workers/*' dry-run",
+    "brand:setup": "python3 -m venv scripts/brand/.venv && scripts/brand/.venv/bin/pip install -q -r scripts/brand/requirements.txt"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
