@@ -32,15 +32,20 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
-          # The self-installer runs a BUNDLED older pnpm to install the pinned one, and that older
-          # pnpm cannot parse `onlyBuiltDependencies` in `pnpm-workspace.yaml` — it expects the key
-          # in package.json, where pnpm 9 kept it. It fails with
-          # `onlyBuiltDependencies?.sort is not a function` before our version is ever installed.
-          # `standalone: true` downloads the pinned binary directly and never runs that path.
-          standalone: true
+      # pnpm via corepack, NOT pnpm/action-setup.
+      #
+      # The action runs a bundled pnpm 9 to install the pinned one, and that pnpm cannot parse
+      # `onlyBuiltDependencies` in pnpm-workspace.yaml — the key lived in package.json until pnpm 10
+      # moved it. It died with `onlyBuiltDependencies?.sort is not a function` before installing the
+      # version that understands our own config, and `standalone: true` did not avoid that path.
+      #
+      # Corepack reads `packageManager` from package.json, so the version is pinned in exactly one
+      # place and cannot drift from what developers run locally.
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.0 --activate
+          pnpm --version
 
       - uses: actions/setup-node@v4
         with:
