@@ -33,6 +33,8 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat, sepolia } from "viem/chains";
 
+import { splitReadsFromSigning } from "./wallet/split-transport.js";
+
 export interface Session {
   readonly account: Address;
   readonly publicClient: PublicClient;
@@ -141,8 +143,21 @@ export async function openSessionFromWallet(
     cacheTime: 0,
   }) as PublicClient;
 
-  const nox = await createHandleClient(walletClient, network);
-  return { account, publicClient, walletClient, nox, network };
+  /*
+   * The Nox client signs with the wallet and reads with Kyrve's node.
+   *
+   * `createHandleClient` takes ONE client and uses it for both, so handing it the wallet client
+   * unwrapped makes the visitor's extension Kyrve's RPC endpoint. On the deployed build that
+   * returned `-32000 Request failed with status code 404` for every read, from a wallet that was
+   * displaying a Sepolia balance at the time. `splitReadsFromSigning` explains why the split belongs
+   * at the transport.
+   *
+   * The local-key session above is deliberately NOT wrapped: its transport is already an explicit
+   * `http(rpcUrl)`, so there is no injected provider to route around.
+   */
+  const signer = splitReadsFromSigning(walletClient, rpcUrl);
+  const nox = await createHandleClient(signer, network);
+  return { account, publicClient, walletClient: signer, nox, network };
 }
 
 /** Handle -> decrypted value, held only for as long as the session is unlocked. */

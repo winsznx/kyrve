@@ -38,6 +38,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { PublicClient } from "viem";
@@ -142,7 +143,22 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
   const { data: wagmiClient } = useWalletClient();
   const [session, setSession] = useState<Session>();
   const [walletState, setWalletState] = useState<WalletState>("not-connected");
+
+  /**
+   * Whether a session is currently open, readable without depending on it.
+   *
+   * The wallet effect below both writes `walletState` and needs to know it, and a `useState` cannot
+   * serve both without the effect invalidating itself. See the note on that effect's dependencies.
+   */
+  const opened = useRef(false);
   const [walletFailure, setWalletFailure] = useState<string>();
+
+  /*
+    The wallet state as of the last render, for effects that must ASK about it without OBSERVING it.
+    Reading it from the dependency array instead is what produced the connect loop described below.
+  */
+  const stateRef = useRef<WalletState>(walletState);
+  stateRef.current = walletState;
   const [role, setRole] = useState<Role | undefined>(() => readRole());
   const [onboarded, setOnboarded] = useState<boolean>(() => hasOnboarded());
 
@@ -271,9 +287,9 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
   useEffect(() => {
     if (network === undefined) return;
     if (window.__KYRVE_LOCAL_KEY__ === undefined) return;
-    if (walletState !== "not-connected") return;
+    if (stateRef.current !== "not-connected") return;
     void connect();
-  }, [network, connect, walletState]);
+  }, [network, connect]);
 
   /**
    * The production adapter: whatever RainbowKit connected becomes a Kyrve session.
@@ -285,6 +301,20 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
    * The effect also covers account switching and disconnection from the wallet's own UI: when
    * `wagmiClient` or `wagmiAccount` changes, the session is rebuilt against the new signer rather
    * than left bound to the previous one, which would sign as somebody the user is no longer.
+   *
+   * ════════════════════════════════════════════════════════════════════════════════════════════
+   * IT MUST NOT DEPEND ON THE STATE IT SETS
+   * ════════════════════════════════════════════════════════════════════════════════════════════
+   *
+   * `walletState` was in the dependency array and is set in the body. Connecting therefore ran:
+   * set "connecting" -> state changed -> effect re-runs -> cleanup abandons the in-flight session
+   * build -> set "connecting" -> forever. The interface sat on "Waiting for your wallet…" while the
+   * wallet reported itself connected, and each iteration built another handle client, so a wallet
+   * extension's console filled with hundreds of repeated `eth_call`s.
+   *
+   * The state was only ever read to decide whether a disconnection should clear an existing session,
+   * which is a question about the PREVIOUS render. A ref answers it without making the effect
+   * observe its own writes.
    */
   useEffect(() => {
     if (network === undefined) return;
@@ -293,7 +323,12 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
     if (wagmiClient === undefined || wagmiAccount === undefined) {
       // Disconnected in the wallet. Clear decrypted values with it: a balance decrypted by an
       // account that is no longer connected must not stay on screen.
-      if (walletState === "connected") {
+      //
+      // Read through a ref rather than from `walletState` directly. This effect WRITES that state,
+      // and depending on what it writes is what made the deployed build reconnect forever — see the
+      // note on the dependency array below.
+      if (opened.current) {
+        opened.current = false;
         lock();
         setSession(undefined);
         setWalletState("not-connected");
@@ -307,11 +342,13 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
       try {
         const next = await openSessionFromWallet(network, rpcUrl, wagmiClient, wagmiAccount);
         if (!live) return;
+        opened.current = true;
         setSession(next);
         setWalletState("connected");
         setWalletFailure(undefined);
       } catch (error) {
         if (!live) return;
+        opened.current = false;
         setWalletFailure(safeErrorMessage(error));
         setWalletState("not-connected");
       }
@@ -319,7 +356,21 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
     return () => {
       live = false;
     };
-  }, [network, rpcUrl, wagmiClient, wagmiAccount, walletState]);
+    /*
+     * `walletState` is NOT a dependency, and adding it back breaks the product.
+     *
+     * This effect sets `walletState` on both of its paths. Listing it here made every successful
+     * connection invalidate the effect that had just produced it: connect, open a session, set
+     * "connected", re-run, set "connecting", open another session, forever. In the deployed build
+     * that presented as a connect button stuck on "Waiting for your wallet…" beside a wallet that
+     * was plainly connected, and a console filling with `eth_call` at several per second.
+     *
+     * It cost hours precisely because both symptoms pointed away from the cause: the button read as
+     * a connector problem and the flood read as an RPC problem. Neither was. The disconnect branch
+     * reads `opened` instead, which is a ref for exactly this reason — it carries the same fact
+     * without making this effect depend on its own output.
+     */
+  }, [network, rpcUrl, wagmiClient, wagmiAccount]);
 
   if (boot.record === undefined || network === undefined || publicClient === undefined) {
     return fallback(boot);
