@@ -98,22 +98,30 @@ export function Roll(): ReactElement {
   if (roll === undefined) {
     return (
       <section className="band">
-        <h1>Roll</h1>
-        <Empty
-          title="A roll needs two complete series, and this deployment has fewer"
-          testId="roll-unavailable"
-        >
+        <span className="eyebrow">Position migration</span>
+        <h1>Move maturity</h1>
+        <p className="lede">
+          Move a confidential claim between two settled positions with different maturities. This
+          requires a source position and a target position.
+        </p>
+        <Empty title="A second settled position is required" testId="roll-unavailable">
           <p>
-            One custody vault serves exactly one series, because <code>bindSettler</code> is
-            one-shot and the settler holds its series, token, ownership registry, vault and market
-            as immutables. A second maturity therefore needs a second engine, epoch controller,
-            graph registry, ledger and settlement layer — there is no configuration that makes it
-            cheap.
+            This deployment does not yet have the two complete series a migration needs, so there is
+            no position you can move from and no target position you can move into.
           </p>
-          <p>
-            That is why there is nothing to show here rather than an empty ladder: a maturity ladder
-            on a deployment with one series would be describing a system that does not exist.
-          </p>
+          <details className="route-detail">
+            <summary>
+              <span>Why this needs another issuance stack</span>
+              <small>One custody vault serves one series only.</small>
+            </summary>
+            <div className="route-detail-body">
+              <p className="note">
+                <code>bindSettler</code> is one-shot. The settler holds its series, token, ownership
+                registry, vault and market as immutables. A second maturity therefore needs a second
+                engine, epoch controller, graph registry, ledger and settlement layer.
+              </p>
+            </div>
+          </details>
         </Empty>
       </section>
     );
@@ -123,10 +131,10 @@ export function Roll(): ReactElement {
     <>
       <section className="band">
         <span className="eyebrow">Provider · migration</span>
-        <h1>Roll</h1>
+        <h1>Move maturity</h1>
         <p className="lede">
           One intent against one supply, between two series that share no contract. A roll{" "}
-          <strong>transfers</strong> — it does not burn and mint. <code>Nox.mint</code> and{" "}
+          <strong>transfers</strong>. It does not burn and mint. <code>Nox.mint</code> and{" "}
           <code>Nox.burn</code> are the only operations that touch confidential total supply and
           both produce a new handle, so an unchanged supply handle on both sides is proof the
           operation never happened. That is a stronger statement than an equal plaintext.
@@ -184,7 +192,7 @@ export function Roll(): ReactElement {
           ) : !conversion.value.open ? (
             <p className="lede" data-testid="roll-not-open">
               The source series has not opened redemption, so there is no conversion to check. The
-              book reverts <code>SourceRedemptionNotOpen</code> rather than defaulting to par — a
+              book reverts <code>SourceRedemptionNotOpen</code> rather than defaulting to par. A
               roll priced at par by accident would move value between the two sides on every
               netting.
             </p>
@@ -212,8 +220,8 @@ export function Roll(): ReactElement {
                     <th>Agree</th>
                     <td data-testid="roll-agree">
                       {conversion.value.reported === conversion.value.recomputed
-                        ? "yes — the book reports the arithmetic it declares"
-                        : "NO — the book reports a conversion that is not the arithmetic it declares"}
+                        ? "Yes. The book reports the arithmetic it declares."
+                        : "No. The book reports a conversion that is not the arithmetic it declares."}
                     </td>
                   </tr>
                 </tbody>

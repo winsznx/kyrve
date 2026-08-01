@@ -1,270 +1,198 @@
 # How to use Kyrve
 
-Every page in the deployed application, what it is for, and what to do on it.
+Kyrve turns encrypted lending terms and encrypted borrowing requirements into one executable
+quote. The selected market, rate and aggregate become public when the quote is activated. The rest
+of the curve, provider allocations, limits and beneficial ownership remain private.
 
-**Live:** https://kyrve.timjosh507.workers.dev · Ethereum Sepolia (chain 11155111)
+**Live app:** https://kyrve.timjosh507.workers.dev
 
-Written by reading the deployed pages. Where a page reports something as absent, this guide says so
-rather than describing what it would show if it were there.
+The network badge in the application is the source of truth for the deployment you have opened.
+The public Sepolia deployment uses chain `11155111`. A local stack uses chain `31337`.
 
----
+## Before you begin
 
-## Before anything
+You can browse the public parts of Kyrve without a wallet. A wallet is required only when you need
+to sign, encrypt an input, or decrypt a value that has been granted to you.
 
-**You need a browser extension wallet** on Ethereum Sepolia — MetaMask, Zerion, Rabby, Coinbase.
-There is no QR code: Kyrve dropped WalletConnect because it contacted two third-party origins on
-every page load, and the terminal is meant to contact exactly two things, the Nox gateway and the
-chain.
+Use an Ethereum wallet extension on the network shown in the app. On Sepolia, you need Sepolia ETH
+for gas. The local stack supplies a local account for the browser flow.
 
-**You need Sepolia ETH** for gas, and nothing else. The test token has an open mint and the
-interface will mint it for you.
+Kyrve does not restore an ended wallet session after a refresh. Ending a session and locking it
+clear locally decrypted values from browser memory. Neither action withdraws a Nox grant that the
+wallet already holds.
 
-**Nothing is persisted.** Reloading ends your session and you reconnect. That is deliberate: a page
-that reopened a session on load would silently reopen one for somebody who had just locked it to
-clear a decrypted balance off the screen.
+## Privacy states
 
-**Public pages need no wallet at all.** The entire verification surface, the settlement evidence and
-every address on every page work while disconnected. Only your own confidential values need a signer.
-
----
-
-## The four confidentiality states
-
-These appear throughout and always mean the same thing.
-
-| State | Means |
+| State | What it means |
 |---|---|
-| **encrypted and unavailable** | A value exists and you hold no grant on it. Shown as redacted structure, never as a zero. |
-| **available to decrypt** | You hold a grant. Nothing has been decrypted yet. |
-| **decrypted locally** | Plaintext, in this browser's memory only. Never sent anywhere. |
-| **intentionally public** | Published on chain, permanently, and the page says when that happened. |
+| **Encrypted** | The value exists, but is not readable on the page. It is never displayed as zero. |
+| **Available to decrypt** | Your wallet has a grant, but no plaintext has been requested yet. |
+| **Decrypted locally** | Plaintext held only in this browser's memory. |
+| **Public** | A value published on chain. It remains public permanently. |
 
----
+## Getting started
 
-## Getting in
+Open `/app/start` and follow four steps.
 
-### `/` — the landing page
+1. **Choose your workspace.** Choose **Provide capital**, **Request capital**, or **Verify**. A role
+   changes the guidance and task order. It grants nothing and hides no route.
+2. **Connect your wallet.** Connect the wallet that will sign the encrypted actions. You may
+   continue without a wallet to use public pages. Select **Choose a different role** on this step
+   whenever you need to return to the role cards.
+3. **Check your connection.** Kyrve reports the network, wallet, configured confidential runtime,
+   market availability and role. A check explains what will not work but does not block public use.
+4. **Begin.** Go to the role's first valid task or open the workspace.
 
-The argument, and one real settled quote with four encrypted rows and one public number. The
-transaction link under it goes to the actual Sepolia settlement.
+The **Working as** menu remains available in the account control. It lets you switch role at any
+time, or choose a role again and restart onboarding. Changing or ending a wallet session does not
+change your selected role.
 
-**Do:** click **Enter the terminal**.
+## Navigation and account controls
 
-### `/app/start` — onboarding, four steps
+Desktop navigation is grouped by the job it supports.
 
-1. **Choose your role.** *Provide capital*, *Request capital*, or *Verify*. This changes what you are
-   shown first. It grants nothing and hides nothing, and every page stays reachable whichever you
-   pick. Change it any time from the session block at the foot of the left rail.
-2. **Connect your wallet.** It must be the wallet that signs. Every encrypted input is bound to its
-   direct caller, so there is no read-only mode and no relayer that can stand in for one.
-3. **Check readiness.** Five live checks: network, wallet, confidential runtime, market, role. The
-   third one asks the Nox gateway whether it is reachable rather than assuming it.
-4. **Begin.** Drops you into the first thing your role actually does.
+The labels below are exactly what the rail shows. Where a page's own title differs, it is given in
+brackets — a reader hunting the sidebar for a page title would not find it otherwise.
 
-You can skip the wallet at step 2 and still use every public page.
-
----
-
-## The left rail
-
-Eleven destinations in four groups. On a narrow window the rail collapses and four destinations move
-to a bar at the bottom of the screen.
-
-| Group | Pages |
+| Group | Rail labels |
 |---|---|
 | — | Overview |
-| **Capital** | Add capital · Lending terms · Request a quote |
-| **Market** | Activity · Private matching · Review a quote |
-| **Holdings** | Positions · Move maturity · Disclosures |
-| **Evidence** | Verify the deployment |
+| Set up | Add capital (*Add private capital*) · Lending terms (*Set lending terms*) · Request a quote (*Request capital*) |
+| Monitor | Activity (*What has happened*) · Private matching · Review a quote |
+| Manage | Positions (*Settled positions*) · Move maturity · Disclosures (*Share a frozen disclosure*) |
+| Verify | Verify the deployment (*Verify this deployment*) |
 
-At its foot: your role, connection state, address, how many decrypted values are held in this
-browser, and the controls to lock, switch account, switch network or end the session.
+On a smaller screen, the persistent bottom bar has four destinations: **Home**, **Activity**,
+**Positions**, and **Verify**. The full desktop navigation remains available at wider widths.
 
-**Locking is not revocation.** It clears decrypted values from memory. It withdraws no grant,
-because Nox has no way to withdraw one.
+The account control shows the current role and connection state. When connected, it provides the
+account and network controls supplied by the wallet, **Lock and clear** for decrypted values, and
+**End session**. Locking and ending a session do not revoke prior grants.
 
----
+## The workspace
 
-## Provider journey
+### `/app` - Your workspace
 
-### `/app/fund` — Add capital · *"Confidential balance"*
+The workspace starts with one current step. It then shows the small set of tasks relevant to the
+selected role, followed by public deployment facts.
 
-Moves a public ERC-20 balance into a confidential ERC-7984 one.
+Before you connect, the workspace explains what can still be inspected: deployment verification,
+settled records, and the privacy boundary around a wallet connection. It does not invent a private
+balance or a matching result.
 
-**What is public:** the amount you wrap. It is a plain `uint256` in calldata and it is public
-permanently. That is unavoidable and it is the honest cost of entering the confidential layer from a
-public token. Everything after it is encrypted.
+## Provide capital
 
-**Do:**
-1. **Test tokens** card — mint yourself tUSDC. The token has a permissionless `mint`, so any reviewer
-   can fund themselves.
-2. **Wrap** — enter an amount and click through. **Three wallet prompts**: mint, approve, wrap.
-3. **Private balance** — click *Decrypt confidential balance locally*. Decryption happens in your
-   browser. No Kyrve server, log, metric or database receives the result.
+### `/app/fund` - Add private capital
 
-**Watch for:** the wrapper wraps the market's own loan token, not merely a token named "test". Two
-different test tokens exist on this chain and only one is the market's; using the wrong one produces
-a balance the application cannot see.
+Wrap public loan tokens into a confidential ERC-7984 balance.
 
-### `/app/mandates` — Lending terms · *"Lending mandate"*
+The amount you wrap is public in the transaction permanently. The confidential balance created
+afterwards is encrypted. Connect your wallet to mint local test tokens where available, approve the
+wrapper, wrap, and decrypt your own resulting balance locally.
 
-How much you will lend, into which markets, at what minimum rate. All encrypted.
+Only wrap the market's configured loan token. A token with the same symbol is not necessarily the
+asset the market uses.
 
-**Every submission carries 35 handles** whether you enable one market or eight. The unused slots hold
-encrypted zeros, so the shape of your strategy is not readable from the transaction size.
+### `/app/mandates` - Set lending terms
 
-**Do:** fill in total budget, per-market caps and minimum rate indexes, then **Seal encrypted
-mandate**. The page lists exactly what becomes public the moment you sign — your address, the
-universe id, the epoch, a schema version, the block timestamp, and a commitment over the handle
-references. Not over any value.
+Submit the confidential terms that describe what you are prepared to lend, into which markets, and
+at what minimum rate. The form names the public fields before you sign. The lending limits and rates
+are encrypted in the browser before submission.
 
-**A mandate is an offer, not a reservation.** Capacity is reserved only when an epoch runs and
-selects a leaf, and that reservation moves real capital out of your confidential balance in one
-subtraction, inside the same contract that holds the coverage backing it.
+A mandate is not a capital reservation. Capital is reserved only when matching selects a result.
+You can later replace or retire a mandate. Retiring is permanent.
 
-You can replace or retire a mandate later. Retiring has no undo.
+### `/app/series` - Settled positions
 
-### `/app/series` — Positions · *"Series"*
+Lists settled credit positions. A position records public settlement facts and offers the connected
+provider a way to read their own confidential claim. From an individual position you can verify the
+series, create a disclosure when a Capsule vault is available, or transfer it when a Cross book is
+available.
 
-What a settled quote leaves behind: a public credit position at Midnight, and confidential claims on
-it. The credit is public; who owns how much of it is not, and cannot be derived from this page.
+### `/app/roll` - Move maturity
 
-Shows the series id, maturity, the Midnight market, the series vault that acts as the maker, and the
-settled quote. From here you can verify the series from chain state or transfer out of it.
+A roll transfers a confidential claim from one settled series to another. It requires two complete
+series with the required market components. If the deployment does not have them, the page clearly
+reports that there is no valid source and target pair. It does not show an empty maturity ladder.
 
-### `/app/capsules` — Disclosures · *"Capsules"*
+### `/app/capsules` - Share a frozen disclosure
 
-A capsule freezes one value at one block and grants one recipient the ability to decrypt **that
-frozen copy** — never the live handle.
+A capsule freezes one value at one block and gives one recipient access to that frozen snapshot. It
+never grants the recipient access to the live value.
 
-**The grant is permanent.** Nox has no way to withdraw one. What a capsule's expiry governs is
-whether the capsule still *asserts*, not whether its recipient can still read the snapshot it froze.
-The interface will never tell you access was revoked, because that would be false.
+The recipient's grant is permanent. A capsule expiry controls whether the capsule still asserts its
+facts. It does not make a historical snapshot unreadable.
 
----
+### `/app/cross/:seriesId` - Transfer a position
 
-## Borrower journey
+This page exists for a specific settled series. A Cross order moves a confidential claim between two
+parties without showing either balance publicly. If no Cross book is deployed for that series, Kyrve
+reports the capability as unavailable rather than presenting an unusable order form.
 
-### `/app/request` — Request a quote · *"Borrower request"*
+## Request capital
 
-Deliberately asymmetric. The bond is ETH and its value is visible; the expiry and the exact-fill
-requirement have to be agreed by every verifier. What stays encrypted is the part a provider could
-quote against: how much you want, the least you would accept, and every maximum rate you would pay.
+### `/app/request` - Request capital
 
-**19 handles per submission, always** — same padding logic as a mandate.
+Submit a borrower request. The ETH bond is public. Your desired amount, minimum acceptable amount
+and maximum rates are encrypted before the request leaves the browser. Connect the wallet that will
+sign the request.
 
-### `/app/quotes` — Review a quote · *"Quotes"*
+### `/app/curve` - Private matching
 
-One confidential epoch produces one leaf: a market, a rate and an aggregate amount.
+This is the public status surface for the encrypted matching run. It shows a deliberately redacted
+field, not a chart with invented values. Only a selected quote becomes readable. If no matching run
+has published a quote, the page says so and links to the mandate and request steps that must happen
+first.
 
-**Verifying costs nothing and reveals nothing. Activating is irreversible** — it is the moment those
-three become public, and it can happen once per epoch, forever.
+Measured operation costs and their limits are available under **Technical measurements**. They are
+kept behind the workflow state so the status of matching is not buried beneath implementation detail.
 
-The page lists quotes that already settled. Each has its own page where every number is read from
-chain state.
+### `/app/quotes` - Review a quote
 
-**Exact fill is enforced twice** and neither check can do it alone: `isRatified` is a view and never
-receives the fill size, and Midnight itself permits a partial fill, so the vault's `onBuy` is the
-only place actual size reaches maker code.
+Shows the quote record after matching has produced a real result. Verifying a candidate does not
+reveal the rest of the curve. Activating one quote is the irreversible moment when the market, rate
+and aggregate become public.
 
----
+The resulting offer can settle only for the approved borrower and at the exact units. Partial fills
+are refused by the series vault.
 
-## Shared pages
+## Monitor activity
 
-### `/app/activity` — *"What has happened"*
+### `/app/activity` - What has happened
 
-Every line is a public fact read from the chain at page load, not a stored notification. Nothing here
-is decrypted.
+Activity is derived from public chain reads, not stored notifications. It shows the current role's
+workflow first, followed by the events that this deployment can confirm for the connected wallet.
+An empty activity view means the chain has no recorded activity for that wallet on this deployment.
 
-An empty feed means the chain has no record of this wallet acting on this deployment — not that
-something failed to load.
+## Verification
 
-### `/app/curve` — Private matching · *"Confidential curve"*
+### `/proof` - Verify this deployment
 
-Where it resolves. Eligibility, capacity, the privacy floor and leaf selection are computed entirely
-on encrypted values, and exactly one leaf is published. Everything rejected — every other leaf, every
-provider allocation, every capacity — stays encrypted.
+Verification needs no wallet. Each page reads the deployment's chain in the browser and compares it
+with the served deployment record. The record supplies identifiers but never determines the verdict.
 
-The redacted chart is drawn from geometry constants, not from any measurement. There is nothing in it
-to recover.
+The verification index links to deployment, series, quote and capsule checks. It also keeps the
+important limits available without allowing them to obscure the checks a reviewer came to run.
 
-**On the current deployment no epoch has finished**, and the page says so rather than rendering
-stages that never ran. An epoch is minutes of off-chain computation against a real Nox stack, driven
-one stage at a time because every encrypted primitive is a separate transaction. This page cannot
-start one. Locally, `pnpm stack:local` brings up everything and the browser demonstration drives a
-whole epoch end to end.
-
-### `/app/roll` — Move maturity
-
-**Needs two complete series, and this deployment has one.** One custody vault serves exactly one
-series, because `bindSettler` is one-shot and the settler holds its series, token, ownership
-registry, vault and market as immutables. A second maturity therefore needs a second engine, epoch
-controller, graph registry, ledger and settlement layer.
-
-The page says that rather than showing an empty ladder, because a maturity ladder on a
-one-series deployment would describe a system that does not exist.
-
----
-
-## Verification — `/proof`
-
-The part a reviewer should care about most. **It needs no wallet and no key**, so you can run it
-against a deployment you do not control.
-
-Every check states a fact, reads this chain for it, and compares. The deployment record supplies
-addresses and identifiers and is **never** the source of a verdict. Where the record and the chain
-disagree, the check fails and shows both — the chain is what is true.
-
-### Four verdicts, and two are neither pass nor fail
-
-| Verdict | Means |
+| Verdict | Meaning |
 |---|---|
-| **recomputed** | This browser read the chain and the values agree. |
-| **failed** | This browser read the chain and they do not. Both values are shown. |
-| **not deployed here** | The contract was never deployed for this layer. Calling that a pass or a failure would be a lie in one direction. |
-| **reported, not verified here** | The record asserts it and this browser did not check it. Listed rather than dropped, so it cannot be mistaken for a recomputation. |
+| **Recomputed** | This browser read the chain and the expected values agree. |
+| **Failed** | This browser read the chain and the values disagree. |
+| **Not deployed here** | This deployment has no such component. |
+| **Reported, not verified** | The record makes the claim, but this browser did not verify it. |
 
-### Sub-pages
+Verification is a recomputation at one named block. It is not an audit. Nox decryption proofs are
+EIP-712 signatures from the Nox KMS. They are not zero-knowledge proofs.
 
-- **Deployment** — every address checked for deployed code, the compiler pin each layer was built
-  with, and the source-verification status the records report. Names the block it checked.
-- **Series** — identity, the published aggregate against the live supply handle, public coverage, and
-  every market-layer binding.
-- **Quote** — terms, offer hash, exact fill and the resulting position.
-- **Capsule** — verified by id, from a capsule you hold.
-
-### What these pages are not
-
-A recomputation at one block, by one browser, over the checks each page lists. **Not an audit**, and
-it says nothing about any block other than the one named.
-
-Values published through the Nox handle gateway carry decryption proofs — EIP-712 signatures by the
-Nox KMS attesting that a handle decrypts to a value. **They are not zero-knowledge proofs and Kyrve
-never calls them that.** A proof once issued is replayable by anyone forever and says nothing about
-which computation the value belongs to.
-
----
-
-## What this deployment does not have
-
-Stated plainly so nothing here reads as broken when it is not.
-
-- **No finished epoch.** `/app/curve` and the live half of `/app/quotes` need one. Run the full
-  epoch locally with `pnpm stack:local`.
-- **One series, so no roll.** `/app/roll` explains why a second needs a whole second stack.
-- **No Slither coverage on the confidential layer.** `crytic-compile` will not drive solc 0.8.36.
-  Reported as `UNVERIFIED BY SLITHER` on every gate run, never as a pass.
-
----
-
-## Running it yourself
+## Local run
 
 ```bash
 pnpm install
-pnpm stack:local     # chain, Nox stack, gateway, two issuance stacks, workers, web app
-pnpm demo:phase7     # drives the browser demonstration end to end
-pnpm verify:phase7   # the phase gate
+pnpm stack:local
+pnpm demo:phase7
+pnpm verify:phase7
 ```
 
-`pnpm stack:local` does not report READY until every health check answers.
+`pnpm stack:local` starts the local chain, Nox services, settlement stacks, Workers and built web
+application. It reports ready only after its health checks answer. `pnpm demo:phase7` drives the
+real browser flow against that local stack.

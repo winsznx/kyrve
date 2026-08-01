@@ -64,7 +64,7 @@ export function Activity(): ReactElement {
       what: "Your lending terms were sealed",
       detail:
         journey.mandateState === MandateState.Active
-          ? `Live on epoch ${journey.mandateEpoch ?? "—"}. The submission carried the same 35 encrypted fields it always does, so its shape says nothing about its contents.`
+          ? `Live on epoch ${journey.mandateEpoch ?? "not recorded"}. The submission carried the same 35 encrypted fields it always does, so its shape says nothing about its contents.`
           : `Currently ${journey.mandateState === MandateState.Paused ? "paused" : "retired"}. Nothing is matched against them in this state.`,
       to: "/app/mandates",
     });
@@ -138,21 +138,23 @@ export function Activity(): ReactElement {
         <span className="eyebrow">Activity</span>
         <h1>What has happened</h1>
         <p className="lede">
-          Every line below is a public fact read from the chain just now — not a stored
-          notification. Nothing here is decrypted.
+          Every line below is a public fact read from the chain just now, not a stored notification.
+          Nothing here is decrypted.
         </p>
       </section>
 
-      <section className="band">
-        <Workflow journey={journey} testId="activity-workflow" />
+      <section className="band activity-progress">
+        <span className="eyebrow">Your progress</span>
+        <h2>What Kyrve can confirm for this wallet</h2>
+        <Workflow journey={journey} role={role ?? "provider"} testId="activity-workflow" />
       </section>
 
       <section className="band">
         {entries.length === 0 ? (
           <Empty title="Nothing has happened on this wallet yet" testId="activity-empty">
             <p>
-              This is not an empty feed waiting to fill — it means the chain has no record of this
-              wallet doing anything on this deployment. Your first action will appear here.
+              This is not an empty feed waiting to fill. The chain has no record of this wallet
+              doing anything on this deployment. Your first action will appear here.
             </p>
             <p>
               <Link to="/app" className="row-link">

@@ -37,7 +37,6 @@ import { EncryptedField } from "../components/EncryptedField.js";
 import { QuoteSpecimen } from "../components/QuoteSpecimen.js";
 import { TaglineReveal } from "../components/TaglineReveal.js";
 import { PROOF_LINE, PROOF_STAGES } from "../generated/proof-summary.js";
-import { useKyrve } from "../lib/context.js";
 import { Link } from "../router/router.js";
 
 /** What stays private and what becomes public. Same length, deliberately. */
@@ -110,8 +109,6 @@ const VERDICT_WORD: Record<string, string> = {
 };
 
 export function Landing(): ReactElement {
-  const { record } = useKyrve();
-
   /*
    * The header's action appears only once the hero has scrolled away.
    *
@@ -404,8 +401,8 @@ export function Landing(): ReactElement {
         <p className="note">
           Four verdicts, and two are neither pass nor fail. <em>Not present here</em> means this
           checkout has no record of it. <em>Reported, not verified here</em> means a record asserts
-          it and this page did not check — listed rather than dropped, so it cannot be mistaken for
-          a recomputation.{" "}
+          it and this page did not check. It is listed rather than dropped, so it cannot be mistaken
+          for a recomputation.{" "}
           <Link to="/proof" className="row-link">
             Recompute all of it from chain state
           </Link>

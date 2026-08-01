@@ -27,7 +27,6 @@
 import type { ReactElement } from "react";
 
 import { Facts } from "../components/Facts.js";
-import { Hash } from "../components/Hash.js";
 import { Badge, PageHeader, Stat } from "../components/PageHeader.js";
 import { NextAction, Workflow } from "../components/Workflow.js";
 import { MANDATE_STATE_LABEL, MandateState } from "../lib/abi.js";
@@ -78,61 +77,22 @@ export function Overview(): ReactElement {
     <>
       <PageHeader
         eyebrow={ROLE_COPY[role].label}
-        title="Your Kyrve"
-        description={`${ROLE_COPY[role].promise} Everything below is read from ${source} when this page loads. Nothing is cached and no amount is decrypted here.`}
+        title="Your workspace"
+        description={`${ROLE_COPY[role].promise} This view is read from ${source}. Private values remain encrypted until you choose to decrypt them locally.`}
         badge={<Badge tone="live">{network}</Badge>}
       />
 
-      {/*
-        The public shape of the deployment, before anything personal.
-
-        Four numbers that are true whether or not a wallet is connected, so the screen says something
-        concrete on the first visit rather than four rows of "not yet". They are all public facts
-        about what exists — never a balance, never a rate, never anything a reader would need a grant
-        to see, which is why they render through `Stat` rather than through `Figure`.
-      */}
-      <section className="stat-row" data-testid="deployment-stats">
-        <Stat
-          label="Series issued"
-          value={layers.length === 0 ? "none" : String(layers.length)}
-          hint="Complete issuance stacks on this deployment"
-          testId="stat-series"
-        />
-        <Stat
-          label="Contracts live"
-          value={String(contracts)}
-          hint="Deployed and recorded with their addresses"
-          testId="stat-contracts"
-        />
-        <Stat
-          label="Disclosure vaults"
-          value={vaults === 0 ? "none" : String(vaults)}
-          hint="Where a frozen snapshot can be granted"
-          testId="stat-vaults"
-        />
-        <Stat
-          label="Curve visibility"
-          value="private"
-          hint="No rate or allocation is public at any point"
-          testId="stat-curve"
-        />
-      </section>
-
-      {/*
-        The two things a returning reader wants, side by side rather than stacked.
-
-        Stacked, "what to do next" and "what I hold" are four hundred pixels apart and the second one
-        is below the fold, so the screen answers one question per scroll. The wider column is the
-        action because that is the one with a decision in it.
-      */}
-      <section className="dash-grid">
-        <div className="dash-main">
+      <section className="workspace-overview">
+        <div className="workspace-focus">
           <NextAction journey={journey} />
           {journey.stages.length === 0 ? null : (
-            <>
-              <h2>Where this is up to</h2>
-              <Workflow journey={journey} />
-            </>
+            <div className="workspace-progress">
+              <div>
+                <span className="eyebrow">Progress</span>
+                <h2>Path to a settled position</h2>
+              </div>
+              <Workflow journey={journey} role={role} />
+            </div>
           )}
           {journey.error === undefined ? null : (
             <p className="note" role="alert" data-testid="journey-error">
@@ -142,14 +102,30 @@ export function Overview(): ReactElement {
           )}
         </div>
 
-        <div className="dash-side">
-          <h2>What you hold</h2>
-          <Portfolio role={role} journey={journey} layerCount={layers.length} vaults={vaults} />
-        </div>
+        <aside
+          className="workspace-private"
+          data-state={session === undefined ? "public" : "private"}
+        >
+          {session === undefined ? (
+            <PublicAccess />
+          ) : (
+            <>
+              <span className="eyebrow">Private position</span>
+              <h2>What this wallet can act on</h2>
+              <Portfolio role={role} journey={journey} layerCount={layers.length} vaults={vaults} />
+            </>
+          )}
+        </aside>
       </section>
 
-      <section className="band">
-        <h2>Things you can do</h2>
+      <section className="band workspace-actions-section">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">Available tasks</span>
+            <h2>Choose what to do next</h2>
+          </div>
+          <p className="note">Every task states its public and private boundary before you act.</p>
+        </div>
         <ul className="rows action-rows" data-testid="role-actions">
           {actions.always.map((action) => (
             <li key={action.path}>
@@ -175,40 +151,47 @@ export function Overview(): ReactElement {
         </ul>
       </section>
 
-      {/*
-        The contracts, named in the language of the product rather than in Solidity.
-
-        A reader who wants to check the deployment should not have to work out which of eighteen
-        addresses matters. These three are the ones that carry the argument, each with the sentence
-        that says what it does and a link straight to its verified source.
-      */}
-      <section className="band">
-        <h2>What is deployed here</h2>
-        <ul className="contract-cards" data-testid="contract-cards">
-          <ContractCard
-            name="The mandate book"
-            body="Where a lender's encrypted terms are submitted. It stores handles and never a rate."
-            address={record.addresses["EncryptedMandateBook"]}
-            chainId={record.chainId}
+      <section className="band deployment-summary" data-testid="deployment-stats">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">Public deployment</span>
+            <h2>At a glance</h2>
+          </div>
+          <Link to="/proof/deployment" className="row-link">
+            Verify this deployment
+          </Link>
+        </div>
+        <div className="stat-row">
+          <Stat
+            label="Series issued"
+            value={layers.length === 0 ? "none" : String(layers.length)}
+            hint="Complete credit positions on this deployment"
+            testId="stat-series"
           />
-          <ContractCard
-            name="The custody vault"
-            body="Holds confidential coverage, and performs the one subtraction a reservation makes."
-            address={record.series?.addresses["KyrveCustodyVault"]}
-            chainId={record.chainId}
+          <Stat
+            label="Contracts live"
+            value={String(contracts)}
+            hint="Recorded addresses with deployed code"
+            testId="stat-contracts"
           />
-          <ContractCard
-            name="The disclosure vault"
-            body="Freezes a snapshot for one named auditor. Expiry stops new snapshots, not old ones."
-            address={record.market?.addresses["KyrveCapsuleVault"]}
-            chainId={record.chainId}
+          <Stat
+            label="Disclosure vaults"
+            value={vaults === 0 ? "none" : String(vaults)}
+            hint="Frozen snapshots can be issued here"
+            testId="stat-vaults"
           />
-        </ul>
+          <Stat
+            label="Curve visibility"
+            value="private"
+            hint="Rates and allocations stay encrypted"
+            testId="stat-curve"
+          />
+        </div>
       </section>
 
-      <section className="band">
+      <section className="band deployment-details" data-testid="contract-cards">
         <details className="advanced" data-testid="advanced">
-          <summary>How this works underneath</summary>
+          <summary>How this settlement is enforced</summary>
           <p className="note">
             Encrypted lending terms and one encrypted requirement go into an epoch. The confidential
             engine evaluates eligibility, capacity, the privacy floor and leaf selection entirely on
@@ -231,6 +214,24 @@ export function Overview(): ReactElement {
   );
 }
 
+/** The public half is useful before a wallet is connected, so it earns its own short panel. */
+function PublicAccess(): ReactElement {
+  return (
+    <>
+      <span className="eyebrow">Before you connect</span>
+      <h2>What you can inspect now</h2>
+      <ul className="workspace-public-list">
+        <li>Verify the deployment and each settled record without a wallet.</li>
+        <li>Connect only when you need to sign, encrypt or decrypt a value.</li>
+        <li>Decrypted values stay in this browser and can be cleared at any time.</li>
+      </ul>
+      <Link to="/proof/deployment" className="ghost workspace-public-link">
+        Verify the deployment
+      </Link>
+    </>
+  );
+}
+
 /**
  * Every contract this record names, across both issuance layers.
  *
@@ -247,34 +248,6 @@ function contractCount(record: ReturnType<typeof useKyrve>["record"]): number {
     record.layerB?.market?.addresses,
   ];
   return groups.reduce<number>((total, group) => total + Object.keys(group ?? {}).length, 0);
-}
-
-function ContractCard({
-  name,
-  body,
-  address,
-  chainId,
-}: {
-  name: string;
-  body: string;
-  address: string | undefined;
-  chainId: number;
-}): ReactElement {
-  return (
-    <li className="contract-card">
-      <strong>{name}</strong>
-      <span>{body}</span>
-      {/*
-        An absent address is stated, not hidden. A deployment that has not issued a series has no
-        curve engine, and a card that quietly renders nothing there reads as a rendering fault.
-      */}
-      {address === undefined ? (
-        <span className="contract-absent">not deployed on this record</span>
-      ) : (
-        <Hash value={address} kind="address" chainId={chainId} />
-      )}
-    </li>
-  );
 }
 
 function Portfolio({
@@ -295,7 +268,9 @@ function Portfolio({
         facts={[
           {
             label: "Confidential balance",
-            value: journey.hasConfidentialBalance ? "held — readable only by you" : undefined,
+            value: journey.hasConfidentialBalance
+              ? "held locally, readable only by you"
+              : undefined,
             absent: "none yet. Adding capital creates one",
           },
           {
@@ -343,7 +318,7 @@ function Portfolio({
             label: "Outstanding debt",
             value:
               journey.quoteStatus === QuoteStatus.Consumed
-                ? "settled — the credit position is public"
+                ? "settled. The credit position is public"
                 : undefined,
             absent: "nothing settled yet",
           },

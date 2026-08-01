@@ -32,8 +32,8 @@ export function SeriesList(): ReactElement {
   return (
     <>
       <section className="band">
-        <span className="eyebrow">Provider · step three</span>
-        <h1>Series</h1>
+        <span className="eyebrow">Provider · Positions</span>
+        <h1>Settled positions</h1>
         <p className="lede">
           A series is what a settled quote leaves behind: a public credit position at Midnight, and
           confidential claims on it. The credit is public. Who owns how much of it is not, and
@@ -54,9 +54,8 @@ export function SeriesList(): ReactElement {
               Start at{" "}
               <Link to="/app/fund" className="row-link">
                 funding a confidential balance
-              </Link>
-              , or run the browser demonstration, which drives the whole lifecycle against a real
-              Nox stack and real Midnight.
+              </Link>{" "}
+              A position appears only after exact settlement has completed.
             </p>
           </Empty>
         </section>
@@ -75,7 +74,7 @@ export function SeriesList(): ReactElement {
               className="primary"
               data-testid="open-first-position"
             >
-              Open {layers.length === 1 ? "your position" : "the first position"}
+              Open {layers.length === 1 ? "the position" : "a position"}
             </Link>
           </div>
           <ul className="rows" data-testid="series-list">
@@ -114,7 +113,7 @@ export function SeriesList(): ReactElement {
                 <p className="note">
                   {layer.series.providers.length} provider
                   {layer.series.providers.length === 1 ? "" : "s"} hold a claim on this quote.
-                  Participation in an epoch is public — it is the honest cost of a permissionless
+                  Participation in an epoch is public. It is the honest cost of a permissionless
                   keeper. What stays private is whether any of them was eligible, at what rate, in
                   what size, and what they now own.
                 </p>

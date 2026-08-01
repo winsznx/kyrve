@@ -53,24 +53,27 @@ export function Mandates(): ReactElement {
   return (
     <>
       <section className="band">
-        <span className="eyebrow">Provider · step two</span>
-        <h1>Lending mandate</h1>
+        <span className="eyebrow">Provider · Step 2</span>
+        <h1>Set lending terms</h1>
         <p className="lede">
           A mandate says how much you will lend, into which markets, and at what minimum rate. All
           of it is encrypted. The submission always carries the same 35 handles whether you enable
-          one market or eight — the unused slots hold encrypted zeros, so the shape of your mandate
+          one market or eight. The unused slots hold encrypted zeros, so the shape of your mandate
           is not readable from the transaction.
         </p>
-        <Facts
-          facts={[
-            {
-              label: "Mandate book",
-              value: <span className="mono">{record.addresses.EncryptedMandateBook}</span>,
-            },
-            { label: "Universe", value: <span className="mono">{UNIVERSE}</span> },
-            { label: "Handles per submission", value: "35, always" },
-          ]}
-        />
+        <details className="route-meta">
+          <summary>Submission details</summary>
+          <Facts
+            facts={[
+              {
+                label: "Mandate book",
+                value: <span className="mono">{record.addresses.EncryptedMandateBook}</span>,
+              },
+              { label: "Universe", value: <span className="mono">{UNIVERSE}</span> },
+              { label: "Handles per submission", value: "35, always" },
+            ]}
+          />
+        </details>
       </section>
 
       <section className="band">
@@ -80,16 +83,17 @@ export function Mandates(): ReactElement {
       </section>
 
       <section className="band">
-        <div className="card">
-          <h2>Next</h2>
+        <div className="card route-next">
+          <span className="eyebrow">After you submit</span>
+          <h2>Your terms wait for a matching run</h2>
           <p className="lede">
             A mandate is an offer to the curve engine, not a reservation. Capacity is reserved only
-            when an epoch runs and selects a leaf — and a reservation moves real capital out of your
+            when an epoch runs and selects a leaf. A reservation moves real capital out of your
             confidential balance in one subtraction, in the same contract that holds the coverage
             backing it.
           </p>
           <Link to="/app/curve" className="ghost">
-            Watch an epoch compute
+            View matching status
           </Link>
         </div>
       </section>
@@ -284,7 +288,7 @@ function MandatePanel({ session }: { session: Session }): ReactElement {
   return (
     <div className="grid" data-testid="mandate-band">
       <div className="card">
-        <h2>{epoch === undefined ? "Create a mandate" : `Replace mandate — epoch ${epoch}`}</h2>
+        <h2>{epoch === undefined ? "Create a mandate" : `Replace mandate: epoch ${epoch}`}</h2>
 
         <div className="row">
           <div className="field">
@@ -354,7 +358,7 @@ function MandatePanel({ session }: { session: Session }): ReactElement {
             disabled={busy || retired}
             data-testid="mandate-submit"
           >
-            {epoch === undefined ? "Seal encrypted mandate" : "Replace — opens a new epoch"}
+            {epoch === undefined ? "Seal encrypted mandate" : "Replace: opens a new epoch"}
           </button>
         </div>
 
@@ -377,7 +381,7 @@ function MandatePanel({ session }: { session: Session }): ReactElement {
             <tr>
               <th>Mandate</th>
               <td className="handle" data-testid="mandate-id">
-                {mandateId ?? "—"}
+                {mandateId ?? "not recorded"}
               </td>
             </tr>
             <tr>
@@ -396,8 +400,8 @@ function MandatePanel({ session }: { session: Session }): ReactElement {
         {epoch !== undefined && epoch > 1 ? (
           <p className="note" data-testid="epoch-note">
             Epoch {epoch - 1} no longer authorises any activity. Its handles were not destroyed and
-            cannot be — anyone who could already decrypt them still can, permanently. Kyrve does not
-            describe that as revoked.
+            cannot be withdrawn. Anyone who could already decrypt them still can, permanently. Kyrve
+            does not describe that as revoked.
           </p>
         ) : null}
 
@@ -432,7 +436,7 @@ function MandatePanel({ session }: { session: Session }): ReactElement {
                 disabled={busy || retired}
                 data-testid="mandate-pause"
               >
-                Pause — stops being quoted against
+                Pause: stops being quoted against
               </button>
             )}
 
@@ -443,7 +447,7 @@ function MandatePanel({ session }: { session: Session }): ReactElement {
                 disabled={busy}
                 data-testid="mandate-retire-confirm"
               >
-                Retire permanently — this cannot be undone
+                Retire permanently: this cannot be undone
               </button>
             ) : (
               <button
@@ -463,8 +467,8 @@ function MandatePanel({ session }: { session: Session }): ReactElement {
             <strong>Retiring is terminal and there is no recovery</strong>
             <p>
               A retired mandate cannot be resumed or replaced, and a new mandate for this address
-              and this universe cannot be created afterwards — the identifier is deterministic in
-              both. Pausing is the reversible action; this one is not.
+              and this universe cannot be created afterwards because the identifier is deterministic
+              in both. Pausing is the reversible action; this one is not.
             </p>
           </div>
         ) : null}

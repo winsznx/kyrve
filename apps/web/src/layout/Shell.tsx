@@ -16,7 +16,7 @@
 import type { ReactElement, ReactNode } from "react";
 
 import { useKyrve } from "../lib/context.js";
-import { Link, type Match, useLocation } from "../router/router.js";
+import { type Match, useLocation } from "../router/router.js";
 import { BottomNav } from "./BottomNav.js";
 import { Sidebar } from "./Sidebar.js";
 
@@ -46,7 +46,7 @@ export function Shell({ match, children }: ShellProps): ReactElement {
 
       {chromeless ? null : <Sidebar />}
 
-      <main id="main" className={chromeless ? "page page-full" : "page"}>
+      <main id="main" className={chromeless ? "page page-full" : "page workspace-page"}>
         {children}
       </main>
 
@@ -76,7 +76,7 @@ export function Shell({ match, children }: ShellProps): ReactElement {
             Environment <span className="mono">{record.environment}</span> · chain{" "}
             <span className="mono">{record.chainId}</span>. Not an offer of securities and not
             investment advice. Values published through the Nox handle gateway carry decryption
-            proofs — signatures over a released plaintext, not zero-knowledge proofs. No gas
+            proofs. They are signatures over a released plaintext, not zero-knowledge proofs. No gas
             indistinguishability is claimed. The confidential contract layer has no static-analysis
             coverage.
           </p>

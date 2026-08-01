@@ -63,12 +63,17 @@ export function Cross({ seriesId }: { seriesId: `0x${string}` }): ReactElement {
   if (layer === undefined || book === undefined) {
     return (
       <section className="band">
-        <h1>Cross</h1>
-        <Empty title="No Cross book is deployed over this series" testId="cross-unknown">
+        <span className="eyebrow">Position transfer</span>
+        <h1>Transfer a position</h1>
+        <p className="lede">
+          A private transfer market belongs to one settled position. This page does not create a
+          market where one has not been deployed.
+        </p>
+        <Empty title="No private transfer market is available" testId="cross-unknown">
           <p>
             {layer === undefined
-              ? "This deployment names no series with that id, and this page will not fall back to another one."
-              : "A Cross book is deployed over one series and holds it as an immutable. This series has none, which is a fact about this deployment rather than a verdict about the series."}
+              ? "This deployment has no settled position with that identifier."
+              : "This settled position has no Cross book deployed over it."}
           </p>
           <p>
             <Link to="/app/series" className="row-link">
@@ -84,13 +89,14 @@ export function Cross({ seriesId }: { seriesId: `0x${string}` }): ReactElement {
     <>
       <section className="band">
         <span className="eyebrow">{layer.label} · secondary</span>
-        <h1>Cross out of series {abbreviate(seriesId)}</h1>
+        <h1>Transfer a position</h1>
         <p className="lede">
           A Cross order moves a confidential claim between two parties without either balance
           becoming public. You escrow an encrypted amount; the keeper matches an exit against an
           entry; the conservation identities hold on both sides and the floor-division dust stays
           with the buyer.
         </p>
+        <p className="note">Position {abbreviate(seriesId)}</p>
         <Economics book={book} />
       </section>
 
@@ -332,8 +338,8 @@ function OrderPanel({
               onChange={(event) => setSide(Number(event.target.value) === 1 ? 1 : 0)}
               data-testid="cross-side"
             >
-              <option value={CROSS_SIDE.Exit}>Exit — give up a claim</option>
-              <option value={CROSS_SIDE.Entry}>Entry — take one on</option>
+              <option value={CROSS_SIDE.Exit}>Exit: give up a claim</option>
+              <option value={CROSS_SIDE.Entry}>Entry: take one on</option>
             </select>
           </div>
         </div>
@@ -343,8 +349,8 @@ function OrderPanel({
           <p>
             The amount is encrypted before it leaves this browser and the escrow stays a handle only
             you hold a grant on. What becomes public is that an order exists, on which side, and
-            when it expires. Settling a residual publicly is a separate action with its own warning
-            — and it is permanent, because Nox has no un-publish.
+            when it expires. Settling a residual publicly is a separate action with its own warning.
+            It is permanent because Nox has no way to un-publish it.
           </p>
         </div>
 

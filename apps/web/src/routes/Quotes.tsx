@@ -53,28 +53,22 @@ export function Quotes(): ReactElement {
   return (
     <>
       <section className="band">
-        <span className="eyebrow">Borrower · step two</span>
-        <h1>Quotes</h1>
+        <span className="eyebrow">Borrower · Step 2</span>
+        <h1>Review a quote</h1>
         <p className="lede">
           One confidential epoch produces one leaf: a market, a rate and an aggregate amount.
-          Verifying it costs nothing and reveals nothing. Activating it is the moment those three
-          become public — and it can happen once per epoch, forever.
+          Verifying costs nothing and reveals nothing. Activating makes those three values public
+          permanently, so review them carefully before you act.
         </p>
       </section>
 
       {settlements.length === 0 ? (
         <section className="band">
-          <Empty title="No finished epoch is being served" testId="quotes-empty">
+          <Empty title="No quote is ready for review" testId="quotes-empty">
             <p>
               A quote exists only after a confidential epoch has run, been publicly decrypted and
-              been activated. That is minutes of off-chain computation against a real Nox stack, not
-              something this page can start.
-            </p>
-            <p>
-              Locally: <code className="mono">pnpm stack:local</code> brings up the node, the Nox
-              stack and a deployment, and the browser demonstration drives a whole epoch end to end.
-              The panel appears here once the record carries a real finished epoch — a panel
-              rendered with placeholder terms would be a placeholder proof.
+              activated. This page cannot start matching or invent terms before a real result
+              exists.
             </p>
           </Empty>
         </section>
@@ -82,7 +76,7 @@ export function Quotes(): ReactElement {
         settlements.map(({ tag, settlement }) => (
           <RequiresWallet
             key={tag}
-            purpose="verify, activate and settle a quote — all three bind to your wallet"
+            purpose="verify, activate and settle a quote. All three actions bind to your wallet"
           >
             {(session) => <QuoteBand settlement={settlement} session={session} />}
           </RequiresWallet>

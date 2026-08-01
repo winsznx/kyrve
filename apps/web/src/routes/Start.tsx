@@ -32,7 +32,7 @@ import { RedactedCurve } from "../components/RedactedCurve.js";
 import { useChainRead } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
 import { layersOf, settlementsOf } from "../lib/records.js";
-import { ROLE_COPY, ROLES, type Role } from "../lib/role.js";
+import { ROLE_COPY, ROLES } from "../lib/role.js";
 import { Link, navigate } from "../router/router.js";
 
 export function Start(): ReactElement {
@@ -73,7 +73,7 @@ export function Start(): ReactElement {
         <header className="start-head">
           <span className="wordmark">kyrve</span>
           <Link to="/" className="row-link">
-            Back to the overview
+            Back to Kyrve
           </Link>
         </header>
 
@@ -100,10 +100,10 @@ export function Start(): ReactElement {
 
         {step === 1 ? (
           <section data-testid="step-role">
-            <h1>What brings you to Kyrve?</h1>
+            <h1>Choose your workspace</h1>
             <p className="lede">
-              This decides what you are shown first. It grants nothing, hides nothing, and you can
-              change it at any time from the header.
+              Choose the job you are here to do. This only changes the guidance Kyrve shows first.
+              It grants nothing, hides nothing, and you can change it from the account menu.
             </p>
             <div className="role-cards">
               {ROLES.map((option) => (
@@ -127,16 +127,15 @@ export function Start(): ReactElement {
 
         {step === 2 ? (
           <section data-testid="step-wallet">
-            <h1>Connect the wallet you will sign with</h1>
+            <h1>Connect the wallet you will use</h1>
             <p className="lede">
               Your wallet encrypts submissions and decrypts only values you are authorised to view.
               <strong> Kyrve does not send decrypted balances to its server.</strong> They exist in
               this browser's memory and are cleared the moment you lock the session.
             </p>
             <p className="lede">
-              It has to be the wallet that signs, not a relayer or a smart account: every encrypted
-              input is bound to its direct caller, so there is no read-only mode that could stand in
-              for one.
+              Use the wallet that will sign your actions. Kyrve binds each encrypted submission to
+              that wallet.
             </p>
             <div className="actions">
               <button
@@ -148,20 +147,23 @@ export function Start(): ReactElement {
               >
                 {walletState === "connecting" ? "Waiting for your wallet…" : "Connect wallet"}
               </button>
+              <button type="button" onClick={() => setStep(1)} data-testid="start-change-role">
+                Choose a different role
+              </button>
               <button type="button" onClick={() => setStep(3)} data-testid="start-skip-wallet">
                 Continue without one
               </button>
             </div>
             <p className="note">
-              Everything public — settlement evidence, deployment facts, verification — works
-              without a wallet. Only your own confidential values need one.
+              Settlement evidence, deployment facts and verification all work without a wallet. Only
+              your own confidential values need one.
             </p>
           </section>
         ) : null}
 
         {step === 3 ? (
           <section data-testid="step-readiness">
-            <h1>Everything you need is running</h1>
+            <h1>Check your connection</h1>
             <p className="lede">
               A quick check that this deployment can do what you are about to ask of it.
             </p>
@@ -184,7 +186,7 @@ export function Start(): ReactElement {
                 ok={record.gatewayUrl !== undefined || record.chainId !== 31337}
                 pending={false}
                 label="Confidential runtime"
-                good="The Nox handle gateway is reachable for encryption and decryption"
+                good="A Nox handle gateway is configured for this deployment"
                 bad="No handle gateway is configured for this chain"
               />
               <Check
@@ -192,7 +194,7 @@ export function Start(): ReactElement {
                 pending={false}
                 label="Market"
                 good={`${layers.length} settled series available`}
-                bad="No settled series yet. You can still submit; nothing will match until an epoch runs"
+                bad="No settled series yet. You can still submit, but no position can settle until matching runs"
               />
               <Check
                 ok={role !== undefined}
@@ -242,7 +244,7 @@ export function Start(): ReactElement {
                 }}
                 data-testid="start-home"
               >
-                Go to my home instead
+                Go to workspace
               </button>
             </div>
           </section>

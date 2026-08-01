@@ -33,7 +33,6 @@ import {
   QUOTE_REGISTRY_ABI,
   REQUEST_BOOK_ABI,
   SERIES_OWNERSHIP_ABI,
-  SERIES_TOKEN_ABI,
   WRAPPED_ASSET_ABI,
 } from "./abi.js";
 import type { KyrveRecord } from "./records.js";
@@ -64,6 +63,8 @@ export const STAGE_LABEL: Readonly<Record<Stage, string>> = {
 };
 
 export interface NextAction {
+  /** The state the reader needs to understand before deciding what to do. */
+  readonly heading: string;
   /** The imperative, in the reader's language. */
   readonly label: string;
   readonly path: string;
@@ -120,6 +121,7 @@ const EMPTY: JourneyState = {
   stages: [],
   reached: new Set(),
   next: {
+    heading: "Connect a wallet to begin",
     label: "Connect a wallet",
     path: "/app/start",
     why: "Kyrve binds every encrypted submission to the wallet that signs it.",
@@ -359,6 +361,7 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
   if (role === "provider") {
     if (!facts.hasConfidentialBalance) {
       return {
+        heading: "Your capital is not in the private workspace yet",
         label: "Add capital to begin",
         path: "/app/fund",
         why: "You hold no confidential balance yet. Lending terms without capital behind them cannot be filled.",
@@ -366,6 +369,7 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
     }
     if (facts.mandateState === MandateState.None) {
       return {
+        heading: "Your capital is ready for private lending terms",
         label: "Define your lending terms",
         path: "/app/mandates",
         why: "Your capital is confidential and idle. Terms tell the private matching what you will lend, where, and at what floor.",
@@ -373,6 +377,7 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
     }
     if (facts.mandateState === MandateState.Paused) {
       return {
+        heading: "Your lending terms are paused",
         label: "Resume your lending terms",
         path: "/app/mandates",
         why: "Your terms are paused, so nothing will be matched against them.",
@@ -380,6 +385,7 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
     }
     if (facts.mandateState === MandateState.Retired) {
       return {
+        heading: "Your lending terms are retired",
         label: "Review your position",
         path: "/app/series",
         why: "Your terms are retired permanently. Anything already allocated to you is still yours.",
@@ -388,6 +394,7 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
     }
     if (facts.hasClaim) {
       return {
+        heading: "You hold settled credit",
         label: "Share a disclosure",
         path: "/app/capsules",
         why: "You own settled credit. A disclosure grants one reviewer one frozen value and nothing else.",
@@ -395,15 +402,17 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
       };
     }
     return {
-      label: "Track private matching",
+      heading: "Your lending terms are live",
+      label: "View matching status",
       path: "/app/curve",
-      why: "Your terms are live. Nothing is allocated until an epoch runs and selects one quote.",
+      why: "No allocation exists until a matching run selects one quote. Your rate floor, budget and allocation stay encrypted throughout.",
     };
   }
 
   if (role === "borrower") {
     if (!facts.hasLiveRequest && facts.quoteStatus === QuoteStatus.None) {
       return {
+        heading: "You have not submitted a borrowing request",
         label: "Request a confidential quote",
         path: "/app/request",
         why: "State privately how much you need and the most you will pay. Only the bond is public.",
@@ -411,13 +420,15 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
     }
     if (facts.quoteStatus === QuoteStatus.Executable) {
       return {
+        heading: "One quote is ready for your decision",
         label: "Review and settle your quote",
         path: "/app/quotes",
-        why: "One quote is executable. Settling takes it at exactly its size — a partial fill is refused.",
+        why: "One quote is executable. Settling takes it at exactly its size. A partial fill is refused.",
       };
     }
     if (facts.quoteStatus === QuoteStatus.Consumed) {
       return {
+        heading: "Your quote settled at its exact size",
         label: "View your debt and its proof",
         path: `/app/quotes/${facts.quoteId ?? ""}`,
         why: "Your quote settled through unmodified Midnight. The credit position is public; who owns it is not.",
@@ -425,7 +436,8 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
       };
     }
     return {
-      label: "Track the private computation",
+      heading: "Your request is waiting for matching",
+      label: "View matching status",
       path: "/app/curve",
       why: "Your request is sealed. The confidential engine is evaluating it against every eligible lender.",
     };
@@ -433,12 +445,14 @@ function chooseNext(role: Role, facts: JourneyState): NextAction {
 
   if (facts.capsulesHeld > 0) {
     return {
+      heading: "A frozen disclosure is ready for you",
       label: "Open your disclosure",
       path: `/app/capsules/${facts.firstCapsuleId ?? ""}`,
       why: "Somebody granted you a frozen snapshot. You can decrypt that one value and nothing else.",
     };
   }
   return {
+    heading: "Public deployment evidence is ready to check",
     label: "Verify the deployment",
     path: "/proof/deployment",
     why: "No disclosure has been granted to this wallet. Everything public can still be recomputed from chain state.",

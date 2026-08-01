@@ -12,6 +12,7 @@
     "Verify"
   ],
   "oldProtocolNounsInNavigation": 0,
+  "roleCanChangeDuringOnboarding": true,
   "roleSwitchingWorks": true,
   "refreshRestoresPublicState": true,
   "mobileNavigationUsable": true,

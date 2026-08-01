@@ -25,12 +25,13 @@
  * suspects a role is locking them out will hunt for the escape hatch instead of doing the task.
  */
 
-import { useAccountModal, useChainModal, useConnectModal } from "@rainbow-me/rainbowkit";
+import { useAccountModal, useChainModal } from "@rainbow-me/rainbowkit";
 import { type ReactElement, useState } from "react";
 
 import { useKyrve } from "../lib/context.js";
-import { ROLE_COPY, ROLES, type Role } from "../lib/role.js";
+import { forgetRole, ROLE_COPY, ROLES, type Role } from "../lib/role.js";
 import { lock, revealedCount, useRevealed } from "../lib/session.js";
+import { navigate } from "../router/router.js";
 
 /** The short name a header can carry. `ROLE_COPY.label` is the imperative used on the role cards. */
 const SHORT: Readonly<Record<Role, string>> = {
@@ -44,11 +45,9 @@ export function RoleBadge(): ReactElement {
   /*
    * RainbowKit's modals, used only when this is a real visitor.
    *
-   * `openConnectModal` is undefined while RainbowKit is still resolving, and also when a wallet is
-   * already connected — so the fallback to `connect()` is not a fallback to the injected path, it is
-   * the deterministic adapter's own action for a page that was handed a key.
+   * The chooser is opened by `connect()` in `lib/context.tsx`, not from here. One opener, so every
+   * control in the product that says "connect wallet" opens the same thing.
    */
-  const { openConnectModal } = useConnectModal();
   const { openAccountModal } = useAccountModal();
   const { openChainModal } = useChainModal();
   /*
@@ -109,8 +108,8 @@ export function RoleBadge(): ReactElement {
         <div className="account-line">
           {walletState === "ended" ? (
             <span className="account-note" data-testid="session-ended">
-              Decrypted values cleared. Nothing was revoked — every grant this wallet holds stays in
-              place, permanently.
+              Decrypted values cleared. Nothing was revoked. Every grant this wallet holds stays in
+              place permanently.
             </span>
           ) : null}
           {walletFailure === undefined ? null : (
@@ -133,8 +132,8 @@ export function RoleBadge(): ReactElement {
             {held === 0
               ? "No decrypted value is held in this browser."
               : `${held} decrypted value${held === 1 ? "" : "s"} held in this browser's memory, and nowhere else.`}{" "}
-            Locking clears them immediately. It does not revoke anything — every grant this wallet
-            already holds stays in place, permanently, because Nox has no way to withdraw one.
+            Locking clears them immediately. It does not revoke access. Every grant this wallet
+            already holds stays in place permanently because Nox has no way to withdraw one.
           </span>
           <div className="account-line">
             <button type="button" onClick={() => lock()} disabled={held === 0} data-testid="lock">
@@ -180,9 +179,21 @@ export function RoleBadge(): ReactElement {
             ))}
           </ul>
           <p className="account-note">
-            A role changes which actions are offered first. It grants nothing and hides nothing —
-            every page stays reachable whichever you choose.
+            A role changes which actions are offered first. It grants nothing and hides nothing.
+            Every page stays reachable whichever you choose.
           </p>
+          <button
+            type="button"
+            className="account-reset"
+            onClick={() => {
+              forgetRole();
+              setOpen(false);
+              navigate("/app/start");
+            }}
+            data-testid="restart-onboarding"
+          >
+            Choose a role again
+          </button>
         </div>
       ) : null}
     </div>

@@ -36,26 +36,26 @@ export function RequiresWallet({ purpose, children, testId }: RequiresWalletProp
   if (session !== undefined) return <>{children(session)}</>;
 
   return (
-    <div
-      className="card"
+    <section
+      className="wallet-gate"
       data-testid={testId ?? "requires-wallet"}
       data-phase="waiting-for-wallet"
       aria-busy={walletState === "connecting"}
     >
-      <h3>A wallet is needed to {purpose}</h3>
-      <p className="lede">
-        {walletState === "ended"
-          ? "This session was ended and every decrypted value was cleared from memory. Nothing was " +
-            "revoked — the wallet keeps every grant it held, because Nox has no way to withdraw one."
-          : "Kyrve binds every encrypted input to the wallet that submits it, so there is no " +
-            "read-only mode that could stand in for one and no relayer that could be inserted. The " +
-            "public half of this page needs no wallet and is shown above."}
-      </p>
-      {walletFailure === undefined ? null : (
-        <p className="note" role="alert">
-          {walletFailure}
+      <div>
+        <p className="eyebrow">Wallet required</p>
+        <h2>Connect to {purpose}</h2>
+        <p className="lede">
+          {walletState === "ended"
+            ? "This session ended and every decrypted value was cleared from memory. Your wallet keeps each grant it already held because Nox cannot withdraw one."
+            : "Kyrve binds every encrypted input to the wallet that submits it. The public context above is available without a wallet."}
         </p>
-      )}
+        {walletFailure === undefined ? null : (
+          <p className="note" role="alert">
+            {walletFailure}
+          </p>
+        )}
+      </div>
       <button
         type="button"
         onClick={() => void connect()}
@@ -68,6 +68,6 @@ export function RequiresWallet({ purpose, children, testId }: RequiresWalletProp
             ? "Reconnect"
             : "Connect wallet"}
       </button>
-    </div>
+    </section>
   );
 }

@@ -197,9 +197,9 @@ export const ROLE_ACTIONS: Readonly<Record<Role, RoleActionSet>> = {
         outcome: "State privately what you need and what you will pay.",
       },
       {
-        label: "Track private matching",
+        label: "View matching status",
         path: "/app/curve",
-        outcome: "Watch the confidential computation advance, stage by stage.",
+        outcome: "See the public status of private matching without exposing the curve.",
       },
       {
         label: "Review and settle",

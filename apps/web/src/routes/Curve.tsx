@@ -34,7 +34,6 @@ import type { ReactElement } from "react";
 
 import { Empty, Facts } from "../components/Facts.js";
 import { RedactedCurve } from "../components/RedactedCurve.js";
-import { Why } from "../components/Why.js";
 import { PUBLIC_RESULT_VERIFIER_ABI } from "../lib/abi.js";
 import { abbreviate, useChainRead } from "../lib/chain.js";
 import { useKyrve } from "../lib/context.js";
@@ -106,17 +105,17 @@ export function Curve(): ReactElement {
   return (
     <>
       <section className="band">
-        <span className="eyebrow">The engine</span>
-        <h1>Confidential curve</h1>
+        <span className="eyebrow">Matching status</span>
+        <h1>Private matching</h1>
         <p className="lede">
-          Every eligible mandate and one request go into an epoch. The engine computes eligibility,
-          capacity, the privacy floor and leaf selection entirely on encrypted values, and publishes
-          exactly one leaf: a market, a rate and an aggregate amount. Everything it rejected — every
-          other leaf, every provider allocation, every capacity — stays encrypted.
+          Kyrve evaluates eligible lending terms and a borrower request on encrypted values. It can
+          publish one executable quote. Every other market, rate, allocation and capacity remains
+          private.
         </p>
 
-        <div className="card">
-          <h2>The curve, as far as anyone here is authorised to see it</h2>
+        <div className="card curve-summary">
+          <span className="eyebrow">Private by design</span>
+          <h2>Only the selected quote becomes readable</h2>
           <RedactedCurve
             className="hero-field"
             resolved={resolved}
@@ -124,23 +123,21 @@ export function Curve(): ReactElement {
             testId="curve-field"
           />
           <p className="note">
-            Deliberate redacted structure. There is no data behind these strokes — they are drawn
-            from geometry constants, not from any measurement — so there is nothing in them to
-            recover.
+            This is deliberate redacted structure. It is drawn from geometry constants, not a market
+            measurement, so no private data can be recovered from it.
             {resolved
-              ? " The single Cobalt point is the selected leaf, positioned by its public rate index within the universe's public grid."
-              : " No point is drawn, because no quote has been selected. A Cobalt mark on a page with no quote would be decoration in the one colour that is never allowed to be decoration."}
+              ? " The Cobalt point is the selected quote, positioned by its public rate index in the public grid."
+              : " No point is shown because no quote has been selected."}
           </p>
         </div>
       </section>
 
       {first === undefined || candidate === undefined ? (
         <section className="band">
-          <Empty title="No epoch has finished on this deployment" testId="curve-empty">
+          <Empty title="No matching run has published a quote" testId="curve-empty">
             <p>
-              An epoch is minutes of off-chain computation against a real Nox stack, driven a stage
-              at a time because every encrypted primitive is a separate transaction. This page
-              cannot start one, and it will not render placeholder stages that never ran.
+              Matching takes several encrypted transactions and may take minutes. This page reports
+              published results. It does not invent a progress state for work that has not run.
             </p>
             <p>
               <Link to="/app/mandates" className="row-link">
@@ -190,7 +187,7 @@ export function Curve(): ReactElement {
               },
               {
                 label: "Privacy floor",
-                value: `at least ${CURVE_MIN_PRIVACY_FLOOR} providers — the boolean, never the count`,
+                value: `at least ${CURVE_MIN_PRIVACY_FLOOR} providers. Kyrve publishes the boolean, never the count`,
               },
             ]}
           />
@@ -207,60 +204,60 @@ export function Curve(): ReactElement {
         </section>
       )}
 
-      <section className="band">
-        <h2>What an epoch costs</h2>
-        <p className="lede">
-          Every encrypted primitive is a separate external call, so cost scales linearly with
-          operation count and the work is split across transactions. These are measured figures from
-          the Phase 3 run, not estimates — <code>verify:phase3</code> fails if they disagree with
-          the recorded measurement.
-        </p>
-        <div className="table-scroll">
-          <table data-testid="curve-stages">
-            <thead>
-              <tr>
-                <th>Stage</th>
-                <th>Unit</th>
-                <th>Measured gas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {STAGES.map((stage) => (
-                <tr key={stage.name}>
-                  <td>{stage.name}</td>
-                  <td>{stage.unit}</td>
-                  <td className="numeric">{stage.gas.toLocaleString("en-GB")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="note">
-          A single transaction may not exceed{" "}
-          {CURVE_TRANSACTION_GAS_CEILING.toLocaleString("en-GB")} gas — EIP-7825, on the Osaka fork
-          — which is why the accumulate chunk is bounded at {CURVE_MAX_CELLS_PER_TRANSACTION} cells.
-          Phase 3 sized its widths against a node with no such cap and produced one width over the
-          limit; <code>verify:gas-cap</code> is the regression gate that keeps it there.
-        </p>
-        <p className="note">
-          These are local measurements. Testnet gas remains <strong>unverified</strong> and is not
-          presented here as a forecast.
-        </p>
-      </section>
-
-      <section className="band">
-        <Why title="This advances in visible steps because every encrypted operation is a transaction">
-          <p>
-            Nox has no batch entry point. Each primitive is a separate external call, so an epoch is
-            tens of transactions rather than one, and cost scales with the number of operations
-            rather than with the size of the numbers.
-          </p>
-          <p>
-            There is also no callback when off-chain work finishes. Readiness is found by polling,
-            which is why each stage names what it is waiting on instead of showing a spinner that
-            cannot know.
-          </p>
-        </Why>
+      <section className="band technical-section">
+        <details className="route-detail">
+          <summary>
+            <span>Technical measurements</span>
+            <small>Measured costs and the reason matching reports only published results.</small>
+          </summary>
+          <div className="route-detail-body">
+            <h2>What an epoch costs</h2>
+            <p className="lede">
+              Every encrypted primitive is a separate external call, so cost scales linearly with
+              operation count and the work is split across transactions. These are measured figures
+              from the Phase 3 run, not estimates. <code>verify:phase3</code> fails if they disagree
+              with the recorded measurement.
+            </p>
+            <div className="table-scroll">
+              <table data-testid="curve-stages">
+                <thead>
+                  <tr>
+                    <th>Stage</th>
+                    <th>Unit</th>
+                    <th>Measured gas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {STAGES.map((stage) => (
+                    <tr key={stage.name}>
+                      <td>{stage.name}</td>
+                      <td>{stage.unit}</td>
+                      <td className="numeric">{stage.gas.toLocaleString("en-GB")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="note">
+              A single transaction may not exceed{" "}
+              {CURVE_TRANSACTION_GAS_CEILING.toLocaleString("en-GB")} gas under EIP-7825 on the
+              Osaka fork. The accumulate chunk is bounded at {CURVE_MAX_CELLS_PER_TRANSACTION}{" "}
+              cells.
+              <code>verify:gas-cap</code> is the regression gate that keeps the bound in place.
+            </p>
+            <p className="note">
+              These are local measurements. Testnet gas remains <strong>unverified</strong> and is
+              not presented here as a forecast.
+            </p>
+            <h3>Why matching advances in visible steps</h3>
+            <p className="note">
+              Nox has no batch entry point. Each primitive is a separate external call, so an epoch
+              is tens of transactions rather than one. There is also no callback when off-chain work
+              finishes. Readiness is found by polling, so the page reports a completed result
+              instead of inventing a progress state it cannot know.
+            </p>
+          </div>
+        </details>
       </section>
     </>
   );

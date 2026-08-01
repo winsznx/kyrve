@@ -85,6 +85,7 @@ async function main(): Promise<void> {
     await walk(browser, baseUrl, "provider", "Add capital", "/app/fund");
     await walk(browser, baseUrl, "borrower", "Create request", "/app/request");
     await walk(browser, baseUrl, "auditor", "Open a disclosure", "/app/capsules");
+    await checkRoleCanChangeDuringOnboarding(browser, baseUrl);
     await checkRoleSwitching(browser, baseUrl);
     await checkRefreshRestoresPublicState(browser, baseUrl);
     await checkMobileNavigation(browser, baseUrl);
@@ -112,6 +113,9 @@ async function main(): Promise<void> {
         rolesWalked: ["provider", "borrower", "auditor"],
         navigationLabels: ["Home", "Activity", "Positions", "Verify"],
         oldProtocolNounsInNavigation: 0,
+        roleCanChangeDuringOnboarding: !failures.some(
+          (finding) => finding.journey === "onboarding role change",
+        ),
         roleSwitchingWorks: !failures.some((finding) => finding.journey === "role switching"),
         refreshRestoresPublicState: !failures.some((finding) => finding.journey === "refresh"),
         mobileNavigationUsable: !failures.some((finding) => finding.journey === "mobile"),
@@ -216,6 +220,38 @@ async function walk(
     notes.push(`${role}: front door → role → readiness → "${label}" → ${expectedPath}`);
   } catch (error) {
     fail(role, error instanceof Error ? (error.message.split("\n")[0] ?? "failed") : String(error));
+  } finally {
+    await page.context().close();
+  }
+}
+
+/** A saved choice must remain editable at the wallet step, not only from the application shell. */
+async function checkRoleCanChangeDuringOnboarding(
+  browser: Browser,
+  baseUrl: string,
+): Promise<void> {
+  const page = await fresh(browser, baseUrl);
+  try {
+    await page.getByTestId("choose-role-borrower").click();
+    await page.getByTestId("start-change-role").waitFor({ timeout: 30_000 });
+    await page.getByTestId("start-change-role").click();
+    await page.getByTestId("step-role").waitFor({ timeout: 30_000 });
+
+    await page.getByTestId("choose-role-auditor").click();
+    await page.getByTestId("step-wallet").waitFor({ timeout: 30_000 });
+    const selected = await page.evaluate<string | null>(
+      `window.localStorage.getItem("kyrve.role")`,
+    );
+    if (selected !== "auditor") {
+      fail("onboarding role change", `selected "${selected ?? "none"}", expected "auditor"`);
+    } else {
+      notes.push("the wallet step returns to role choice and applies the newly selected role");
+    }
+  } catch (error) {
+    fail(
+      "onboarding role change",
+      error instanceof Error ? (error.message.split("\n")[0] ?? "failed") : String(error),
+    );
   } finally {
     await page.context().close();
   }

@@ -70,7 +70,7 @@ const RAIL: readonly RailGroup[] = [
     items: [{ to: "/app", label: "Overview" }],
   },
   {
-    heading: "Capital",
+    heading: "Set up",
     items: [
       { to: "/app/fund", label: "Add capital" },
       { to: "/app/mandates", label: "Lending terms" },
@@ -78,7 +78,7 @@ const RAIL: readonly RailGroup[] = [
     ],
   },
   {
-    heading: "Market",
+    heading: "Monitor",
     items: [
       { to: "/app/activity", label: "Activity" },
       { to: "/app/curve", label: "Private matching" },
@@ -94,7 +94,7 @@ const RAIL: readonly RailGroup[] = [
     ],
   },
   {
-    heading: "Holdings",
+    heading: "Manage",
     items: [
       { to: "/app/series", label: "Positions", owns: ["/app/series"] },
       { to: "/app/roll", label: "Move maturity" },
@@ -102,7 +102,7 @@ const RAIL: readonly RailGroup[] = [
     ],
   },
   {
-    heading: "Evidence",
+    heading: "Verify",
     items: [{ to: "/proof", label: "Verify the deployment", owns: ["/proof"] }],
   },
 ];

@@ -101,7 +101,7 @@ export function SeriesDetail({ seriesId }: { seriesId: `0x${string}` }): ReactEl
               <p className="lede" data-testid="cross-unavailable">
                 No Cross book is deployed over this series, so there is no confidential secondary
                 transfer for it here. That is a fact about this deployment and not a verdict about
-                the series — reporting it as either would state something nobody measured.
+                the series. Reporting it as either would state something nobody measured.
               </p>
             ) : (
               <>

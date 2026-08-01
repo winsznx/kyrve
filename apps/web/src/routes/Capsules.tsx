@@ -54,12 +54,12 @@ export function Capsules(): ReactElement {
   return (
     <>
       <section className="band">
-        <span className="eyebrow">Provider · disclosure</span>
-        <h1>Capsules</h1>
+        <span className="eyebrow">Provider · Disclosure</span>
+        <h1>Share a frozen disclosure</h1>
         <p className="lede">
           A capsule freezes one value at one block and grants one recipient the ability to decrypt
-          that frozen copy — never the live handle. The grant is permanent, because Nox has no way
-          to withdraw one. What a capsule's expiry governs is whether the capsule still asserts, not
+          that frozen copy, never the live handle. The grant is permanent, because Nox has no way to
+          withdraw one. What a capsule's expiry governs is whether the capsule still asserts, not
           whether its recipient can still read the snapshot it froze.
         </p>
       </section>
@@ -69,7 +69,7 @@ export function Capsules(): ReactElement {
           <Empty title="No Capsule vault is deployed here" testId="capsules-empty">
             <p>
               A Capsule vault is deployed over one series. This deployment names none, so there is
-              nothing to issue against and nothing to read — which is a fact about this deployment,
+              nothing to issue against and nothing to read. This is a fact about this deployment,
               not a verdict about capsules.
             </p>
           </Empty>
@@ -172,7 +172,7 @@ function CapsulePanel({
         <p className="lede">
           The snapshot is taken from your own balance by the series token, at the block this
           transaction lands in. Its value equals your balance at that block and its lineage is
-          shared with nothing else — it is not the live balance handle, which is never granted to
+          shared with nothing else. It is not the live balance handle, which is never granted to
           anyone but you.
         </p>
 
@@ -207,7 +207,7 @@ function CapsulePanel({
           <p>
             The recipient will be able to decrypt this frozen snapshot forever. Nox has no{" "}
             <code>removeViewer</code> and no <code>removeAdmin</code>. The expiry above controls
-            only whether the capsule still asserts its facts — after it passes, live access ends and
+            only whether the capsule still asserts its facts. After it passes, live access ends and
             future snapshots are disabled, and this historical snapshot remains available to its
             recipient.
           </p>
@@ -278,7 +278,7 @@ function CapsulePanel({
         <p className="note">
           Every capsule is bound to this chain, this deployment and this series. A valid decryption
           proof says nothing about which quote a value belongs to, so the binding is what makes a
-          capsule mean anything — and{" "}
+          capsule mean anything. The{" "}
           <Link to="/proof" className="row-link">
             the proof pages
           </Link>{" "}

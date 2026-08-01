@@ -56,24 +56,27 @@ export function RequestPage(): ReactElement {
   return (
     <>
       <section className="band">
-        <span className="eyebrow">Borrower · step one</span>
-        <h1>Borrower request</h1>
+        <span className="eyebrow">Borrower · Step 1</span>
+        <h1>Request capital</h1>
         <p className="lede">
           A request is asymmetric on purpose. The bond is ETH and its value is visible; the expiry
           and the exact-fill requirement have to be agreed by every verifier. What stays encrypted
           is the part a provider could quote against: how much you want, the least you would accept,
           and every maximum rate you would pay.
         </p>
-        <Facts
-          facts={[
-            {
-              label: "Request book",
-              value: <span className="mono">{record.addresses.ConfidentialRequestBook}</span>,
-            },
-            { label: "Universe", value: <span className="mono">{UNIVERSE}</span> },
-            { label: "Handles per submission", value: "19, always" },
-          ]}
-        />
+        <details className="route-meta">
+          <summary>Submission details</summary>
+          <Facts
+            facts={[
+              {
+                label: "Request book",
+                value: <span className="mono">{record.addresses.ConfidentialRequestBook}</span>,
+              },
+              { label: "Universe", value: <span className="mono">{UNIVERSE}</span> },
+              { label: "Handles per submission", value: "19, always" },
+            ]}
+          />
+        </details>
       </section>
 
       <section className="band">
@@ -83,14 +86,15 @@ export function RequestPage(): ReactElement {
       </section>
 
       <section className="band">
-        <div className="card">
-          <h2>Next</h2>
+        <div className="card route-next">
+          <span className="eyebrow">After you submit</span>
+          <h2>Private matching selects one quote</h2>
           <p className="lede">
             An epoch runs over every eligible mandate and this request, and publishes exactly one
             leaf: a market, a rate and an aggregate amount. Everything it rejected stays private.
           </p>
           <Link to="/app/curve" className="ghost">
-            Track the confidential computation
+            View matching status
           </Link>
         </div>
       </section>
@@ -370,19 +374,21 @@ function RequestPanel({ session }: { session: Session }): ReactElement {
             <tr>
               <th>Request</th>
               <td className="handle" data-testid="request-id">
-                {requestId ?? "—"}
+                {requestId ?? "not recorded"}
               </td>
             </tr>
             <tr>
               <th>Expires at</th>
               <td className="numeric" data-testid="request-expiry">
-                {expiresAt === undefined ? "—" : formatTimestamp(expiresAt)}
+                {expiresAt === undefined ? "not recorded" : formatTimestamp(expiresAt)}
               </td>
             </tr>
             <tr>
               <th>Judged against</th>
               <td className="numeric">
-                {chainNow === undefined ? "—" : `${formatTimestamp(chainNow)} (chain clock)`}
+                {chainNow === undefined
+                  ? "not recorded"
+                  : `${formatTimestamp(chainNow)} (chain clock)`}
               </td>
             </tr>
           </tbody>
@@ -390,7 +396,7 @@ function RequestPanel({ session }: { session: Session }): ReactElement {
 
         {expired ? (
           <p className="note" data-testid="request-expired-note">
-            The window closed. Nothing was refused and nothing failed — an expired request simply
+            The window closed. Nothing was refused and nothing failed. An expired request simply
             cannot be sealed into an epoch, and submitting the same one again will not reopen it.
           </p>
         ) : null}

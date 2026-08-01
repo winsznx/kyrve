@@ -140,7 +140,7 @@ export function VerifyPanel({
 
       <p className="lede">
         Every check below states a fact, reads this chain for it, and compares. The deployment
-        record supplies addresses and never a verdict — where the record and the chain disagree, the
+        record supplies addresses and never a verdict. Where the record and the chain disagree, the
         check fails and shows both. A page that displayed the record would have verified nothing.
       </p>
 
@@ -217,8 +217,8 @@ export function VerifyPanel({
       )}
 
       <p className="footnote">
-        The downloadable file carries public values only — no private balance and no decrypted
-        amount — and it says what it is not: a recomputation at one block by one browser over the
+        The downloadable file carries public values only. It has no private balance or decrypted
+        amount, and it says what it is not: a recomputation at one block by one browser over the
         checks listed, not an audit. Values published through the Nox gateway carry decryption
         proofs, which are signatures over a released plaintext; they are not zero-knowledge proofs
         and Kyrve does not describe them as such.

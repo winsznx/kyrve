@@ -70,35 +70,32 @@ export function Fund(): ReactElement {
   return (
     <>
       <section className="band">
-        <span className="eyebrow">Provider · step one</span>
-        <h1>Confidential balance</h1>
+        <span className="eyebrow">Provider · Step 1</span>
+        <h1>Add private capital</h1>
         <p className="lede">
           Wrapping moves a public ERC-20 balance into a confidential ERC-7984 one. The amount you
-          wrap is a plain <code>uint256</code> in calldata and is public permanently — that is
-          unavoidable, and it is the honest cost of entering the confidential layer from a public
-          token. Everything after it is encrypted.
+          wrap is public permanently. Everything after it is encrypted and only you can decrypt your
+          own balance.
         </p>
-        <Facts
-          facts={[
-            {
-              label: "Public test token",
-              value: <span className="mono">{record.addresses.TestUnderlyingERC20}</span>,
-            },
-            {
-              label: "Confidential wrapper",
-              value: <span className="mono">{record.addresses.KyrveWrappedAsset}</span>,
-            },
-            {
-              label: "Custody vault",
-              value: <span className="mono">{record.addresses.KyrveConfidentialAssetVault}</span>,
-            },
-          ]}
-        />
-        <p className="note">
-          The wrapper wraps the market's own loan token. Three phases tolerated two test tokens
-          because nothing crossed back; the moment one did, activation reverted with a funding
-          shortfall on a run where every encrypted step had succeeded (delta T-10).
-        </p>
+        <details className="route-meta">
+          <summary>Token and vault addresses</summary>
+          <Facts
+            facts={[
+              {
+                label: "Public test token",
+                value: <span className="mono">{record.addresses.TestUnderlyingERC20}</span>,
+              },
+              {
+                label: "Confidential wrapper",
+                value: <span className="mono">{record.addresses.KyrveWrappedAsset}</span>,
+              },
+              {
+                label: "Custody vault",
+                value: <span className="mono">{record.addresses.KyrveConfidentialAssetVault}</span>,
+              },
+            ]}
+          />
+        </details>
       </section>
 
       <section className="band">
@@ -108,14 +105,15 @@ export function Fund(): ReactElement {
       </section>
 
       <section className="band">
-        <div className="card">
-          <h2>Next</h2>
+        <div className="card route-next">
+          <span className="eyebrow">Next step</span>
+          <h2>Set the terms for your capital</h2>
           <p className="lede">
             A confidential balance is capital, not a commitment. A mandate is what tells the curve
             engine how much of it you will lend, into which markets, and at what minimum rate.
           </p>
           <Link to="/app/mandates" className="ghost">
-            Submit a lending mandate
+            Set lending terms
           </Link>
         </div>
       </section>
@@ -330,7 +328,7 @@ function WrapPanel({ session }: { session: Session }): ReactElement {
               <th>Public tUSDC balance</th>
               <td className="numeric" data-testid="mint-balance">
                 {publicBalance === undefined
-                  ? "—"
+                  ? "not recorded"
                   : formatAmount(publicBalance, UNDERLYING_DECIMALS)}
               </td>
             </tr>
@@ -363,7 +361,7 @@ function WrapPanel({ session }: { session: Session }): ReactElement {
             disabled={busy}
             data-testid="wrap-submit"
           >
-            Wrap — this amount becomes public
+            Wrap: this amount becomes public
           </button>
         </div>
 
@@ -386,7 +384,7 @@ function WrapPanel({ session }: { session: Session }): ReactElement {
               <th>Public tUSDC balance</th>
               <td className="numeric" data-testid="public-balance">
                 {publicBalance === undefined
-                  ? "—"
+                  ? "not recorded"
                   : formatAmount(publicBalance, UNDERLYING_DECIMALS)}
               </td>
             </tr>
@@ -410,7 +408,7 @@ function WrapPanel({ session }: { session: Session }): ReactElement {
         />
         <p className="note">
           Decrypted in this browser and held in memory only. No Kyrve server, log, metric or
-          database receives it. Locking the session clears it immediately — and revokes nothing,
+          database receives it. Locking the session clears it immediately and revokes nothing,
           because Nox has no grant to withdraw.
         </p>
       </div>

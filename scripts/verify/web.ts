@@ -398,7 +398,7 @@ async function walkRoutes(browser: Awaited<ReturnType<typeof chromium.launch>>):
       const groups = await page.evaluate<string>(
         `[...document.querySelectorAll(".rail-heading")].map(h => (h.textContent || "").trim()).join("|")`,
       );
-      const expectedGroups = "Capital|Market|Holdings|Evidence";
+      const expectedGroups = "Set up|Monitor|Manage|Verify";
       if (groups !== expectedGroups) {
         fail(
           "navigation",
