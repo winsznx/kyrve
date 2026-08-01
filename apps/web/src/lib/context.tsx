@@ -40,12 +40,19 @@ import {
   useState,
 } from "react";
 import type { PublicClient } from "viem";
+import { useAccount, useWalletClient } from "wagmi";
 import { noxNetworkFor } from "./deployment.js";
 import type { LifecycleState } from "./lifecycle.js";
 import { type KyrveRecord, loadRecord } from "./records.js";
 import { safeErrorMessage } from "./redact.js";
 import { hasOnboarded, markOnboarded, type Role, readRole, writeRole } from "./role.js";
-import { lock, openPublicClient, openSession, type Session } from "./session.js";
+import {
+  lock,
+  openPublicClient,
+  openSession,
+  openSessionFromWallet,
+  type Session,
+} from "./session.js";
 
 /** How the wallet half of the terminal is doing. Four states, none of them a spinner. */
 export type WalletState =
@@ -121,6 +128,9 @@ export interface KyrveProviderProps {
 
 export function KyrveProvider({ children, fallback }: KyrveProviderProps): ReactElement {
   const [boot, setBoot] = useState<BootState>({ record: undefined, error: undefined });
+  // RainbowKit's connection, read through wagmi. Undefined until somebody connects.
+  const { address: wagmiAccount } = useAccount();
+  const { data: wagmiClient } = useWalletClient();
   const [session, setSession] = useState<Session>();
   const [walletState, setWalletState] = useState<WalletState>("not-connected");
   const [walletFailure, setWalletFailure] = useState<string>();
@@ -182,8 +192,22 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
     [network, rpcUrl],
   );
 
+  /**
+   * The deterministic adapter, and only when a key was injected into the page.
+   *
+   * This is the path four browser suites drive. It cannot be reached from a URL — nothing here reads
+   * `location.search` — and it cannot be reached at all unless the harness put a key on `window`
+   * before the first script ran, which only `addInitScript` can do.
+   *
+   * A real visitor never takes this branch. Their connection is RainbowKit's, below.
+   */
   const connect = useCallback(async (): Promise<void> => {
     if (network === undefined) return;
+    if (window.__KYRVE_LOCAL_KEY__ === undefined) {
+      // Nothing to do: RainbowKit owns connection for a real wallet, and the connect control in the
+      // header opens its modal rather than calling this.
+      return;
+    }
     setWalletState("connecting");
     setWalletFailure(undefined);
     try {
@@ -221,6 +245,52 @@ export function KyrveProvider({ children, fallback }: KyrveProviderProps): React
     if (walletState !== "not-connected") return;
     void connect();
   }, [network, connect, walletState]);
+
+  /**
+   * The production adapter: whatever RainbowKit connected becomes a Kyrve session.
+   *
+   * wagmi hands back a viem `WalletClient`, which is exactly what `Session` already holds — so every
+   * route, panel and protocol action downstream is identical whichever adapter connected. That is
+   * why adding RainbowKit changed no protocol code and broke no passing suite.
+   *
+   * The effect also covers account switching and disconnection from the wallet's own UI: when
+   * `wagmiClient` or `wagmiAccount` changes, the session is rebuilt against the new signer rather
+   * than left bound to the previous one, which would sign as somebody the user is no longer.
+   */
+  useEffect(() => {
+    if (network === undefined) return;
+    if (window.__KYRVE_LOCAL_KEY__ !== undefined) return;
+
+    if (wagmiClient === undefined || wagmiAccount === undefined) {
+      // Disconnected in the wallet. Clear decrypted values with it: a balance decrypted by an
+      // account that is no longer connected must not stay on screen.
+      if (walletState === "connected") {
+        lock();
+        setSession(undefined);
+        setWalletState("not-connected");
+      }
+      return;
+    }
+
+    let live = true;
+    setWalletState("connecting");
+    void (async () => {
+      try {
+        const next = await openSessionFromWallet(network, rpcUrl, wagmiClient, wagmiAccount);
+        if (!live) return;
+        setSession(next);
+        setWalletState("connected");
+        setWalletFailure(undefined);
+      } catch (error) {
+        if (!live) return;
+        setWalletFailure(safeErrorMessage(error));
+        setWalletState("not-connected");
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [network, rpcUrl, wagmiClient, wagmiAccount, walletState]);
 
   if (boot.record === undefined || network === undefined || publicClient === undefined) {
     return fallback(boot);

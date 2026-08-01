@@ -25,6 +25,7 @@
  * suspects a role is locking them out will hunt for the escape hatch instead of doing the task.
  */
 
+import { useAccountModal, useChainModal, useConnectModal } from "@rainbow-me/rainbowkit";
 import { type ReactElement, useState } from "react";
 
 import { useKyrve } from "../lib/context.js";
@@ -40,6 +41,24 @@ const SHORT: Readonly<Record<Role, string>> = {
 
 export function RoleBadge(): ReactElement {
   const { session, walletState, walletFailure, connect, disconnect, role, chooseRole } = useKyrve();
+  /*
+   * RainbowKit's modals, used only when this is a real visitor.
+   *
+   * `openConnectModal` is undefined while RainbowKit is still resolving, and also when a wallet is
+   * already connected — so the fallback to `connect()` is not a fallback to the injected path, it is
+   * the deterministic adapter's own action for a page that was handed a key.
+   */
+  const { openConnectModal } = useConnectModal();
+  const { openAccountModal } = useAccountModal();
+  const { openChainModal } = useChainModal();
+  /*
+   * WHICH ADAPTER IS DRIVING THIS PAGE.
+   *
+   * A key on `window` means the deterministic harness put it there before the first script ran,
+   * which only `addInitScript` can do — it is not reachable from a URL, a query parameter or any
+   * user action. Everything else is a real visitor, and their wallet is RainbowKit's.
+   */
+  const deterministic = typeof window !== "undefined" && window.__KYRVE_LOCAL_KEY__ !== undefined;
   const [open, setOpen] = useState(false);
   useRevealed();
   const held = revealedCount();
@@ -103,6 +122,16 @@ export function RoleBadge(): ReactElement {
             <button type="button" onClick={() => lock()} disabled={held === 0} data-testid="lock">
               Lock and clear {held} decrypted value{held === 1 ? "" : "s"}
             </button>
+            {deterministic || openAccountModal === undefined ? null : (
+              <button type="button" onClick={openAccountModal} data-testid="account">
+                Account
+              </button>
+            )}
+            {deterministic || openChainModal === undefined ? null : (
+              <button type="button" onClick={openChainModal} data-testid="chain">
+                Network
+              </button>
+            )}
             <button type="button" onClick={disconnect} data-testid="disconnect">
               End session
             </button>

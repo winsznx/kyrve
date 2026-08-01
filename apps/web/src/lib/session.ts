@@ -111,6 +111,40 @@ export async function openSession(network: NoxNetwork, rpcUrl: string): Promise<
   return { account, publicClient, walletClient, nox, network };
 }
 
+/**
+ * A session over a wallet somebody else already connected.
+ *
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ * THE BOUNDARY BETWEEN THE TWO ADAPTERS
+ * ════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * `openSession` above is the DETERMINISTIC adapter: it takes a key the harness injected, or it asks
+ * an injected provider directly. Four browser suites depend on it and it must not be removed.
+ *
+ * This one is the PRODUCTION adapter's half. RainbowKit and wagmi own connection, chain switching
+ * and reconnection; they hand back a viem `WalletClient`, and everything downstream of this function
+ * is identical either way. That is the whole point of the boundary — no route, no panel and no
+ * protocol action knows which adapter connected it, so adding RainbowKit changed no protocol code.
+ *
+ * The `Session` shape is unchanged, which is why the passing suites keep passing.
+ */
+export async function openSessionFromWallet(
+  network: NoxNetwork,
+  rpcUrl: string,
+  walletClient: WalletClient,
+  account: Address,
+): Promise<Session> {
+  const chain = network.chainId === 11155111 ? sepolia : hardhat;
+  const publicClient = createPublicClient({
+    chain,
+    transport: http(rpcUrl),
+    cacheTime: 0,
+  }) as PublicClient;
+
+  const nox = await createHandleClient(walletClient, network);
+  return { account, publicClient, walletClient, nox, network };
+}
+
 /** Handle -> decrypted value, held only for as long as the session is unlocked. */
 const revealed = new Map<string, bigint>();
 const listeners = new Set<() => void>();

@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App.js";
+import { WalletProvider } from "./lib/wallet/provider.js";
 import "./styles.css";
 
 const container = document.getElementById("root");
@@ -9,6 +10,8 @@ if (container === null) throw new Error("the terminal has no mount point");
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <WalletProvider>
+      <App />
+    </WalletProvider>
   </StrictMode>,
 );
